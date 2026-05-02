@@ -9,6 +9,15 @@ export function graphClient(token) {
         },
     });
 }
+export function mdeClient(token) {
+    return axios.create({
+        baseURL: "https://api.securitycenter.microsoft.com/api",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+        },
+    });
+}
 export function ninjaClient(token) {
     return axios.create({
         baseURL: "https://app.ninjarmm.com/api/v2",
@@ -27,11 +36,26 @@ export function unifiCloudClient() {
         },
     });
 }
+export function confluenceClient() {
+    const domain = process.env["CONFLUENCE_DOMAIN"] ?? "";
+    const email = process.env["CONFLUENCE_EMAIL"] ?? "";
+    const token = process.env["CONFLUENCE_API_TOKEN"] ?? "";
+    const auth = Buffer.from(`${email}:${token}`).toString("base64");
+    return axios.create({
+        baseURL: `https://${domain}.atlassian.net/wiki/api/v2`,
+        headers: {
+            Authorization: `Basic ${auth}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+        },
+    });
+}
 export function formatError(err) {
     if (isAxiosError(err)) {
         const data = err.response?.data;
         const msg = data?.["message"] ??
             data?.["error"] ??
+            data?.["errors"] ??
             err.response?.statusText ??
             err.message;
         const status = err.response?.status;
