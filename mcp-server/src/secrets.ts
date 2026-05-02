@@ -73,6 +73,6 @@ export async function loadBitwardenSecrets(): Promise<void> {
     );
   } catch (err) {
     console.error("[it-ops-mcp] Bitwarden Secrets Manager error:", err);
-    throw err;
+    // Don't throw — fall back to whatever env vars are already set
   }
 }

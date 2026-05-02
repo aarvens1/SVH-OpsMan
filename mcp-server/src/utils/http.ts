@@ -12,6 +12,16 @@ export function graphClient(token: string): AxiosInstance {
   });
 }
 
+export function mdeClient(token: string): AxiosInstance {
+  return axios.create({
+    baseURL: "https://api.securitycenter.microsoft.com/api",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
 export function ninjaClient(token: string): AxiosInstance {
   return axios.create({
     baseURL: "https://app.ninjarmm.com/api/v2",
@@ -32,12 +42,28 @@ export function unifiCloudClient(): AxiosInstance {
   });
 }
 
+export function confluenceClient(): AxiosInstance {
+  const domain = process.env["CONFLUENCE_DOMAIN"] ?? "";
+  const email = process.env["CONFLUENCE_EMAIL"] ?? "";
+  const token = process.env["CONFLUENCE_API_TOKEN"] ?? "";
+  const auth = Buffer.from(`${email}:${token}`).toString("base64");
+  return axios.create({
+    baseURL: `https://${domain}.atlassian.net/wiki/api/v2`,
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+  });
+}
+
 export function formatError(err: unknown): string {
   if (isAxiosError(err)) {
     const data = err.response?.data as Record<string, unknown> | undefined;
     const msg =
       (data?.["message"] as string | undefined) ??
       (data?.["error"] as string | undefined) ??
+      (data?.["errors"] as string | undefined) ??
       err.response?.statusText ??
       err.message;
     const status = err.response?.status;

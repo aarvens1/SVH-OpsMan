@@ -89,7 +89,7 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
       try {
         const [ip, prefix] = subnet.split("/");
         const prefixLen = parseInt(prefix ?? "24", 10);
-        const netmaskBits = ~(~0 << (32 - prefixLen)) >>> 0;
+        const netmaskBits = (~0 << (32 - prefixLen)) >>> 0;
         const parts = [24, 16, 8, 0].map((s) => (netmaskBits >> s) & 0xff);
         const netmask = parts.join(".");
 

@@ -6,6 +6,11 @@ import { registerPlannerTools } from "./tools/planner.js";
 import { registerUnifiCloudTools } from "./tools/unifi-cloud.js";
 import { registerUnifiNetworkTools } from "./tools/unifi-network.js";
 import { registerNinjaOneTools } from "./tools/ninjaone.js";
+import { registerDefenderMdeTools } from "./tools/defender-mde.js";
+import { registerEntraAdminTools } from "./tools/entra-admin.js";
+import { registerOneDriveTools } from "./tools/onedrive.js";
+import { registerTeamsTools } from "./tools/teams.js";
+import { registerConfluenceTools } from "./tools/confluence.js";
 function checkEnv(...vars) {
     const missing = vars.filter((v) => !process.env[v]);
     if (missing.length > 0) {
@@ -24,11 +29,18 @@ const services = {
     unifiCloud: checkEnv("UNIFI_API_KEY"),
     unifiController: checkEnv("UNIFI_CONTROLLER_URL", "UNIFI_USERNAME", "UNIFI_PASSWORD"),
     ninjaone: checkEnv("NINJA_CLIENT_ID", "NINJA_CLIENT_SECRET"),
+    mde: checkEnv("MDE_TENANT_ID", "MDE_CLIENT_ID", "MDE_CLIENT_SECRET"),
+    confluence: checkEnv("CONFLUENCE_DOMAIN", "CONFLUENCE_EMAIL", "CONFLUENCE_API_TOKEN"),
 };
 registerPlannerTools(server, services.graph);
 registerUnifiCloudTools(server, services.unifiCloud);
 registerUnifiNetworkTools(server, services.unifiController);
 registerNinjaOneTools(server, services.ninjaone);
+registerDefenderMdeTools(server, services.mde);
+registerEntraAdminTools(server, services.graph);
+registerOneDriveTools(server, services.graph);
+registerTeamsTools(server, services.graph);
+registerConfluenceTools(server, services.confluence);
 const enabledCount = Object.values(services).filter(Boolean).length;
 console.error(`[it-ops-mcp] Server starting — ${enabledCount}/${Object.keys(services).length} services configured`);
 const transport = new StdioServerTransport();
