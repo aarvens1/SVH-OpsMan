@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { loadBitwardenSecrets } from "./secrets.js";
 import { registerPlannerTools } from "./tools/planner.js";
 import { registerUnifiCloudTools } from "./tools/unifi-cloud.js";
 import { registerUnifiNetworkTools } from "./tools/unifi-network.js";
@@ -13,6 +14,10 @@ function checkEnv(...vars) {
     }
     return true;
 }
+// Load secrets from Bitwarden Secrets Manager before checking env vars.
+// In Docker, BWS_ACCESS_TOKEN is the only env var that needs to be passed in.
+// Locally with a .env file, individual vars can still be set directly.
+await loadBitwardenSecrets();
 const server = new McpServer({ name: "it-ops-server", version: "1.0.0" });
 const services = {
     graph: checkEnv("GRAPH_TENANT_ID", "GRAPH_CLIENT_ID", "GRAPH_CLIENT_SECRET"),
