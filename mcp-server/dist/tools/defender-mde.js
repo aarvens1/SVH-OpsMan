@@ -102,7 +102,7 @@ export function registerDefenderMdeTools(server, enabled) {
                 .describe("'Quick' is fast and covers common threat locations; 'Full' scans the entire disk"),
             comment: z
                 .string()
-                .default("Scan triggered via OpsMan")
+                .default("Scan triggered via it-ops-mcp-server")
                 .describe("Reason for the scan (recorded in audit log)"),
         }),
     }, async ({ machine_id, scan_type, comment }) => {

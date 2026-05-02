@@ -121,7 +121,7 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
           .describe("'Quick' is fast and covers common threat locations; 'Full' scans the entire disk"),
         comment: z
           .string()
-          .default("Scan triggered via OpsMan")
+          .default("Scan triggered via it-ops-mcp-server")
           .describe("Reason for the scan (recorded in audit log)"),
       }),
     },

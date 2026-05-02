@@ -12,6 +12,10 @@ This gives Claude direct access to your IT operations stack. Instead of switchin
 
 > *"Show me what clients are connected to the guest VLAN and block the unknown MAC addresses."*
 
+> *"Find all app registrations with secrets expiring in the next 30 days."*
+
+> *"Post a maintenance notice to the #ops Teams channel and create a Confluence page to document what changed."*
+
 ---
 
 ## What's included
@@ -19,11 +23,16 @@ This gives Claude direct access to your IT operations stack. Instead of switchin
 | System | What Claude can do |
 |--------|--------------------|
 | **Microsoft Planner** | Create and update plans, tasks, checklists, and notes |
+| **Entra ID (Azure AD)** | Audit MFA methods, Conditional Access, app registrations, expiring secrets, role members, risky users |
+| **OneDrive** | Browse files, search, create folders, generate sharing links |
+| **Microsoft Teams** | List teams/channels, send messages, create channels, add members |
+| **Microsoft Defender for Endpoint** | List devices, vulnerabilities, alerts, IOC indicators, trigger AV scans, isolate/unisolate devices, TVM recommendations |
 | **UniFi (Cloud)** | View sites and devices across all locations |
 | **UniFi (Controller)** | Manage VLANs, firewall rules, devices, and connected clients |
 | **NinjaOne RMM** | Manage servers — services, processes, patches, event logs, scripts, alerts, and maintenance windows |
+| **Confluence** | Search pages, read and edit content, manage comments |
 
-All four are independent. You can connect only the ones you use.
+All services are independent. You can connect only the ones you use.
 
 ---
 
@@ -45,24 +54,42 @@ You only need to do this once per service. Skip any you don't use.
 
 ---
 
-#### Microsoft Planner
+#### Microsoft Graph (Planner, Entra ID, OneDrive, Teams)
 
-Planner is accessed through Microsoft's Graph API, which requires an App Registration in your Azure tenant.
+These four services all share a single app registration.
 
 1. Go to [Entra ID](https://entra.microsoft.com) → **App registrations** → **New registration**
 2. Give it a name (e.g. `Claude IT Ops`) and register
 3. Go to **API permissions** → **Add a permission** → **Microsoft Graph** → **Application permissions**
-4. Add these three permissions:
+4. Add these permissions:
 
    | Permission | Why it's needed |
    |-----------|----------------|
    | `Tasks.ReadWrite` | Read and write Planner tasks |
-   | `Group.Read.All` | Look up which groups own which plans |
-   | `AuditLog.Read.All` | Read sign-in logs |
+   | `Group.Read.All` | Look up which groups own which plans; list Teams |
+   | `ChannelMessage.Send` | Post messages to Teams channels |
+   | `Files.ReadWrite.All` | Browse and manage OneDrive files |
+   | `Policy.Read.All` | Read Conditional Access policies |
+   | `Application.Read.All` | List app registrations and service principals |
+   | `RoleManagement.Read.Directory` | List directory roles and members |
+   | `IdentityRiskyUser.ReadWrite.All` | Read and dismiss risky users (requires P2) |
+   | `UserAuthenticationMethod.Read.All` | Read MFA methods |
 
 5. Click **Grant admin consent**
-6. Go to **Certificates & secrets** → **New client secret** → copy the value immediately (it's only shown once)
+6. Go to **Certificates & secrets** → **New client secret** → copy the value immediately (shown only once)
 7. Note down your **Tenant ID**, **Client ID**, and the **Client secret value**
+
+---
+
+#### Microsoft Defender for Endpoint
+
+MDE requires a **separate** app registration with different permissions.
+
+1. Create a new app registration in Entra ID (e.g. `Claude MDE`)
+2. Go to **API permissions** → **Add a permission** → **APIs my organization uses** → search for **WindowsDefenderATP**
+3. Add **Application permissions**: `Machine.Read.All`, `Machine.Isolate`, `Machine.Scan`, `Alert.Read.All`, `Ti.ReadWrite`, `Vulnerability.Read.All`
+4. Grant admin consent
+5. Create a client secret and note your **Tenant ID**, **Client ID**, and **Client secret**
 
 ---
 
@@ -76,7 +103,7 @@ Planner is accessed through Microsoft's Graph API, which requires an App Registr
 
 #### UniFi Network Controller
 
-This is for direct access to your UDM Pro, CloudKey, or self-hosted controller — for things like managing VLANs and firewall rules. You just need a local admin account on the controller.
+For direct access to your UDM Pro, CloudKey, or self-hosted controller. You just need a local admin account.
 
 You'll need:
 - The controller's URL (e.g. `https://192.168.1.1`)
@@ -92,19 +119,36 @@ You'll need:
 
 ---
 
+#### Confluence
+
+1. Log in to your Atlassian account at [id.atlassian.com](https://id.atlassian.com)
+2. Go to **Security** → **API tokens** → **Create API token**
+3. Copy the token value
+4. Note your Confluence **domain** — the part before `.atlassian.net` in your Confluence URL
+
+---
+
 ### Step 2 — Add credentials to Bitwarden Secrets Manager
 
 In [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/), create a **machine account** and generate an access token for it. This token is the only thing you'll need to give Claude later.
 
 Then create a secret for each credential. The **Key** must match exactly as shown — the server uses these names to find the right values.
 
-**Microsoft Planner**
+**Microsoft Graph (Planner, Entra ID, OneDrive, Teams)**
 
 | Key | Value |
 |-----|-------|
 | `GRAPH_TENANT_ID` | Your Azure tenant ID |
 | `GRAPH_CLIENT_ID` | App registration client ID |
 | `GRAPH_CLIENT_SECRET` | App registration client secret |
+
+**Microsoft Defender for Endpoint**
+
+| Key | Value |
+|-----|-------|
+| `MDE_TENANT_ID` | Your Azure tenant ID |
+| `MDE_CLIENT_ID` | MDE app registration client ID |
+| `MDE_CLIENT_SECRET` | MDE app registration client secret |
 
 **UniFi Cloud**
 
@@ -126,6 +170,14 @@ Then create a secret for each credential. The **Key** must match exactly as show
 |-----|-------|
 | `NINJA_CLIENT_ID` | NinjaOne API client ID |
 | `NINJA_CLIENT_SECRET` | NinjaOne API client secret |
+
+**Confluence**
+
+| Key | Value |
+|-----|-------|
+| `CONFLUENCE_DOMAIN` | Your org subdomain (e.g. `mycompany` for `mycompany.atlassian.net`) |
+| `CONFLUENCE_EMAIL` | The email address for the API token |
+| `CONFLUENCE_API_TOKEN` | The API token |
 
 Make sure the machine account has access to all the secrets you created.
 
@@ -186,7 +238,7 @@ Once connected, just talk to Claude naturally. It knows which tools are availabl
 - For **Planner tasks**, you don't need to know task IDs — Claude can search by plan name, group, or description and find the right one.
 - For **NinjaOne**, if you say "the production database server" Claude will search for it rather than asking for an ID.
 - For **UniFi**, you can refer to sites and devices by name.
-- If you ask Claude to do something that modifies a system (restart a service, block a client, create a firewall rule), it will tell you what it's about to do before acting.
+- If you ask Claude to do something that modifies a system (restart a service, block a client, create a firewall rule, isolate a device), it will tell you what it's about to do before acting.
 
 ---
 
@@ -255,6 +307,74 @@ A complete list of what Claude can do with each service.
 | `planner_update_checklist_item` | Add, tick off, rename, or remove a checklist item |
 
 > Planner doesn't have a native comments feature — the **notes field** on each task is the place for running commentary.
+
+---
+
+### Entra ID
+
+> Needs: `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`
+
+| Tool | What it does |
+|------|-------------|
+| `entra_get_user_mfa_methods` | List all MFA methods registered for a user |
+| `entra_list_conditional_access_policies` | List Conditional Access policies and their state |
+| `entra_list_app_registrations` | List app registrations with credential expiry dates |
+| `entra_list_expiring_secrets` | Find secrets and certificates expiring within N days |
+| `entra_list_directory_roles` | List active directory roles (Global Admin, etc.) |
+| `entra_get_role_members` | See who is assigned to a specific role |
+| `entra_list_risky_users` | List users flagged by Identity Protection |
+| `entra_dismiss_risky_user` | Mark users as safe after investigation |
+
+---
+
+### OneDrive
+
+> Needs: `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`
+
+| Tool | What it does |
+|------|-------------|
+| `onedrive_get_user_drive` | Get a user's drive ID and quota |
+| `onedrive_list_items` | List files and folders in a location |
+| `onedrive_get_item` | Get metadata for a specific file or folder |
+| `onedrive_search_files` | Search a drive by filename or content keyword |
+| `onedrive_create_folder` | Create a new folder |
+| `onedrive_create_sharing_link` | Generate a shareable link (view, edit, or embed) |
+
+---
+
+### Teams
+
+> Needs: `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`
+
+| Tool | What it does |
+|------|-------------|
+| `teams_list_teams` | List all Teams in the tenant |
+| `teams_list_channels` | List channels in a Team |
+| `teams_send_message` | Post a message to a channel |
+| `teams_list_messages` | Read recent messages in a channel |
+| `teams_create_channel` | Create a new channel |
+| `teams_add_member` | Add a user to a Team as member or owner |
+
+---
+
+### Defender for Endpoint
+
+> Needs: `MDE_TENANT_ID`, `MDE_CLIENT_ID`, `MDE_CLIENT_SECRET`
+>
+> Requires a separate app registration with WindowsDefenderATP permissions.
+
+| Tool | What it does |
+|------|-------------|
+| `mde_list_devices` | List enrolled devices — filter by health status or risk score |
+| `mde_get_device` | Get full details for a specific device |
+| `mde_get_device_vulnerabilities` | List CVEs on a device with severity and remediation info |
+| `mde_run_av_scan` | Trigger a Quick or Full antivirus scan on a device |
+| `mde_isolate_device` | Cut a device off from the network (Full or Selective) |
+| `mde_unisolate_device` | Restore network access after investigation |
+| `mde_list_alerts` | List alerts — filter by severity and status |
+| `mde_list_indicators` | List custom IOCs (blocked IPs, domains, hashes) |
+| `mde_create_indicator` | Create a new IOC to block or alert on |
+| `mde_get_security_recommendations` | List TVM remediation priorities by exposure impact |
 
 ---
 
@@ -354,6 +474,23 @@ A complete list of what Claude can do with each service.
 
 ---
 
+### Confluence
+
+> Needs: `CONFLUENCE_DOMAIN`, `CONFLUENCE_EMAIL`, `CONFLUENCE_API_TOKEN`
+
+| Tool | What it does |
+|------|-------------|
+| `confluence_list_spaces` | List all Confluence spaces |
+| `confluence_search_pages` | Search pages using CQL |
+| `confluence_get_page` | Get the full content of a page |
+| `confluence_get_page_children` | List child pages under a parent |
+| `confluence_create_page` | Create a new page in a space |
+| `confluence_update_page` | Edit a page's title or content |
+| `confluence_get_page_comments` | List comments on a page |
+| `confluence_add_page_comment` | Add a comment to a page |
+
+---
+
 ## Troubleshooting
 
 **A service isn't working and Claude says it's not configured**
@@ -367,6 +504,9 @@ The controller session lasts about an hour and refreshes automatically. If it's 
 
 **NinjaOne script says PENDING and never finishes**
 Scripts run in the background on the remote agent. It usually takes a few seconds, but can take longer on slower machines or with complex scripts. Ask Claude to check the result again.
+
+**MDE tools fail with "403 Forbidden"**
+Make sure you're using the correct (separate) MDE app registration, not the Graph one. The permissions required for WindowsDefenderATP must be set on that specific registration and admin consent must be granted.
 
 **Docker image doesn't work on this machine's architecture**
 Build the image directly on the machine where it will run rather than copying an image from another machine. The Bitwarden native addon installs the right binary for the platform automatically during the build.
