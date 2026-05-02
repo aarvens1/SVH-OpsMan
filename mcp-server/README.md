@@ -1,110 +1,158 @@
 # IT Operations MCP Server
 
-A TypeScript/Node.js [Model Context Protocol](https://modelcontextprotocol.io) server that exposes IT operations tooling as Claude tools. Runs locally via stdio and connects to Claude Code or Claude Desktop.
+This gives Claude direct access to your IT operations stack. Instead of switching between tabs and portals, you can ask Claude in plain English and it will query or act on your systems directly.
 
-**43 tools across 4 services:**
+**Example things you can ask:**
 
-| Service | Tools | What you can do |
-|---------|-------|-----------------|
-| Microsoft Graph — Planner | 13 | Manage plans, buckets, tasks, notes, and checklists |
-| UniFi Cloud (api.ui.com) | 4 | Browse sites and device inventory across all locations |
-| UniFi Network Controller | 9 | Configure VLANs, firewall rules, devices, and clients |
-| NinjaOne RMM | 17 | Manage servers: services, processes, patches, event logs, scripts, alerts, maintenance mode |
+> *"Check if the SQL Server service is running on PROD-DB-01 and restart it if not."*
 
----
+> *"Create a Planner task in the Infrastructure board, add a checklist for the deployment steps, and assign it to me."*
 
-## How it works
+> *"List any critical alerts on our servers and put anything with high disk usage into maintenance mode while I investigate."*
 
-```
-Claude ──stdio──▶ Docker container
-                      │
-                      ├─ startup: fetch credentials from Bitwarden Secrets Manager
-                      │
-                      ├─ Microsoft Graph  (OAuth2 client credentials, token cached)
-                      ├─ UniFi Cloud      (API key)
-                      ├─ UniFi Controller (Bearer token, auto-refreshed on 401)
-                      └─ NinjaOne RMM     (OAuth2 client credentials, token cached)
-```
-
-Credentials are never baked into the image. The container receives a single `BWS_ACCESS_TOKEN` at runtime and fetches everything else from Bitwarden Secrets Manager on startup.
+> *"Show me what clients are connected to the guest VLAN and block the unknown MAC addresses."*
 
 ---
 
-## Prerequisites
+## What's included
 
-- Docker
-- A [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/) account with a machine account and access token
-- API credentials for whichever services you want to enable (each service is independently optional)
+| System | What Claude can do |
+|--------|--------------------|
+| **Microsoft Planner** | Create and update plans, tasks, checklists, and notes |
+| **UniFi (Cloud)** | View sites and devices across all locations |
+| **UniFi (Controller)** | Manage VLANs, firewall rules, devices, and connected clients |
+| **NinjaOne RMM** | Manage servers — services, processes, patches, event logs, scripts, alerts, and maintenance windows |
+
+All four are independent. You can connect only the ones you use.
 
 ---
 
-## 1. Configure Bitwarden Secrets Manager
+## Before you start
 
-Create secrets in Bitwarden Secrets Manager. Each secret's **Key** must exactly match the environment variable name below, and the **Value** is the credential.
+You'll need:
 
-### Microsoft Graph / Planner
+1. **Docker** installed on the machine running Claude
+2. **Bitwarden Secrets Manager** — this is where your credentials live. The server fetches them on startup so nothing sensitive is ever stored in the image or config files.
+3. **API credentials** for each service you want to connect (details below)
 
-Create an App Registration in [Entra ID](https://entra.microsoft.com) with the following **application** permissions (not delegated):
+---
 
-| Permission | Purpose |
-|-----------|---------|
-| `Tasks.ReadWrite` | Read and write Planner tasks |
-| `Group.Read.All` | List groups to find plan owners |
-| `AuditLog.Read.All` | Read sign-in logs (if using Entra tools) |
+## Setup
 
-Grant admin consent, then create a client secret.
+### Step 1 — Get your API credentials
 
-| Bitwarden key | Value |
-|---------------|-------|
-| `GRAPH_TENANT_ID` | Your Azure AD tenant ID |
-| `GRAPH_CLIENT_ID` | App registration client (application) ID |
-| `GRAPH_CLIENT_SECRET` | App registration client secret value |
+You only need to do this once per service. Skip any you don't use.
 
-### UniFi Cloud (Site Manager)
+---
 
-Generate an API key at [account.ui.com](https://account.ui.com) → API Keys.
+#### Microsoft Planner
 
-| Bitwarden key | Value |
-|---------------|-------|
+Planner is accessed through Microsoft's Graph API, which requires an App Registration in your Azure tenant.
+
+1. Go to [Entra ID](https://entra.microsoft.com) → **App registrations** → **New registration**
+2. Give it a name (e.g. `Claude IT Ops`) and register
+3. Go to **API permissions** → **Add a permission** → **Microsoft Graph** → **Application permissions**
+4. Add these three permissions:
+
+   | Permission | Why it's needed |
+   |-----------|----------------|
+   | `Tasks.ReadWrite` | Read and write Planner tasks |
+   | `Group.Read.All` | Look up which groups own which plans |
+   | `AuditLog.Read.All` | Read sign-in logs |
+
+5. Click **Grant admin consent**
+6. Go to **Certificates & secrets** → **New client secret** → copy the value immediately (it's only shown once)
+7. Note down your **Tenant ID**, **Client ID**, and the **Client secret value**
+
+---
+
+#### UniFi Cloud
+
+1. Log in to [account.ui.com](https://account.ui.com)
+2. Go to **API Keys** → create a new key
+3. Copy the key value
+
+---
+
+#### UniFi Network Controller
+
+This is for direct access to your UDM Pro, CloudKey, or self-hosted controller — for things like managing VLANs and firewall rules. You just need a local admin account on the controller.
+
+You'll need:
+- The controller's URL (e.g. `https://192.168.1.1`)
+- An admin username and password
+
+---
+
+#### NinjaOne
+
+1. In NinjaOne, go to **Administration → Apps → API**
+2. Create a new API application — choose **Client Credentials** as the grant type
+3. Copy the **Client ID** and **Client Secret**
+
+---
+
+### Step 2 — Add credentials to Bitwarden Secrets Manager
+
+In [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/), create a **machine account** and generate an access token for it. This token is the only thing you'll need to give Claude later.
+
+Then create a secret for each credential. The **Key** must match exactly as shown — the server uses these names to find the right values.
+
+**Microsoft Planner**
+
+| Key | Value |
+|-----|-------|
+| `GRAPH_TENANT_ID` | Your Azure tenant ID |
+| `GRAPH_CLIENT_ID` | App registration client ID |
+| `GRAPH_CLIENT_SECRET` | App registration client secret |
+
+**UniFi Cloud**
+
+| Key | Value |
+|-----|-------|
 | `UNIFI_API_KEY` | Your UniFi Cloud API key |
 
-### UniFi Network Controller
+**UniFi Network Controller**
 
-For direct controller access (UDM Pro, CloudKey Gen2+, or self-hosted Network Application). Requires a local admin account on the controller.
-
-| Bitwarden key | Value |
-|---------------|-------|
-| `UNIFI_CONTROLLER_URL` | Base URL of your controller (e.g. `https://192.168.1.1`) |
+| Key | Value |
+|-----|-------|
+| `UNIFI_CONTROLLER_URL` | e.g. `https://192.168.1.1` |
 | `UNIFI_USERNAME` | Controller admin username |
 | `UNIFI_PASSWORD` | Controller admin password |
 
-> The controller uses a self-signed certificate by default. TLS verification is disabled for controller connections.
+**NinjaOne**
 
-### NinjaOne RMM
-
-In NinjaOne: **Administration → Apps → API** → create a new API application with **Client Credentials** grant type.
-
-| Bitwarden key | Value |
-|---------------|-------|
+| Key | Value |
+|-----|-------|
 | `NINJA_CLIENT_ID` | NinjaOne API client ID |
 | `NINJA_CLIENT_SECRET` | NinjaOne API client secret |
 
+Make sure the machine account has access to all the secrets you created.
+
 ---
 
-## 2. Build the Docker image
+### Step 3 — Build the Docker image
 
 ```bash
 cd mcp-server
 docker build -t it-ops-mcp .
 ```
 
+This only needs to be done once (or again after pulling updates).
+
 ---
 
-## 3. Connect to Claude
+### Step 4 — Connect to Claude
 
-### Claude Desktop
+Pick whichever you use:
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+**Claude Desktop**
+
+Open the config file:
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Add this (replace the token with your Bitwarden machine account access token):
 
 ```json
 {
@@ -113,7 +161,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
       "command": "docker",
       "args": [
         "run", "-i", "--rm",
-        "-e", "BWS_ACCESS_TOKEN=<your-access-token>",
+        "-e", "BWS_ACCESS_TOKEN=your-access-token-here",
         "it-ops-mcp"
       ]
     }
@@ -121,42 +169,59 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
 }
 ```
 
-### Claude Code
+**Claude Code**
 
 ```bash
-claude mcp add it-ops -- docker run -i --rm -e BWS_ACCESS_TOKEN=<your-access-token> it-ops-mcp
+claude mcp add it-ops -- docker run -i --rm -e BWS_ACCESS_TOKEN=your-access-token-here it-ops-mcp
 ```
 
-Restart Claude after updating the config. On startup the server logs which services are configured.
+Restart Claude. When the server starts it will log which services loaded successfully and warn about any that are missing credentials.
 
 ---
 
-## Local development (without Docker)
+## Using it
+
+Once connected, just talk to Claude naturally. It knows which tools are available and will pick the right ones. A few tips:
+
+- For **Planner tasks**, you don't need to know task IDs — Claude can search by plan name, group, or description and find the right one.
+- For **NinjaOne**, if you say "the production database server" Claude will search for it rather than asking for an ID.
+- For **UniFi**, you can refer to sites and devices by name.
+- If you ask Claude to do something that modifies a system (restart a service, block a client, create a firewall rule), it will tell you what it's about to do before acting.
+
+---
+
+## Development
+
+If you want to run the server locally without Docker (e.g. to test changes):
 
 ```bash
 cd mcp-server
 cp .env.example .env
-# Fill in credentials directly in .env — dotenv loads them as a fallback
-# when BWS_ACCESS_TOKEN is not set
-
+# Edit .env and fill in credentials directly — this skips Bitwarden
 npm install
-npm run dev       # run via tsx (no compile step)
-npm run typecheck # type-check only
-npm run build     # compile to dist/
-npm start         # run compiled output
+npm run dev
 ```
 
-To inspect available tools without Claude:
+To browse all available tools interactively:
 
 ```bash
+npm run build
 npx @modelcontextprotocol/inspector node dist/index.js
+```
+
+Other useful commands:
+
+```bash
+npm run typecheck   # check for type errors without building
+npm run build       # compile TypeScript to dist/
+npm start           # run the compiled server
 ```
 
 ---
 
 ## Self-hosted Bitwarden
 
-If you run your own Bitwarden instance, add these two additional secrets (or set them in `.env` locally):
+If you run your own Bitwarden instance rather than the cloud service, add two more secrets pointing to your instance:
 
 | Key | Value |
 |-----|-------|
@@ -167,184 +232,141 @@ If you run your own Bitwarden instance, add these two additional secrets (or set
 
 ## Tool reference
 
-### Microsoft Graph — Planner
+A complete list of what Claude can do with each service.
 
-> Requires: `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`
->
-> **Note:** All PATCH and DELETE operations require an `etag` — fetch it from the corresponding GET tool's `@odata.etag` field. Planner has no native comments; the `description` field on task details is the notes area.
+### Planner
 
-| Tool | Description |
+> Needs: `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`
+
+| Tool | What it does |
 |------|-------------|
-| `planner_list_plans` | List all Planner plans belonging to an M365 group |
+| `planner_list_plans` | List all plans in a Microsoft 365 group |
 | `planner_get_plan` | Get details of a specific plan |
-| `planner_create_plan` | Create a new plan in an M365 group |
-| `planner_list_buckets` | List all buckets (columns) in a plan |
-| `planner_create_bucket` | Create a new bucket in a plan |
-| `planner_list_tasks` | List tasks in a plan, optionally filtered to a bucket |
-| `planner_get_task` | Get a task's fields and the `@odata.etag` needed for updates |
-| `planner_create_task` | Create a task with optional assignee, due date, and initial checklist items |
-| `planner_update_task` | Update title, due date, percent complete, or bucket |
+| `planner_create_plan` | Create a new plan |
+| `planner_list_buckets` | List the columns/buckets in a plan |
+| `planner_create_bucket` | Add a new column to a plan |
+| `planner_list_tasks` | List tasks in a plan or a specific bucket |
+| `planner_get_task` | Get a task's details |
+| `planner_create_task` | Create a task, optionally with assignee, due date, and checklist |
+| `planner_update_task` | Update title, due date, progress, or move to another bucket |
 | `planner_delete_task` | Delete a task |
-| `planner_get_task_details` | Get the notes/description and full checklist for a task |
-| `planner_update_task_notes` | Update the notes/description field |
-| `planner_update_checklist_item` | Add, check/uncheck, rename, or remove a checklist item |
+| `planner_get_task_details` | Get the full notes and checklist for a task |
+| `planner_update_task_notes` | Edit the notes/description on a task |
+| `planner_update_checklist_item` | Add, tick off, rename, or remove a checklist item |
 
-**Checklist workflow:**
-
-```
-planner_get_task_details(task_id)          → get etag + current checklist
-planner_update_checklist_item(task_id, etag, title="Deploy config")   → adds item
-planner_update_checklist_item(task_id, etag, item_id=..., is_checked=true) → checks it off
-planner_update_checklist_item(task_id, etag, item_id=..., delete=true)    → removes it
-```
+> Planner doesn't have a native comments feature — the **notes field** on each task is the place for running commentary.
 
 ---
 
 ### UniFi Cloud
 
-> Requires: `UNIFI_API_KEY`
->
-> Covers all sites and devices visible to the API key, including UniFi Fabric devices.
+> Needs: `UNIFI_API_KEY`
 
-| Tool | Description |
+| Tool | What it does |
 |------|-------------|
-| `unifi_list_sites` | List all sites across all accounts |
-| `unifi_get_site` | Get site details and device summary |
-| `unifi_list_site_devices` | List all devices at a site with model, MAC, and status |
-| `unifi_get_site_device` | Get full details for a specific device |
+| `unifi_list_sites` | List all your UniFi sites |
+| `unifi_get_site` | Get details and a device summary for a site |
+| `unifi_list_site_devices` | List every device at a site (APs, switches, gateways, Fabric) |
+| `unifi_get_site_device` | Get full details on a specific device |
 
 ---
 
 ### UniFi Network Controller
 
-> Requires: `UNIFI_CONTROLLER_URL`, `UNIFI_USERNAME`, `UNIFI_PASSWORD`
+> Needs: `UNIFI_CONTROLLER_URL`, `UNIFI_USERNAME`, `UNIFI_PASSWORD`
 >
-> Works with UniFi Dream Machine, CloudKey Gen2+, and self-hosted Network Application. The controller session token is cached for 1 hour and automatically refreshed on 401.
+> Works with UDM Pro, CloudKey Gen2+, and self-hosted Network Application.
 
-| Tool | Description |
+| Tool | What it does |
 |------|-------------|
-| `unifi_get_site_health` | WAN status, client counts, and subsystem health for a site |
-| `unifi_list_networks` | List VLANs and networks with subnet and DHCP settings |
-| `unifi_create_network` | Create a new VLAN/network with optional DHCP |
-| `unifi_list_firewall_rules` | List all firewall rules on a site |
-| `unifi_create_firewall_rule` | Create a firewall rule (accept/drop/reject) |
-| `unifi_list_controller_devices` | List managed APs, switches, and gateways with status |
+| `unifi_get_site_health` | Check WAN status, client counts, and any active alerts |
+| `unifi_list_networks` | List all VLANs and networks |
+| `unifi_create_network` | Create a new VLAN |
+| `unifi_list_firewall_rules` | List firewall rules |
+| `unifi_create_firewall_rule` | Create a new firewall rule |
+| `unifi_list_controller_devices` | List APs, switches, and gateways with their status |
 | `unifi_restart_device` | Reboot a network device |
 | `unifi_list_clients` | List connected clients with IP, hostname, and signal |
-| `unifi_block_client` | Block or unblock a client by MAC address |
+| `unifi_block_client` | Block or unblock a device by MAC address |
 
 ---
 
 ### NinjaOne RMM
 
-> Requires: `NINJA_CLIENT_ID`, `NINJA_CLIENT_SECRET`
+> Needs: `NINJA_CLIENT_ID`, `NINJA_CLIENT_SECRET`
 >
-> Scoped to server management. Device listing defaults to `WINDOWS_SERVER,LINUX_SERVER` OS types. NinjaOne device IDs are integers returned by `ninja_list_servers`.
+> Filtered to servers (Windows Server and Linux) by default.
 
-**Servers**
-
-| Tool | Description |
+**Finding servers**
+| Tool | What it does |
 |------|-------------|
-| `ninja_list_servers` | List servers with optional org filter and cursor pagination |
-| `ninja_get_server` | Get hardware specs, OS version, IP, agent version, and uptime |
+| `ninja_list_servers` | List your servers — filter by org, paginate with cursor |
+| `ninja_get_server` | Get OS, hardware specs, IP, agent version, and uptime |
 
 **Windows Services**
-
-| Tool | Description |
+| Tool | What it does |
 |------|-------------|
-| `ninja_list_services` | List services with state and startup type |
-| `ninja_manage_service` | Start, stop, or restart a service by name |
+| `ninja_list_services` | List services and whether they're running |
+| `ninja_manage_service` | Start, stop, or restart a service |
 
 **Processes**
-
-| Tool | Description |
+| Tool | What it does |
 |------|-------------|
-| `ninja_list_processes` | List running processes with CPU and memory usage |
+| `ninja_list_processes` | See what's running and how much CPU/memory it's using |
 | `ninja_terminate_process` | Kill a process by PID |
 
-**Scripting**
-
-| Tool | Description |
+**Running scripts**
+| Tool | What it does |
 |------|-------------|
-| `ninja_run_script` | Run a PowerShell, CMD, or Bash script; returns a `result_id` |
-| `ninja_get_script_result` | Fetch output and exit code of a queued script |
+| `ninja_run_script` | Run a PowerShell, CMD, or Bash script on a server |
+| `ninja_get_script_result` | Get the output and exit code once it's finished |
 
-**Patch Management**
+> Scripts run asynchronously. After `ninja_run_script` returns a `result_id`, call `ninja_get_script_result` a few seconds later to get the output.
 
-| Tool | Description |
+**Patch management**
+| Tool | What it does |
 |------|-------------|
-| `ninja_list_pending_patches` | List available patches with KB article and severity |
-| `ninja_approve_patches` | Approve patches for installation, optionally scheduled |
-| `ninja_get_patch_history` | List previously installed patches |
+| `ninja_list_pending_patches` | See what patches are waiting to be installed |
+| `ninja_approve_patches` | Approve patches to install now or on a schedule |
+| `ninja_get_patch_history` | See what's already been installed |
 
 **Storage**
-
-| Tool | Description |
+| Tool | What it does |
 |------|-------------|
-| `ninja_list_volumes` | List disk volumes with size, free space, and percent used |
+| `ninja_list_volumes` | Check disk space on all drives |
 
-**Event Logs**
-
-| Tool | Description |
+**Event logs**
+| Tool | What it does |
 |------|-------------|
-| `ninja_get_event_logs` | Query System, Security, or Application log with level/source/event ID filter |
+| `ninja_get_event_logs` | Search System, Security, or Application logs — filter by level, source, or event ID |
 
 **Alerts**
-
-| Tool | Description |
+| Tool | What it does |
 |------|-------------|
-| `ninja_list_device_alerts` | List active alerts for a server |
-| `ninja_acknowledge_alert` | Acknowledge or clear an alert with an optional note |
+| `ninja_list_device_alerts` | See active alerts on a server |
+| `ninja_acknowledge_alert` | Acknowledge or clear an alert, with an optional note |
 
-**Maintenance Mode**
-
-| Tool | Description |
+**Maintenance windows**
+| Tool | What it does |
 |------|-------------|
-| `ninja_set_maintenance_mode` | Suppress monitoring for a planned window (5 min – 24 h) |
-| `ninja_exit_maintenance_mode` | Resume normal monitoring immediately |
-
----
-
-## Project structure
-
-```
-mcp-server/
-├── src/
-│   ├── index.ts              # Entry point: secret loading, service checks, tool registration
-│   ├── secrets.ts            # Bitwarden Secrets Manager integration
-│   ├── auth/
-│   │   ├── graph.ts          # OAuth2 token cache for Microsoft Graph
-│   │   ├── ninja.ts          # OAuth2 token cache for NinjaOne
-│   │   └── unifi.ts          # Session token manager for UniFi controller
-│   ├── tools/
-│   │   ├── planner.ts        # 13 Planner tools
-│   │   ├── unifi-cloud.ts    # 4 UniFi Cloud tools
-│   │   ├── unifi-network.ts  # 9 UniFi Network Controller tools
-│   │   └── ninjaone.ts       # 17 NinjaOne tools
-│   └── utils/
-│       └── http.ts           # Axios client factories and error formatter
-├── Dockerfile
-├── .dockerignore
-├── .env.example
-├── package.json
-└── tsconfig.json
-```
+| `ninja_set_maintenance_mode` | Pause monitoring for a server during planned work (5 min up to 24 h) |
+| `ninja_exit_maintenance_mode` | Resume monitoring early |
 
 ---
 
 ## Troubleshooting
 
-**Service shows as not configured on startup**
-All startup warnings go to stderr. Check that the Bitwarden secret keys match exactly (case-sensitive). Run locally with the individual env vars set to verify the credentials work before troubleshooting Bitwarden.
+**A service isn't working and Claude says it's not configured**
+The server logs a warning at startup for any service with missing credentials. Check that the secret keys in Bitwarden match exactly — they're case-sensitive. You can also test credentials by running locally with a `.env` file before involving Bitwarden.
 
-**Planner PATCH returns 412 Precondition Failed**
-The `etag` is stale. Re-fetch the resource with the corresponding GET tool and use the fresh `@odata.etag` value.
+**Planner update fails with "412 Precondition Failed"**
+This happens when the task or task details have been modified since you last fetched them. Ask Claude to re-fetch the task and try the update again — it will get a fresh version.
 
-**UniFi controller returns 401 after working**
-The session token expired and auto-refresh failed. Verify `UNIFI_USERNAME` and `UNIFI_PASSWORD` are correct. The controller token has a 1-hour TTL and is automatically re-fetched on the next request.
+**UniFi controller keeps asking to log in again**
+The controller session lasts about an hour and refreshes automatically. If it's happening repeatedly, double-check the controller URL, username, and password in Bitwarden.
 
-**NinjaOne script result shows status PENDING**
-Scripts are queued asynchronously. Call `ninja_get_script_result` again after a few seconds. Large scripts on slow agents may take longer.
+**NinjaOne script says PENDING and never finishes**
+Scripts run in the background on the remote agent. It usually takes a few seconds, but can take longer on slower machines or with complex scripts. Ask Claude to check the result again.
 
-**Docker image pulls wrong architecture**
-The `@bitwarden/sdk-napi` native addon is installed from npm in the runtime stage, so it targets the container's architecture automatically. Rebuild the image on the target host rather than cross-building.
+**Docker image doesn't work on this machine's architecture**
+Build the image directly on the machine where it will run rather than copying an image from another machine. The Bitwarden native addon installs the right binary for the platform automatically during the build.
