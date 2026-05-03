@@ -72,6 +72,10 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
         vlan: z.number().int().min(1).max(4094).describe("VLAN ID"),
         subnet: z
           .string()
+          .regex(
+            /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/([1-9]|[12]\d|3[0-2])$/,
+            "subnet must be in CIDR notation with prefix 1–32 (e.g. 192.168.100.1/24)"
+          )
           .describe("Gateway IP with prefix (e.g. 192.168.100.1/24)"),
         dhcp_enabled: z.boolean().default(true).describe("Enable DHCP server for this network"),
         dhcp_start: z
