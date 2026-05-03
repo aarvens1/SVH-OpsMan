@@ -516,4 +516,299 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }
     }
   );
+
+  // ── Backups ────────────────────────────────────────────────────────────────
+
+  server.registerTool(
+    "ninja_list_device_backups",
+    {
+      description:
+        "List backup jobs configured for a NinjaOne-managed device, including job name, plan, last run status, and next scheduled run.",
+      inputSchema: z.object({
+        device_id: z.number().int().describe("NinjaOne device ID"),
+      }),
+    },
+    async ({ device_id }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getNinjaToken();
+        const res = await ninjaClient(token).get(`/device/${device_id}/backup`);
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "ninja_list_all_backups",
+    {
+      description:
+        "List backup job status across all NinjaOne-managed devices. " +
+        "Useful for getting a fleet-wide view of backup health.",
+      inputSchema: z.object({
+        org_id: z
+          .number()
+          .int()
+          .optional()
+          .describe("Filter to a specific organization ID"),
+        page_size: z.number().int().min(1).max(200).default(50),
+        after: z
+          .string()
+          .optional()
+          .describe("Cursor from previous response for pagination"),
+      }),
+    },
+    async ({ org_id, page_size, after }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getNinjaToken();
+        const params: Record<string, string | number> = { pageSize: page_size };
+        if (org_id !== undefined) params["organizationId"] = org_id;
+        if (after) params["after"] = after;
+        const res = await ninjaClient(token).get("/devices/backup", { params });
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  // ── Script Library ─────────────────────────────────────────────────────────
+
+  server.registerTool(
+    "ninja_list_scripts",
+    {
+      description:
+        "List scripts in the NinjaOne script library. Returns script ID, name, language, scope, and category.",
+      inputSchema: z.object({
+        page_size: z.number().int().min(1).max(200).default(50),
+        after: z
+          .string()
+          .optional()
+          .describe("Cursor from previous response for pagination"),
+        lang: z
+          .enum(["POWERSHELL", "CMD", "BASH", "PYTHON"])
+          .optional()
+          .describe("Filter by script language"),
+      }),
+    },
+    async ({ page_size, after, lang }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getNinjaToken();
+        const params: Record<string, string | number> = { pageSize: page_size };
+        if (after) params["after"] = after;
+        if (lang) params["lang"] = lang;
+        const res = await ninjaClient(token).get("/scripting/scripts", { params });
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "ninja_get_script",
+    {
+      description: "Get the full content and metadata of a script in the NinjaOne script library.",
+      inputSchema: z.object({
+        script_id: z.number().int().describe("NinjaOne script library ID"),
+      }),
+    },
+    async ({ script_id }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getNinjaToken();
+        const res = await ninjaClient(token).get(`/scripting/script/${script_id}`);
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "ninja_create_script",
+    {
+      description:
+        "Create a new script in the NinjaOne script library. " +
+        "Returns the new script's ID which can be used with ninja_run_script.",
+      inputSchema: z.object({
+        name: z.string().describe("Display name for the script"),
+        language: z
+          .enum(["POWERSHELL", "CMD", "BASH", "PYTHON"])
+          .describe("Script language/interpreter"),
+        script_body: z.string().describe("The full script content"),
+        description: z
+          .string()
+          .optional()
+          .describe("Optional description shown in the NinjaOne UI"),
+        category_id: z
+          .number()
+          .int()
+          .optional()
+          .describe("Script category ID to organize the script"),
+      }),
+    },
+    async ({ name, language, script_body, description, category_id }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getNinjaToken();
+        const body: Record<string, unknown> = { name, language, scriptBody: script_body };
+        if (description) body["description"] = description;
+        if (category_id !== undefined) body["categoryId"] = category_id;
+        const res = await ninjaClient(token).post("/scripting/scripts", body);
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "ninja_update_script",
+    {
+      description:
+        "Update an existing script in the NinjaOne script library. " +
+        "Only fields provided will be changed.",
+      inputSchema: z.object({
+        script_id: z.number().int().describe("NinjaOne script library ID"),
+        name: z.string().optional().describe("New display name"),
+        script_body: z.string().optional().describe("New script content"),
+        description: z.string().optional().describe("New description"),
+        category_id: z.number().int().optional().describe("New category ID"),
+      }),
+    },
+    async ({ script_id, name, script_body, description, category_id }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getNinjaToken();
+        const body: Record<string, unknown> = {};
+        if (name !== undefined) body["name"] = name;
+        if (script_body !== undefined) body["scriptBody"] = script_body;
+        if (description !== undefined) body["description"] = description;
+        if (category_id !== undefined) body["categoryId"] = category_id;
+        const res = await ninjaClient(token).put(`/scripting/script/${script_id}`, body);
+        return ok(res.data ?? { success: true, script_id });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "ninja_delete_script",
+    {
+      description: "Permanently delete a script from the NinjaOne script library.",
+      inputSchema: z.object({
+        script_id: z.number().int().describe("NinjaOne script library ID to delete"),
+      }),
+    },
+    async ({ script_id }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getNinjaToken();
+        await ninjaClient(token).delete(`/scripting/script/${script_id}`);
+        return ok({ success: true, deleted_script_id: script_id });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  // ── Custom Fields ──────────────────────────────────────────────────────────
+
+  server.registerTool(
+    "ninja_get_device_custom_fields",
+    {
+      description:
+        "Get the values of all custom fields configured for a specific NinjaOne-managed device.",
+      inputSchema: z.object({
+        device_id: z.number().int().describe("NinjaOne device ID"),
+      }),
+    },
+    async ({ device_id }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getNinjaToken();
+        const res = await ninjaClient(token).get(`/device/${device_id}/custom-fields`);
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "ninja_set_device_custom_fields",
+    {
+      description:
+        "Set one or more custom field values on a NinjaOne-managed device. " +
+        "Provide a key/value map where each key is the custom field name and the value is what to set. " +
+        "Only the fields included in the map are modified; others are left unchanged.",
+      inputSchema: z.object({
+        device_id: z.number().int().describe("NinjaOne device ID"),
+        fields: z
+          .record(z.string(), z.unknown())
+          .describe("Map of custom field names to their new values"),
+      }),
+    },
+    async ({ device_id, fields }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getNinjaToken();
+        const res = await ninjaClient(token).patch(`/device/${device_id}/custom-fields`, fields);
+        return ok(res.data ?? { success: true, device_id, updated_fields: Object.keys(fields) });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "ninja_get_org_custom_fields",
+    {
+      description:
+        "Get the values of all custom fields configured for a NinjaOne organization.",
+      inputSchema: z.object({
+        org_id: z.number().int().describe("NinjaOne organization ID"),
+      }),
+    },
+    async ({ org_id }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getNinjaToken();
+        const res = await ninjaClient(token).get(`/organization/${org_id}/custom-fields`);
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "ninja_set_org_custom_fields",
+    {
+      description:
+        "Set one or more custom field values on a NinjaOne organization. " +
+        "Provide a key/value map where each key is the custom field name and the value is what to set.",
+      inputSchema: z.object({
+        org_id: z.number().int().describe("NinjaOne organization ID"),
+        fields: z
+          .record(z.string(), z.unknown())
+          .describe("Map of custom field names to their new values"),
+      }),
+    },
+    async ({ org_id, fields }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getNinjaToken();
+        const res = await ninjaClient(token).patch(`/organization/${org_id}/custom-fields`, fields);
+        return ok(res.data ?? { success: true, org_id, updated_fields: Object.keys(fields) });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
 }
