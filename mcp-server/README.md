@@ -1,20 +1,31 @@
-# IT Operations MCP Server
+# SVH OpsMan — IT Operations MCP Server
 
-This gives Claude direct access to your IT operations stack. Instead of switching between tabs and portals, you can ask Claude in plain English and it will query or act on your systems directly.
+Stop switching between tabs. Ask Claude in plain English and it will query or act on your IT systems directly.
 
-**Example things you can ask:**
+```
+"Check if the SQL Server service is running on PROD-DB-01 and restart it if not."
+"Find all app registrations with secrets expiring in the next 30 days."
+"Post a maintenance notice to #ops and create a Confluence page for what changed."
+"Show me clients on the guest VLAN and block the unknown MAC addresses."
+```
 
-> *"Check if the SQL Server service is running on PROD-DB-01 and restart it if not."*
+---
 
-> *"Create a Planner task in the Infrastructure board, add a checklist for the deployment steps, and assign it to me."*
+## Table of contents
 
-> *"List any critical alerts on our servers and put anything with high disk usage into maintenance mode while I investigate."*
-
-> *"Show me what clients are connected to the guest VLAN and block the unknown MAC addresses."*
-
-> *"Find all app registrations with secrets expiring in the next 30 days."*
-
-> *"Post a maintenance notice to the #ops Teams channel and create a Confluence page to document what changed."*
+- [What's included](#whats-included)
+- [How it works](#how-it-works)
+- [Before you start](#before-you-start)
+- [Setup](#setup)
+  - [Step 1 — Get your API credentials](#step-1--get-your-api-credentials)
+  - [Step 2 — Add credentials to Bitwarden Secrets Manager](#step-2--add-credentials-to-bitwarden-secrets-manager)
+  - [Step 3 — Build the Docker image](#step-3--build-the-docker-image)
+  - [Step 4 — Connect to Claude](#step-4--connect-to-claude)
+- [Using it](#using-it)
+- [Tool reference](#tool-reference)
+- [Development](#development)
+- [Self-hosted Bitwarden](#self-hosted-bitwarden)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -27,12 +38,26 @@ This gives Claude direct access to your IT operations stack. Instead of switchin
 | **OneDrive** | Browse files, search, create folders, generate sharing links |
 | **Microsoft Teams** | List teams/channels, send messages, create channels, add members |
 | **Microsoft Defender for Endpoint** | List devices, vulnerabilities, alerts, IOC indicators, trigger AV scans, isolate/unisolate devices, TVM recommendations |
-| **UniFi (Cloud)** | View sites and devices across all locations |
-| **UniFi (Controller)** | Manage VLANs, firewall rules, devices, and connected clients |
+| **UniFi Cloud** | View sites and devices across all locations |
+| **UniFi Network Controller** | Manage VLANs, firewall rules, devices, and connected clients |
 | **NinjaOne RMM** | Manage servers — services, processes, patches, event logs, scripts, alerts, and maintenance windows |
 | **Confluence** | Search pages, read and edit content, manage comments |
 
-All services are independent. You can connect only the ones you use.
+All services are independent. Connect only the ones you use.
+
+---
+
+## How it works
+
+```
+Claude  →  MCP Server (Docker)  →  Bitwarden Secrets Manager  →  Your services
+```
+
+1. You store every credential in **Bitwarden Secrets Manager** — nothing sensitive goes in config files or the Docker image.
+2. The MCP server runs in a **Docker container** and fetches credentials from Bitwarden on startup.
+3. Claude calls the server's tools just like any other MCP integration — you just talk to it naturally.
+
+This means you only ever hand Claude one thing: a Bitwarden machine account token.
 
 ---
 
@@ -41,8 +66,10 @@ All services are independent. You can connect only the ones you use.
 You'll need:
 
 1. **Docker** installed on the machine running Claude
-2. **Bitwarden Secrets Manager** — this is where your credentials live. The server fetches them on startup so nothing sensitive is ever stored in the image or config files.
-3. **API credentials** for each service you want to connect (details below)
+2. **Bitwarden Secrets Manager** account — free tier works fine ([bitwarden.com/products/secrets-manager](https://bitwarden.com/products/secrets-manager/))
+3. **API credentials** for each service you want to connect (details in Step 1)
+
+> **Tip:** Each service is optional. If you only use NinjaOne and Teams, only set up those two.
 
 ---
 
@@ -56,7 +83,7 @@ You only need to do this once per service. Skip any you don't use.
 
 #### Microsoft Graph (Planner, Entra ID, OneDrive, Teams)
 
-These four services all share a single app registration.
+All four of these services share a single app registration.
 
 1. Go to [Entra ID](https://entra.microsoft.com) → **App registrations** → **New registration**
 2. Give it a name (e.g. `Claude IT Ops`) and register
@@ -77,7 +104,7 @@ These four services all share a single app registration.
 
 5. Click **Grant admin consent**
 6. Go to **Certificates & secrets** → **New client secret** → copy the value immediately (shown only once)
-7. Note down your **Tenant ID**, **Client ID**, and the **Client secret value**
+7. Note your **Tenant ID**, **Client ID**, and **Client secret value**
 
 ---
 
@@ -121,10 +148,10 @@ You'll need:
 
 #### Confluence
 
-1. Log in to your Atlassian account at [id.atlassian.com](https://id.atlassian.com)
+1. Log in to [id.atlassian.com](https://id.atlassian.com)
 2. Go to **Security** → **API tokens** → **Create API token**
 3. Copy the token value
-4. Note your Confluence **domain** — the part before `.atlassian.net` in your Confluence URL
+4. Note your Confluence **domain** (the part before `.atlassian.net` in your URL)
 
 ---
 
@@ -132,7 +159,7 @@ You'll need:
 
 In [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/), create a **machine account** and generate an access token for it. This token is the only thing you'll need to give Claude later.
 
-Then create a secret for each credential. The **Key** must match exactly as shown — the server uses these names to find the right values.
+Then create a secret for each credential below. The **Key** must match exactly — the server uses these names to find the right values.
 
 **Microsoft Graph (Planner, Entra ID, OneDrive, Teams)**
 
@@ -176,7 +203,7 @@ Then create a secret for each credential. The **Key** must match exactly as show
 | Key | Value |
 |-----|-------|
 | `CONFLUENCE_DOMAIN` | Your org subdomain (e.g. `mycompany` for `mycompany.atlassian.net`) |
-| `CONFLUENCE_EMAIL` | The email address for the API token |
+| `CONFLUENCE_EMAIL` | The email address associated with the API token |
 | `CONFLUENCE_API_TOKEN` | The API token |
 
 Make sure the machine account has access to all the secrets you created.
@@ -190,13 +217,13 @@ cd mcp-server
 docker build -t it-ops-mcp .
 ```
 
-This only needs to be done once (or again after pulling updates).
+This only needs to be done once, or again after pulling updates.
 
 ---
 
 ### Step 4 — Connect to Claude
 
-Pick whichever you use:
+Pick whichever client you use:
 
 **Claude Desktop**
 
@@ -204,7 +231,7 @@ Open the config file:
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
-Add this (replace the token with your Bitwarden machine account access token):
+Add this block (replace the token with your Bitwarden machine account access token):
 
 ```json
 {
@@ -227,64 +254,25 @@ Add this (replace the token with your Bitwarden machine account access token):
 claude mcp add it-ops -- docker run -i --rm -e BWS_ACCESS_TOKEN=your-access-token-here it-ops-mcp
 ```
 
-Restart Claude. When the server starts it will log which services loaded successfully and warn about any that are missing credentials.
+Restart Claude. On startup, the server will log which services loaded successfully and warn about any with missing credentials.
 
 ---
 
 ## Using it
 
-Once connected, just talk to Claude naturally. It knows which tools are available and will pick the right ones. A few tips:
+Once connected, just talk to Claude naturally. It knows which tools are available and will pick the right ones.
 
-- For **Planner tasks**, you don't need to know task IDs — Claude can search by plan name, group, or description and find the right one.
-- For **NinjaOne**, if you say "the production database server" Claude will search for it rather than asking for an ID.
-- For **UniFi**, you can refer to sites and devices by name.
-- If you ask Claude to do something that modifies a system (restart a service, block a client, create a firewall rule, isolate a device), it will tell you what it's about to do before acting.
+A few things worth knowing:
 
----
-
-## Development
-
-If you want to run the server locally without Docker (e.g. to test changes):
-
-```bash
-cd mcp-server
-cp .env.example .env
-# Edit .env and fill in credentials directly — this skips Bitwarden
-npm install
-npm run dev
-```
-
-To browse all available tools interactively:
-
-```bash
-npm run build
-npx @modelcontextprotocol/inspector node dist/index.js
-```
-
-Other useful commands:
-
-```bash
-npm run typecheck   # check for type errors without building
-npm run build       # compile TypeScript to dist/
-npm start           # run the compiled server
-```
-
----
-
-## Self-hosted Bitwarden
-
-If you run your own Bitwarden instance rather than the cloud service, add two more secrets pointing to your instance:
-
-| Key | Value |
-|-----|-------|
-| `BWS_API_URL` | e.g. `https://bitwarden.yourcompany.com/api` |
-| `BWS_IDENTITY_URL` | e.g. `https://bitwarden.yourcompany.com/identity` |
+- **You don't need IDs.** For Planner tasks, NinjaOne servers, UniFi sites, and devices — Claude can search by name or description. Just say "the production database server" and it'll find it.
+- **Destructive actions get a confirmation.** If you ask Claude to restart a service, block a client, create a firewall rule, or isolate a device, it will tell you what it's about to do before acting.
+- **Mix and match tools freely.** Claude can pull info from multiple services in one go — e.g. checking NinjaOne for disk alerts and opening a Planner task about it in the same response.
 
 ---
 
 ## Tool reference
 
-A complete list of what Claude can do with each service.
+A complete list of every tool Claude can use, grouped by service.
 
 ### Planner
 
@@ -418,24 +406,28 @@ A complete list of what Claude can do with each service.
 > Filtered to servers (Windows Server and Linux) by default.
 
 **Finding servers**
+
 | Tool | What it does |
 |------|-------------|
 | `ninja_list_servers` | List your servers — filter by org, paginate with cursor |
 | `ninja_get_server` | Get OS, hardware specs, IP, agent version, and uptime |
 
 **Windows Services**
+
 | Tool | What it does |
 |------|-------------|
 | `ninja_list_services` | List services and whether they're running |
 | `ninja_manage_service` | Start, stop, or restart a service |
 
 **Processes**
+
 | Tool | What it does |
 |------|-------------|
 | `ninja_list_processes` | See what's running and how much CPU/memory it's using |
 | `ninja_terminate_process` | Kill a process by PID |
 
 **Running scripts**
+
 | Tool | What it does |
 |------|-------------|
 | `ninja_run_script` | Run a PowerShell, CMD, or Bash script on a server |
@@ -444,6 +436,7 @@ A complete list of what Claude can do with each service.
 > Scripts run asynchronously. After `ninja_run_script` returns a `result_id`, call `ninja_get_script_result` a few seconds later to get the output.
 
 **Patch management**
+
 | Tool | What it does |
 |------|-------------|
 | `ninja_list_pending_patches` | See what patches are waiting to be installed |
@@ -451,22 +444,26 @@ A complete list of what Claude can do with each service.
 | `ninja_get_patch_history` | See what's already been installed |
 
 **Storage**
+
 | Tool | What it does |
 |------|-------------|
 | `ninja_list_volumes` | Check disk space on all drives |
 
 **Event logs**
+
 | Tool | What it does |
 |------|-------------|
 | `ninja_get_event_logs` | Search System, Security, or Application logs — filter by level, source, or event ID |
 
 **Alerts**
+
 | Tool | What it does |
 |------|-------------|
 | `ninja_list_device_alerts` | See active alerts on a server |
 | `ninja_acknowledge_alert` | Acknowledge or clear an alert, with an optional note |
 
 **Maintenance windows**
+
 | Tool | What it does |
 |------|-------------|
 | `ninja_set_maintenance_mode` | Pause monitoring for a server during planned work (5 min up to 24 h) |
@@ -491,22 +488,68 @@ A complete list of what Claude can do with each service.
 
 ---
 
+## Development
+
+To run the server locally without Docker (e.g. to test changes):
+
+```bash
+cd mcp-server
+cp .env.example .env
+# Edit .env and fill in credentials directly — this skips Bitwarden
+npm install
+npm run dev
+```
+
+To browse all available tools interactively:
+
+```bash
+npm run build
+npx @modelcontextprotocol/inspector node dist/index.js
+```
+
+Other useful commands:
+
+```bash
+npm run typecheck   # check for type errors without building
+npm run build       # compile TypeScript to dist/
+npm start           # run the compiled server
+```
+
+---
+
+## Self-hosted Bitwarden
+
+If you run your own Bitwarden instance rather than the cloud service, add two more secrets pointing to it:
+
+| Key | Value |
+|-----|-------|
+| `BWS_API_URL` | e.g. `https://bitwarden.yourcompany.com/api` |
+| `BWS_IDENTITY_URL` | e.g. `https://bitwarden.yourcompany.com/identity` |
+
+---
+
 ## Troubleshooting
 
 **A service isn't working and Claude says it's not configured**
+
 The server logs a warning at startup for any service with missing credentials. Check that the secret keys in Bitwarden match exactly — they're case-sensitive. You can also test credentials by running locally with a `.env` file before involving Bitwarden.
 
 **Planner update fails with "412 Precondition Failed"**
-This happens when the task or task details have been modified since you last fetched them. Ask Claude to re-fetch the task and try the update again — it will get a fresh version.
+
+This happens when the task or task details have been modified since you last fetched them. Ask Claude to re-fetch the task and try the update again — it will get a fresh copy with the right version tag.
 
 **UniFi controller keeps asking to log in again**
+
 The controller session lasts about an hour and refreshes automatically. If it's happening repeatedly, double-check the controller URL, username, and password in Bitwarden.
 
 **NinjaOne script says PENDING and never finishes**
+
 Scripts run in the background on the remote agent. It usually takes a few seconds, but can take longer on slower machines or with complex scripts. Ask Claude to check the result again.
 
 **MDE tools fail with "403 Forbidden"**
-Make sure you're using the correct (separate) MDE app registration, not the Graph one. The permissions required for WindowsDefenderATP must be set on that specific registration and admin consent must be granted.
+
+Make sure you're using the correct (separate) MDE app registration, not the Graph one. The permissions for WindowsDefenderATP must be set on that specific registration and admin consent must be granted.
 
 **Docker image doesn't work on this machine's architecture**
-Build the image directly on the machine where it will run rather than copying an image from another machine. The Bitwarden native addon installs the right binary for the platform automatically during the build.
+
+Build the image directly on the machine where it will run rather than copying an image across. The Bitwarden native addon installs the correct binary for the platform automatically during the build.
