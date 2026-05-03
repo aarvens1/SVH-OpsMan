@@ -1,5 +1,9 @@
-import axios, { type AxiosInstance } from "axios";
+import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from "axios";
 import https from "https";
+
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
 
 interface TokenCacheEntry {
   token: string;
@@ -43,6 +47,7 @@ export function createControllerClient(): AxiosInstance {
   const baseURL = process.env["UNIFI_CONTROLLER_URL"];
   const instance = axios.create({
     baseURL,
+    timeout: 30_000,
     headers: { "Content-Type": "application/json" },
     httpsAgent,
   });
@@ -55,8 +60,7 @@ export function createControllerClient(): AxiosInstance {
 
   instance.interceptors.response.use(undefined, async (error) => {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const config = error.config as any;
+      const config = error.config as RetryableRequestConfig | undefined;
       if (!config || config._retry) return Promise.reject(error);
       config._retry = true;
       invalidateControllerToken();

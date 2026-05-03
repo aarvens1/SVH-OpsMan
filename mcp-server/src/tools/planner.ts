@@ -218,16 +218,28 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
         const taskId = task["id"] as string;
 
         if (checklist_items && checklist_items.length > 0) {
-          const detailsRes = await client.get(`/planner/tasks/${taskId}/details`);
-          const detailsEtag = (detailsRes.headers as Record<string, string>)["etag"] ?? detailsRes.data["@odata.etag"] as string;
+          try {
+            const detailsRes = await client.get(`/planner/tasks/${taskId}/details`);
+            const detailsEtag = (detailsRes.headers as Record<string, string>)["etag"] ?? detailsRes.data["@odata.etag"] as string;
 
-          const checklist: Record<string, unknown> = {};
-          for (const item of checklist_items) {
-            checklist[randomUUID()] = { "@odata.type": "#microsoft.graph.plannerChecklistItem", title: item.title, isChecked: false };
+            const checklist: Record<string, unknown> = {};
+            for (const item of checklist_items) {
+              checklist[randomUUID()] = { "@odata.type": "#microsoft.graph.plannerChecklistItem", title: item.title, isChecked: false };
+            }
+            await client.patch(`/planner/tasks/${taskId}/details`, { checklist }, {
+              headers: { "If-Match": detailsEtag },
+            });
+          } catch (checklistErr) {
+            // Task was created successfully but checklist patching failed.
+            // Return the task with a warning so the caller knows the partial state.
+            return {
+              isError: true as const,
+              content: [{
+                type: "text" as const,
+                text: `Task created (id: ${taskId}) but checklist could not be added: ${formatError(checklistErr)}`,
+              }],
+            };
           }
-          await client.patch(`/planner/tasks/${taskId}/details`, { checklist }, {
-            headers: { "If-Match": detailsEtag },
-          });
         }
 
         return ok({ ...task, checklist_items_added: checklist_items?.length ?? 0 });
