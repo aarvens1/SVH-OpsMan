@@ -1,4 +1,7 @@
 import axios, { type AxiosInstance, isAxiosError } from "axios";
+import https from "https";
+
+const WAZUH_AGENT = new https.Agent({ rejectUnauthorized: false });
 
 export const GRAPH_SCOPE = "https://graph.microsoft.com/.default";
 
@@ -59,13 +62,40 @@ export function todoistClient(): AxiosInstance {
   });
 }
 
-export function braveSearchClient(): AxiosInstance {
+export function armClient(token: string): AxiosInstance {
   return axios.create({
-    baseURL: "https://api.search.brave.com/res/v1",
+    baseURL: "https://management.azure.com",
     timeout: DEFAULT_TIMEOUT_MS,
     headers: {
-      "X-Subscription-Token": process.env["BRAVE_SEARCH_API_KEY"] ?? "",
-      "Accept": "application/json",
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+export function wazuhClient(jwt: string): AxiosInstance {
+  const baseURL = process.env["WAZUH_URL"] ?? "https://localhost:55000";
+  return axios.create({
+    baseURL,
+    timeout: DEFAULT_TIMEOUT_MS,
+    headers: {
+      Authorization: `Bearer ${jwt}`,
+      "Content-Type": "application/json",
+    },
+    httpsAgent: WAZUH_AGENT,
+  });
+}
+
+export function printerlogicClient(): AxiosInstance {
+  const baseURL = process.env["PRINTERLOGIC_URL"] ?? "";
+  const token = process.env["PRINTERLOGIC_API_TOKEN"] ?? "";
+  return axios.create({
+    baseURL,
+    timeout: DEFAULT_TIMEOUT_MS,
+    headers: {
+      Authorization: `Token ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
   });
 }

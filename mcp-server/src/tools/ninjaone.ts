@@ -470,4 +470,55 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }
     }
   );
+
+  // ── Organizations ──────────────────────────────────────────────────────────
+
+  server.registerTool(
+    "ninja_list_organizations",
+    {
+      description:
+        "List all organizations (clients) in NinjaOne with their ID, name, description, and node count.",
+      inputSchema: z.object({
+        page_size: z.number().int().default(50),
+        after: z
+          .number()
+          .int()
+          .optional()
+          .describe("Pagination cursor — last org ID from previous page"),
+      }),
+    },
+    async ({ page_size, after }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getNinjaToken();
+        const params: Record<string, number> = { pageSize: page_size };
+        if (after) params["after"] = after;
+        const res = await ninjaClient(token).get("/organizations", { params });
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "ninja_get_organization",
+    {
+      description: "Get details for a specific NinjaOne organization — settings, policies, and locations.",
+      inputSchema: z.object({
+        org_id: z.number().int().describe("NinjaOne organization ID"),
+      }),
+    },
+    async ({ org_id }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getNinjaToken();
+        const res = await ninjaClient(token).get(`/organization/${org_id}`);
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
 }

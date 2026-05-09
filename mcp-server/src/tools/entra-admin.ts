@@ -276,4 +276,110 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
       }
     }
   );
+
+  server.registerTool(
+    "entra_get_sign_in_logs",
+    {
+      description:
+        "Query Entra ID sign-in logs. Filter by user, app, IP, status, or time window. " +
+        "Returns sign-in time, app, IP, location, device, MFA result, and conditional access outcome. " +
+        "Requires AuditLog.Read.All.",
+      inputSchema: z.object({
+        user_id: z
+          .string()
+          .optional()
+          .describe("Filter by UPN or object ID"),
+        app_display_name: z
+          .string()
+          .optional()
+          .describe("Filter by application display name"),
+        ip_address: z.string().optional().describe("Filter by client IP address"),
+        status: z
+          .enum(["success", "failure", "interrupted", "all"])
+          .default("all"),
+        hours: z
+          .number()
+          .int()
+          .min(1)
+          .max(168)
+          .default(24)
+          .describe("Look back this many hours"),
+        top: z.number().int().min(1).max(500).default(100),
+      }),
+    },
+    async ({ user_id, app_display_name, ip_address, status, hours, top }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getGraphToken(GRAPH_SCOPE);
+        const since = new Date(Date.now() - hours * 3_600_000).toISOString();
+        const filters: string[] = [`createdDateTime ge ${since}`];
+        if (user_id) filters.push(`userPrincipalName eq '${user_id}'`);
+        if (app_display_name) filters.push(`appDisplayName eq '${app_display_name}'`);
+        if (ip_address) filters.push(`ipAddress eq '${ip_address}'`);
+        if (status === "success") filters.push("status/errorCode eq 0");
+        if (status === "failure") filters.push("status/errorCode ne 0");
+        const res = await graphClient(token).get("/auditLogs/signIns", {
+          params: {
+            $filter: filters.join(" and "),
+            $top: top,
+            $orderby: "createdDateTime desc",
+            $select:
+              "id,createdDateTime,userDisplayName,userPrincipalName,appDisplayName,ipAddress,location,status,conditionalAccessStatus,mfaDetail,deviceDetail,clientAppUsed,riskLevelDuringSignIn",
+          },
+        });
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "entra_get_audit_logs",
+    {
+      description:
+        "Query Entra ID audit logs — directory changes like user creation/deletion, " +
+        "group membership changes, role assignments, app consent, and policy modifications. " +
+        "Requires AuditLog.Read.All.",
+      inputSchema: z.object({
+        category: z
+          .string()
+          .optional()
+          .describe(
+            "Audit log category (e.g. 'UserManagement', 'GroupManagement', 'RoleManagement', 'ApplicationManagement', 'Policy')"
+          ),
+        initiated_by: z
+          .string()
+          .optional()
+          .describe("Filter by actor UPN or app display name"),
+        hours: z.number().int().min(1).max(168).default(24).describe("Look back this many hours"),
+        top: z.number().int().min(1).max(200).default(50),
+      }),
+    },
+    async ({ category, initiated_by, hours, top }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getGraphToken(GRAPH_SCOPE);
+        const since = new Date(Date.now() - hours * 3_600_000).toISOString();
+        const filters: string[] = [`activityDateTime ge ${since}`];
+        if (category) filters.push(`category eq '${category}'`);
+        if (initiated_by)
+          filters.push(
+            `initiatedBy/user/userPrincipalName eq '${initiated_by}' or initiatedBy/app/displayName eq '${initiated_by}'`
+          );
+        const res = await graphClient(token).get("/auditLogs/directoryAudits", {
+          params: {
+            $filter: filters.join(" and "),
+            $top: top,
+            $orderby: "activityDateTime desc",
+            $select:
+              "id,activityDateTime,activityDisplayName,category,result,resultReason,initiatedBy,targetResources",
+          },
+        });
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
 }
