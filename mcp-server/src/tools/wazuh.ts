@@ -1,0 +1,301 @@
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import axios from "axios";
+import https from "https";
+import { formatError } from "../utils/http.js";
+
+const DISABLED_MSG =
+  "Wazuh service not configured: set WAZUH_URL, WAZUH_USERNAME, WAZUH_PASSWORD";
+
+function disabled() {
+  return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
+}
+function ok(data: unknown) {
+  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+}
+function err(e: unknown) {
+  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
+}
+
+const tlsAgent = new https.Agent({ rejectUnauthorized: false });
+
+let cachedJwt: { token: string; expires_at: number } | null = null;
+
+async function getJwt(): Promise<string> {
+  if (cachedJwt && Date.now() < cachedJwt.expires_at - 60_000) {
+    return cachedJwt.token;
+  }
+  const url = process.env["WAZUH_URL"] ?? "https://localhost:55000";
+  const username = process.env["WAZUH_USERNAME"] ?? "";
+  const password = process.env["WAZUH_PASSWORD"] ?? "";
+  const res = await axios.post<{ data: { token: string } }>(
+    `${url}/security/user/authenticate`,
+    {},
+    {
+      auth: { username, password },
+      httpsAgent: tlsAgent,
+      timeout: 15_000,
+    }
+  );
+  cachedJwt = {
+    token: res.data.data.token,
+    expires_at: Date.now() + 15 * 60 * 1000,
+  };
+  return cachedJwt.token;
+}
+
+function wazuh(jwt: string) {
+  return axios.create({
+    baseURL: process.env["WAZUH_URL"] ?? "https://localhost:55000",
+    timeout: 30_000,
+    headers: { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
+    httpsAgent: tlsAgent,
+  });
+}
+
+export function registerWazuhTools(server: McpServer, enabled: boolean): void {
+  server.registerTool(
+    "wazuh_list_agents",
+    {
+      description:
+        "List Wazuh agents with their status, OS, IP, and last keepalive. " +
+        "Filter by status or OS platform.",
+      inputSchema: z.object({
+        status: z
+          .enum(["active", "disconnected", "never_connected", "pending"])
+          .optional()
+          .describe("Filter by agent connection status"),
+        os_platform: z
+          .string()
+          .optional()
+          .describe("Filter by OS platform (e.g. 'windows', 'ubuntu')"),
+        search: z
+          .string()
+          .optional()
+          .describe("Search by agent name or IP"),
+        limit: z.number().int().min(1).max(500).default(100),
+        offset: z.number().int().default(0),
+      }),
+    },
+    async ({ status, os_platform, search, limit, offset }) => {
+      if (!enabled) return disabled();
+      try {
+        const jwt = await getJwt();
+        const params: Record<string, string | number> = { limit, offset };
+        if (status) params.status = status;
+        if (os_platform) params["os.platform"] = os_platform;
+        if (search) params.search = search;
+        const res = await wazuh(jwt).get("/agents", { params });
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "wazuh_search_alerts",
+    {
+      description:
+        "Search SIEM alerts. Filter by agent, severity (rule level), time window, and rule group. " +
+        "Returns alert details, rule description, MITRE ATT&CK mappings, and agent context.",
+      inputSchema: z.object({
+        agent_id: z.string().optional().describe("Scope to a specific agent ID"),
+        min_level: z
+          .number()
+          .int()
+          .min(1)
+          .max(15)
+          .default(6)
+          .describe("Minimum Wazuh rule level (1=low, 15=critical)"),
+        time_from: z
+          .string()
+          .optional()
+          .describe("Start time in ISO 8601 or relative (e.g. 'now-24h')"),
+        time_to: z
+          .string()
+          .optional()
+          .describe("End time in ISO 8601. Defaults to now."),
+        rule_group: z
+          .string()
+          .optional()
+          .describe("Filter by rule group (e.g. 'windows', 'syslog', 'authentication_failed')"),
+        query: z
+          .string()
+          .optional()
+          .describe("Free-text search term matched against alert data"),
+        limit: z.number().int().min(1).max(500).default(100),
+      }),
+    },
+    async ({ agent_id, min_level, time_from, time_to, rule_group, query, limit }) => {
+      if (!enabled) return disabled();
+      try {
+        const jwt = await getJwt();
+        const params: Record<string, string | number> = {
+          limit,
+          "rule.level": min_level,
+        };
+        if (agent_id) params.agents_list = agent_id;
+        if (time_from) params.timestamp_from = time_from;
+        if (time_to) params.timestamp_to = time_to;
+        if (rule_group) params["rule.groups"] = rule_group;
+        if (query) params.q = query;
+        const res = await wazuh(jwt).get("/alerts", { params });
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "wazuh_get_agent_vulnerabilities",
+    {
+      description:
+        "List CVE vulnerabilities detected on a specific Wazuh agent. " +
+        "Returns CVE ID, severity, CVSS score, package name, and remediation advice.",
+      inputSchema: z.object({
+        agent_id: z.string().describe("Agent ID (e.g. '001')"),
+        severity: z
+          .enum(["critical", "high", "medium", "low"])
+          .optional()
+          .describe("Filter by CVSS severity"),
+        limit: z.number().int().default(100),
+      }),
+    },
+    async ({ agent_id, severity, limit }) => {
+      if (!enabled) return disabled();
+      try {
+        const jwt = await getJwt();
+        const params: Record<string, string | number> = { limit };
+        if (severity) params.severity = severity;
+        const res = await wazuh(jwt).get(
+          `/vulnerability/${agent_id}`,
+          { params }
+        );
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "wazuh_get_fim_events",
+    {
+      description:
+        "File Integrity Monitoring (FIM) events for an agent. " +
+        "Returns file path, event type (added/modified/deleted), timestamp, MD5/SHA hash changes, and user.",
+      inputSchema: z.object({
+        agent_id: z.string().describe("Agent ID"),
+        time_from: z.string().optional().describe("Start time in ISO 8601"),
+        time_to: z.string().optional().describe("End time in ISO 8601"),
+        path: z.string().optional().describe("Filter by file path prefix"),
+        event_type: z
+          .enum(["added", "modified", "deleted"])
+          .optional()
+          .describe("Filter by FIM event type"),
+        limit: z.number().int().default(100),
+      }),
+    },
+    async ({ agent_id, time_from, time_to, path, event_type, limit }) => {
+      if (!enabled) return disabled();
+      try {
+        const jwt = await getJwt();
+        const params: Record<string, string | number> = { limit };
+        if (time_from) params.date_add_from = time_from;
+        if (time_to) params.date_add_to = time_to;
+        if (path) params.path = path;
+        if (event_type) params.type = event_type;
+        const res = await wazuh(jwt).get(`/syscheck/${agent_id}`, { params });
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "wazuh_get_rootcheck",
+    {
+      description:
+        "Rootcheck (system audit) results for an agent — checks for rootkits, " +
+        "hidden files, unowned files, and policy violations.",
+      inputSchema: z.object({
+        agent_id: z.string().describe("Agent ID"),
+        status: z
+          .enum(["all", "solved", "outstanding"])
+          .default("outstanding")
+          .describe("Filter by check status"),
+        limit: z.number().int().default(100),
+      }),
+    },
+    async ({ agent_id, status, limit }) => {
+      if (!enabled) return disabled();
+      try {
+        const jwt = await getJwt();
+        const params: Record<string, string | number> = { limit };
+        if (status !== "all") params.status = status;
+        const res = await wazuh(jwt).get(`/rootcheck/${agent_id}`, { params });
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "wazuh_search_rules",
+    {
+      description:
+        "Search Wazuh detection rules by keyword, group, level, or ID range. " +
+        "Useful for understanding what triggers a specific alert.",
+      inputSchema: z.object({
+        search: z.string().optional().describe("Keyword to search in rule descriptions"),
+        group: z.string().optional().describe("Rule group (e.g. 'windows', 'authentication')"),
+        min_level: z.number().int().optional().describe("Minimum rule level"),
+        rule_id: z.string().optional().describe("Specific rule ID"),
+        limit: z.number().int().default(50),
+      }),
+    },
+    async ({ search, group, min_level, rule_id, limit }) => {
+      if (!enabled) return disabled();
+      try {
+        const jwt = await getJwt();
+        const params: Record<string, string | number> = { limit };
+        if (search) params.search = search;
+        if (group) params.groups = group;
+        if (min_level) params["level.from"] = min_level;
+        if (rule_id) params.rule_ids = rule_id;
+        const res = await wazuh(jwt).get("/rules", { params });
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "wazuh_search_decoders",
+    {
+      description:
+        "Search Wazuh log decoders. Useful for tracing how raw log lines are parsed into alert fields.",
+      inputSchema: z.object({
+        search: z.string().optional().describe("Keyword to search in decoder names or files"),
+        limit: z.number().int().default(50),
+      }),
+    },
+    async ({ search, limit }) => {
+      if (!enabled) return disabled();
+      try {
+        const jwt = await getJwt();
+        const params: Record<string, string | number> = { limit };
+        if (search) params.search = search;
+        const res = await wazuh(jwt).get("/decoders", { params });
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+}

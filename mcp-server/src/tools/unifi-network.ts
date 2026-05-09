@@ -129,4 +129,74 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
       }
     }
   );
+
+  server.registerTool(
+    "unifi_list_wlans",
+    {
+      description:
+        "List all wireless networks (SSIDs) configured at a UniFi site — " +
+        "SSID name, security type, VLAN, band steering, and enabled/disabled state.",
+      inputSchema: z.object({
+        site_id: z.string().describe("The UniFi site ID"),
+      }),
+    },
+    async ({ site_id }) => {
+      if (!enabled) return disabled();
+      try {
+        const res = await createControllerClient().get(`/api/v2/sites/${site_id}/wlans`);
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "unifi_list_port_profiles",
+    {
+      description:
+        "List switch port profiles (port configurations) defined at a UniFi site, " +
+        "including native VLAN, tagged VLANs, PoE mode, and voice VLAN settings.",
+      inputSchema: z.object({
+        site_id: z.string().describe("The UniFi site ID"),
+      }),
+    },
+    async ({ site_id }) => {
+      if (!enabled) return disabled();
+      try {
+        const res = await createControllerClient().get(
+          `/api/v2/sites/${site_id}/portprofiles`
+        );
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "unifi_get_switch_ports",
+    {
+      description:
+        "Get the current state of all ports on a specific switch — " +
+        "link state, speed, PoE wattage, STP state, traffic counters, and assigned profile.",
+      inputSchema: z.object({
+        site_id: z.string().describe("The UniFi site ID"),
+        device_mac: z.string().describe("MAC address of the switch (e.g. aa:bb:cc:dd:ee:ff)"),
+      }),
+    },
+    async ({ site_id, device_mac }) => {
+      if (!enabled) return disabled();
+      try {
+        const res = await createControllerClient().get(
+          `/api/v2/sites/${site_id}/devices/${device_mac.toLowerCase().replace(/:/g, "")}`
+        );
+        const device = res.data;
+        const ports = device?.port_table ?? device?.portTable ?? [];
+        return ok({ device_name: device?.name, ports });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
 }
