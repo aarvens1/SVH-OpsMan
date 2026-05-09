@@ -48,6 +48,28 @@ export function unifiCloudClient(): AxiosInstance {
   });
 }
 
+export function todoistClient(): AxiosInstance {
+  return axios.create({
+    baseURL: "https://api.todoist.com/rest/v2",
+    timeout: DEFAULT_TIMEOUT_MS,
+    headers: {
+      Authorization: `Bearer ${process.env["TODOIST_API_TOKEN"] ?? ""}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+export function braveSearchClient(): AxiosInstance {
+  return axios.create({
+    baseURL: "https://api.search.brave.com/res/v1",
+    timeout: DEFAULT_TIMEOUT_MS,
+    headers: {
+      "X-Subscription-Token": process.env["BRAVE_SEARCH_API_KEY"] ?? "",
+      "Accept": "application/json",
+    },
+  });
+}
+
 export function confluenceClient(): AxiosInstance {
   const domain = process.env["CONFLUENCE_DOMAIN"] ?? "";
   const email = process.env["CONFLUENCE_EMAIL"] ?? "";
