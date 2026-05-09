@@ -74,14 +74,10 @@ export function armClient(token: string): AxiosInstance {
 }
 
 export function wazuhClient(jwt: string): AxiosInstance {
-  const baseURL = process.env["WAZUH_URL"] ?? "https://localhost:55000";
   return axios.create({
-    baseURL,
+    baseURL: process.env["WAZUH_URL"] ?? "https://localhost:55000",
     timeout: DEFAULT_TIMEOUT_MS,
-    headers: {
-      Authorization: `Bearer ${jwt}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
     httpsAgent: WAZUH_AGENT,
   });
 }
