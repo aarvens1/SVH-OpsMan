@@ -12,6 +12,10 @@ import { registerEntraAdminTools } from "./tools/entra-admin.js";
 import { registerOneDriveTools } from "./tools/onedrive.js";
 import { registerTeamsTools } from "./tools/teams.js";
 import { registerConfluenceTools } from "./tools/confluence.js";
+import { registerTodoistTools } from "./tools/todoist.js";
+import { registerIntuneTools } from "./tools/intune.js";
+import { registerMsAdminTools } from "./tools/ms-admin.js";
+import { registerBraveSearchTools } from "./tools/brave-search.js";
 
 function checkEnv(...vars: string[]): boolean {
   const missing = vars.filter((v) => !process.env[v]);
@@ -38,6 +42,8 @@ const services = {
   ninjaone: checkEnv("NINJA_CLIENT_ID", "NINJA_CLIENT_SECRET"),
   mde: checkEnv("MDE_TENANT_ID", "MDE_CLIENT_ID", "MDE_CLIENT_SECRET"),
   confluence: checkEnv("CONFLUENCE_DOMAIN", "CONFLUENCE_EMAIL", "CONFLUENCE_API_TOKEN"),
+  todoist: checkEnv("TODOIST_API_TOKEN"),
+  braveSearch: checkEnv("BRAVE_SEARCH_API_KEY"),
 };
 
 registerPlannerTools(server, services.graph);
@@ -49,6 +55,10 @@ registerEntraAdminTools(server, services.graph);
 registerOneDriveTools(server, services.graph);
 registerTeamsTools(server, services.graph);
 registerConfluenceTools(server, services.confluence);
+registerTodoistTools(server, services.todoist);
+registerIntuneTools(server, services.graph);
+registerMsAdminTools(server, services.graph);
+registerBraveSearchTools(server, services.braveSearch);
 
 const enabledCount = Object.values(services).filter(Boolean).length;
 console.error(
