@@ -80,7 +80,7 @@ Prompt patterns you trigger by name or by describing what you need. Output goes 
 #### Day Starter
 **Say:** "Day starter" · "Morning briefing" · "What's on my plate"
 
-Covers the last 24 hours. Pulls from every monitoring system and your task and calendar stack, then produces a single prioritized digest: what needs attention now, today's agenda, open tasks, and anything worth watching. Suggested Planner updates and reply drafts are included for your review — nothing changes without your say-so.
+Covers the last 24 hours — or since end of Thursday if it's Monday (picks up the full weekend). Pulls from every monitoring system and your task and calendar stack, then produces a single prioritized digest: what needs attention now, today's agenda, open tasks, and anything worth watching. Suggested Planner updates and reply drafts are included for your review — nothing changes without your say-so.
 
 **Output:** `Briefings/Daily/YYYY-MM-DD.md`
 
@@ -105,7 +105,7 @@ Last week's loose ends plus this week's load: what closed, open threads, upcomin
 ---
 
 #### Week Ender
-**Say:** "Week ender" · "Wrap up the week"
+**Say:** "Week ender" · "Wrap up the week" · Thursday end of day
 
 What shipped, what slipped, seeds for next week, and an optional summary draft for your manager or team — staged in Confluence for review.
 
