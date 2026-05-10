@@ -21,6 +21,19 @@ Run these in parallel:
 - `entra_list_risky_users` — any users currently flagged as risky.
 - `admin_list_service_incidents` — active M365 service incidents.
 
+## Step 1b — Compliance gap (Mondays only)
+
+On Mondays, include this note verbatim in the Obsidian briefing under **🔴 Needs attention now** (or **🟡 Worth watching** if no critical items were found in Step 1):
+
+> **Run weekly compliance gap scan** — open a PowerShell terminal and run:
+> ```powershell
+> . ./connect.ps1
+> Get-SVHComplianceGap | Format-Table Category, Finding, Detail -AutoSize
+> ```
+> Checks: MFA gaps, guest users, stale Intune devices (30+ days), disconnected Wazuh agents, licensed-but-disabled users.
+
+Do NOT attempt to run this as an MCP tool — `Get-SVHComplianceGap` is a PowerShell module function, not an MCP-exposed endpoint. Just surface the reminder.
+
 ## Step 2 — Tasks & calendar
 
 Run these in parallel:
