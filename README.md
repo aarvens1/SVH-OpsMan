@@ -249,6 +249,47 @@ Breaks input into a scope statement, deliverables, WBS, dependencies, and effort
 
 ---
 
+### Content & documentation
+
+#### TicketSmith
+**Say:** "Write a ticket for this" · "Clean up this complaint" · "Turn this into a ticket"
+
+Paste a raw user complaint, rant, or rough description and Claude rewrites it as a calm, professional IT ticket: one-line title, clear problem description, impact statement, steps to reproduce, and a suggested priority. Accepts pasted text, `.txt`, or `.pdf`. Nothing is submitted anywhere — output lands in Obsidian for your review first.
+
+**Output:** Draft ticket body in Obsidian, ready to paste into your ticketing system.
+
+---
+
+#### Scribe
+**Say:** "Write this up" · "Document what I did" · "Make this a how-to" · "Write the closure notes"
+
+Paste rough technician notes — shorthand, out-of-order, half-finished — and Claude structures them into clean documentation. Five output styles you can specify:
+
+| Style | When to use |
+|-------|------------|
+| **standard** | Default — structured doc with context, steps, and outcome |
+| **concise** | Quick summary for tickets or handoff notes |
+| **detailed** | Step-by-step with rationale, suitable for runbooks |
+| **incident-report** | Timeline, root cause, resolution, follow-up items |
+| **how-to** | Numbered steps, reusable guide format |
+
+Accepts paste, `.txt`, `.md`, `.pdf`, or screenshots. Output staged in Obsidian; optionally promoted to Confluence if you ask.
+
+**Output:** `Investigations/` or wherever the content fits, then optionally `Confluence` draft.
+
+---
+
+#### Event Log Analyzer
+**Say:** "Analyze this event log" · "Triage these Windows events" · "Look at the event log export from X"
+
+For when you have an exported log file rather than live query access. Paste or attach an export (`.xml` preferred for richness, `.csv`, `.txt`, `.log` also work) and Claude produces a triage report: findings, patterns, probable cause, and recommended next steps. References SVH-specific event signatures from `references/common-event-clusters.md`.
+
+Complements Event Log Triage (which queries Wazuh and NinjaOne live) — use this when you've already pulled the log file or when the source system isn't in Wazuh.
+
+**Output:** Analysis written to Obsidian.
+
+---
+
 ## Obsidian vault structure
 
 Claude writes directly to the relevant folder. Nothing gets sent outside Obsidian unless you say so.
