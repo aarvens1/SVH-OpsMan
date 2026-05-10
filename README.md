@@ -535,16 +535,16 @@ az role assignment create --assignee <client-id> \
 
 ## Reference documents
 
-`references/` — supporting content Claude uses when running the relevant skills.
+`references/` — supporting content Claude uses when running the relevant skills. These work best when copied into your Obsidian vault under `References/` so the Obsidian MCP can serve them during any Claude session. The repo versions are the source of truth; evolve the Obsidian copies as you learn more about your environment.
 
 | File | Used by |
 |------|---------|
-| `triage-gate.md` | IR Triage — lane classification criteria |
-| `common-failure-modes.md` | Troubleshooting — SVH-specific failure patterns |
-| `hypothesis-patterns.md` | Troubleshooting — isolation moves by problem class |
-| `common-event-clusters.md` | Event Log Triage — Wazuh/Windows event signatures |
-| `ps-remoting-snippets.md` | Event Log Triage — Get-WinEvent recipes |
-| `setup-winrm.md` | Event Log Triage — one-time WinRM trust setup |
+| `triage-gate.md` | IR Triage — lane classification criteria and escalation path |
+| `common-failure-modes.md` | Troubleshooting — SVH-specific failure patterns for Hyper-V, MABS, CMiC, UniFi, WSUS |
+| `hypothesis-patterns.md` | Troubleshooting — isolation moves by problem class (one user vs. many, intermittent, etc.) |
+| `common-event-clusters.md` | Event Log Triage — Wazuh/Windows event signatures grouped by scenario |
+| `ps-remoting-snippets.md` | Event Log Triage — Get-WinEvent recipes for common investigation scenarios |
+| `setup-winrm.md` | Event Log Triage — one-time WinRM trust setup from WSL to Windows targets |
 
 ---
 
