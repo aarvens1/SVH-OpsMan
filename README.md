@@ -370,30 +370,95 @@ Suggested layout — Claude writes to these paths when skills run. The structure
 
 ```
 SVH OpsMan/
-├── Daily/
-│   └── 2025-05-09.md          ← Day Starter output; Day Ender appends
-├── Weekly/
-│   └── 2025-W19.md            ← Week Starter goals; Week Ender retrospective
-├── Incidents/
-│   └── 2025-05-09-jsmith-anomalous-signin.md
-├── Changes/
-│   └── 2025-05-10-cmic-maintenance-window.md
-├── Decisions/
-│   └── 2025-05-01-upgrade-wazuh-4.9.md   ← Decision log entries from any skill
-├── Meetings/
-│   └── 2025-05-09-network-vendor-review.md
-├── Assets/
-│   ├── SVH-SQL01.md           ← Updated each time Asset Investigation runs
+├── 00 Inbox/                  ← Claude drops everything here first
+│   └── 2026-05-09 1430 day-starter.md
+├── 01 Briefings/
+│   ├── Daily/
+│   │   └── 2026-05-09.md     ← Day Starter output; Day Ender appends
+│   └── Weekly/
+│       └── 2026-W19.md       ← Week Starter goals; Week Ender retrospective
+├── 02 Incidents/
+│   ├── Active/
+│   │   └── 2026-05-09-jsmith-anomalous-signin.md
+│   └── Archive/              ← You move here when closed
+├── 03 Investigations/         ← Phishing triage, IOC enrichment, ad-hoc deep dives
+├── 04 Changes/
+│   └── 2026-05-10-cmic-maintenance-window.md
+├── 05 Meetings/
+│   └── 2026-05-09-network-vendor-review.md
+├── 06 Assets/
+│   ├── SVH-SQL01.md          ← Updated each time Asset Investigation runs
 │   └── jsmith.md
-├── Projects/
+├── 07 Projects/
 │   └── vm-migration-q3.md
-├── Vulnerabilities/
+├── 08 Reviews/
+│   ├── Access/               ← Quarterly access reviews, stale user reports
+│   └── Patches/              ← Patch campaign notes
+├── 09 Vulnerabilities/
 │   └── CVE-2024-12345.md
-└── Patches/
-    └── 2025-05-campaign.md
+├── 10 Reports/               ← Management-facing summaries
+└── 98 References/            ← The reference docs from this repo (symlink or copy)
+    ├── triage-gate.md
+    └── ...
 ```
 
-**Decision log pattern:** Any significant finding, recommendation, or action Claude takes should be appended to a `Decisions/` note so you have a trail when something goes wrong later. Trigger it explicitly: *"Log that decision to Obsidian."*
+**Obsidian is the inbox.** Every Claude output lands in `00 Inbox/` first. You promote it to the right folder (or delete it) — Claude never writes directly into deeper folders unless you tell it the destination.
+
+---
+
+### Frontmatter conventions
+
+Every note Claude produces should open with YAML frontmatter. This lets you filter, search, and track status across the vault.
+
+```yaml
+---
+date: 2026-05-09
+skill: Day Starter
+status: draft
+tags: [briefing, daily]
+---
+```
+
+**Standard fields:**
+
+| Field | Values | Meaning |
+|-------|--------|---------|
+| `date` | ISO date | When the note was created |
+| `skill` | skill name | Which skill produced it |
+| `status` | `draft` / `reviewed` / `filed` / `promoted` | Where it is in your review workflow |
+| `tags` | array | Freeform — system names, categories, people |
+
+**Status lifecycle:**
+
+```
+draft  →  reviewed  →  filed      (reviewed, no further action)
+                    →  promoted   (content pushed to Confluence, Teams, or Mail)
+```
+
+Claude writes `status: draft`. You flip it to `reviewed` when you've read it, then `filed` or `promoted` when you're done with it. Nothing leaves Obsidian until it's `reviewed`.
+
+**Extra fields for specific note types:**
+
+```yaml
+# Incidents
+incident_id: INC-2026-042
+severity: high          # critical / high / medium / low
+status: open            # open / contained / closed
+affected: [SVH-SQL01, jsmith]
+
+# Changes
+change_id: CHG-2026-018
+risk: medium            # low / medium / high
+window: 2026-05-10 22:00 – 23:30
+
+# Vulnerabilities
+cve: CVE-2024-12345
+epss: 0.71
+kev: true
+priority: emergency     # emergency / this-week / next-cycle / accept
+```
+
+**Decision log:** Any significant finding, recommendation, or action should be appended to a `06 Assets/decisions.md` note (or the relevant asset/incident note) so you have a trail when something goes wrong. Trigger it explicitly: *"Log that decision to Obsidian."*
 
 ---
 
@@ -618,16 +683,16 @@ Supporting content in `references/` — Claude reads these automatically during 
 
 Validate each layer before adding skills that depend on it. Start with the skills that have no write-side risk.
 
-| Phase | Skills | Notes |
-|-------|--------|-------|
-| 1 | Day Starter, Day Ender | Validates all monitoring sources and Obsidian writes |
-| 2 | Week Starter, Week Ender | Validates the weekly cadence |
-| 3 | Security Posture Snapshot | Validates the cross-system security read path |
-| 4 | Troubleshooting Methodology | Validates NinjaOne + Desktop Commander + Wazuh together |
-| 5 | Event Log Triage | Add after Wazuh syslog confirmed shipping |
-| 6 | UniFi Troubleshooter | Add after UniFi syslog → Wazuh wired up |
-| 7 | Asset Investigation, Vuln Triage, Patch Campaign | Read-only, safe to add anytime after phase 4 |
-| 8 | Meeting Prep, Project Creator | Light dependencies, add when ready |
-| 9 | Change Record, Offboarding, Access Review | Draft-only by default, validate each carefully |
-| 10 | IR Triage | **Last** — only skill that sends non-draft Teams messages |
-| 11 | Mailflow Investigation | Any time after Exchange Admin credentials confirmed |
+| Phase | Skills (#) | Notes |
+|-------|-----------|-------|
+| 1 | Day Starter (1), Day Ender (2) | Validates all monitoring sources and Obsidian writes |
+| 2 | Week Starter (3), Week Ender (4) | Validates the weekly cadence |
+| 3 | Security Posture Snapshot (5) | Validates the cross-system security read path |
+| 4 | Troubleshooting Methodology (7) | Validates NinjaOne + Desktop Commander + Wazuh together |
+| 5 | Event Log Triage (8) | Add after Wazuh syslog confirmed shipping |
+| 6 | UniFi Troubleshooter (10) | Add after UniFi syslog → Wazuh wired up |
+| 7 | Asset Investigation (12), Vuln Triage (9), Patch Campaign (13) | Read-only, safe to add anytime after phase 4 |
+| 8 | Meeting Prep (16), Project Creator (15) | Light dependencies, add when ready |
+| 9 | Change Record (14), Offboarding (17), Access Review (18) | Draft-only by default, validate each carefully |
+| 10 | IR Triage (6) | **Last** — only skill that sends non-draft Teams messages |
+| 11 | Mailflow Investigation (11) | Any time after Exchange Admin credentials confirmed |
