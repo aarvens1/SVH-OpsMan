@@ -23,9 +23,9 @@ Claude connects to a custom MCP server (this repo) and a set of external MCPs. W
 You ──► Claude
               ├── Custom MCP (this repo) ──► Microsoft 365, Azure, NinjaOne,
               │                              UniFi, Wazuh, PrinterLogic, Confluence
-              └── External MCPs ──────────► Obsidian, GitHub, Fathom,
-                                            Firecrawl, Desktop Commander,
-                                            Bitwarden, Time
+              └── External MCPs ──────────► Obsidian, Excalidraw, GitHub,
+                                            Fathom, Firecrawl,
+                                            Desktop Commander, Bitwarden, Time
 ```
 
 **Obsidian is home base.** Briefings, incident notes, change records, meeting notes — anything Claude produces lives in Obsidian. Claude never sends to Teams, Mail, or Planner without you explicitly asking it to.
@@ -60,6 +60,7 @@ You ──► Claude
 | **PrinterLogic** 🔒 | Printers, drivers, deployment profiles, audit logs, print quotas |
 | **Confluence** | Search and read content, edit pages, manage comments |
 | **Obsidian** | Read and write notes — **home base for everything Claude produces** |
+| **Excalidraw** | Create and edit diagrams — network maps, attack paths, asset relationships, WBS charts, change impact scope |
 | **Fathom** | Fetch meeting transcripts and summaries from recorded calls |
 | **GitHub** | Repos, issues, PRs, Actions workflows |
 | **Firecrawl** | Web search, fetch URLs as Markdown, structured extraction |
@@ -132,7 +133,7 @@ Wazuh first for broad correlation, NinjaOne for anything Wazuh missed, then targ
 #### Network Troubleshooter
 **Say:** "Network issue at [site]" · "Why can't [users] reach [resource]"
 
-UniFi Cloud → UniFi Network Controller (VLANs, firewall, switch ports) → Wazuh (IDS/IPS, dropped packets, gateway events) → NinjaOne (affected endpoints) → Desktop Commander (ping, traceroute, port checks). Produces a ranked diagnostic brief.
+UniFi Cloud → UniFi Network Controller (VLANs, firewall, switch ports) → Wazuh (IDS/IPS, dropped packets, gateway events) → NinjaOne (affected endpoints) → Desktop Commander (ping, traceroute, port checks). Produces a ranked diagnostic brief and an Excalidraw topology diagram scoped to the affected path — VLANs, segments, and key devices — embedded in the note.
 
 ---
 
@@ -154,9 +155,9 @@ Runs a triage gate first to classify the situation:
 | 🔎 Active Investigation | Confirmed bad but contained | Enrich first, then draft Teams + Planner for your review |
 | 🔍 Background | Suspicious, likely benign | Enrich only, no notifications |
 
-Enrichment: IOC → Defender → Entra sign-in/audit logs → NinjaOne endpoint state → incident brief.
+Enrichment: IOC → Defender → Entra sign-in/audit logs → NinjaOne endpoint state → incident brief. For Burning Building and Active Investigation lanes, also produces an Excalidraw attack-path diagram (initial access → lateral movement → impact) embedded in the incident note.
 
-**Output:** `Incidents/Active/YYYY-MM-DD-name.md` + lane-appropriate drafts.
+**Output:** `Incidents/Active/YYYY-MM-DD-name.md` + lane-appropriate drafts + attack-path diagram (Active and Burning Building lanes).
 
 > This is the only skill that can send non-draft Teams messages. Build it last for that reason.
 
@@ -195,10 +196,10 @@ CVE → Defender software inventory (who's exposed) → NinjaOne patch state →
 **Say:** "Tell me everything about [server/user/device]" · "Asset report for X"
 
 Routes by asset type:
-- **Server or workstation:** NinjaOne (hardware, services, patches, backups), Wazuh (alerts, FIM), Defender (device profile, CVEs), Azure (if cloud VM)
+- **Server or workstation:** NinjaOne (hardware, services, patches, backups), Wazuh (alerts, FIM), Defender (device profile, CVEs), Azure (if cloud VM) — produces an Excalidraw diagram of the asset's network position: VLAN, adjacent devices, and active firewall rules
 - **User:** Entra sign-in history, MFA status, role and group memberships, CA policies, related Defender alerts
 
-**Output:** `Assets/[name].md` — persistent note, updated each time you investigate the same asset.
+**Output:** `Assets/[name].md` — persistent note, updated each time you investigate the same asset. Network diagram saved to `Diagrams/Assets/[name].excalidraw` and embedded.
 
 ---
 
@@ -225,16 +226,16 @@ Pulls pending patches from NinjaOne across all managed devices. Checks each CVE 
 #### Change Record
 **Say:** "About to make a change" · "Document this rollout" · "Change record for X"
 
-Captures scope, risk classification, test plan, rollback procedure, comms plan, and schedule.
+Captures scope, risk classification, test plan, rollback procedure, comms plan, and schedule. Produces an Excalidraw impact-scope diagram: what's changing, what depends on it, and what's out of scope.
 
-**Output:** Obsidian change note + Confluence draft + Planner card + Teams notification drafts — all staged for your review.
+**Output:** Obsidian change note + impact diagram (`Diagrams/Changes/CHG-YYYY-NNN.excalidraw`) + Confluence draft + Planner card + Teams notification drafts — all staged for your review.
 
 ---
 
 #### Project Creator
 **Say:** large task that needs decomposing · "Turn this into a project"
 
-Breaks input into a scope statement, deliverables, WBS, dependencies, and effort estimate. Pulls context from Confluence and Obsidian. Small projects (≤8 items) → single Planner card with checklist. Larger → full Planner plan with buckets and dates + Confluence project page.
+Breaks input into a scope statement, deliverables, WBS, dependencies, and effort estimate. Pulls context from Confluence and Obsidian. Small projects (≤8 items) → single Planner card with checklist. Larger → full Planner plan with buckets and dates + Confluence project page + Excalidraw WBS diagram (`Diagrams/Projects/[name].excalidraw`) embedded in the project note.
 
 ---
 
@@ -311,6 +312,11 @@ SVH OpsMan/
 │   ├── Access/
 │   └── Patches/
 ├── Vulnerabilities/
+├── Diagrams/              ← Excalidraw drawings (.excalidraw); embed with ![[file.excalidraw]]
+│   ├── Assets/            ← network position diagrams per asset
+│   ├── Changes/           ← impact-scope diagrams per change record
+│   ├── Incidents/         ← attack-path diagrams per incident
+│   └── Projects/          ← WBS diagrams per project
 └── References/            ← reference docs from this repo
 ```
 
@@ -448,6 +454,9 @@ claude mcp add bitwarden \
 
 claude mcp add time \
   -- npx -y @modelcontextprotocol/server-time
+
+claude mcp add excalidraw \
+  -- npx -y mcp-excalidraw    # verify current package name at npmjs.com/package/mcp-excalidraw
 ```
 
 **Claude Desktop** (`claude_desktop_config.json`):
@@ -491,6 +500,10 @@ claude mcp add time \
     "time": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-time"]
+    },
+    "excalidraw": {
+      "command": "npx",
+      "args": ["-y", "mcp-excalidraw"]
     }
   }
 }
