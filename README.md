@@ -319,26 +319,28 @@ priority: this-week       # emergency / this-week / next-cycle / accept
 
 ### System requirements
 
-The MCP server is a lightweight Node.js process — it just proxies API calls, so it needs almost nothing in terms of compute.
+The server currently runs in **WSL** on your workstation. When the time comes to move it to a dedicated Linux VM, the requirements are the same — the server is a lightweight Node.js process that just proxies API calls.
 
-| Resource | Minimum | Recommended |
-|----------|---------|-------------|
-| CPU | 1 vCPU | 2 vCPU |
-| RAM | 512 MB | 1 GB |
-| Disk | 5 GB | 10 GB |
-| OS | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS |
+| Resource | WSL (current) | Dedicated VM (future) |
+|----------|--------------|----------------------|
+| CPU | Shared with host | 1–2 vCPU |
+| RAM | ~512 MB for the process | 1 GB total |
+| Disk | ~500 MB for app + deps | 10 GB for OS + app |
+| OS | WSL 2 (Ubuntu 22.04) | Ubuntu 22.04 LTS |
 | Node.js | 18+ | 20 LTS |
 
-**Network:** Outbound HTTPS only. No inbound ports needed — the server communicates with Claude over stdio. Needs access to:
+The MCP server communicates with Claude over **stdio** — it must run on the same machine as Claude (or the machine you're SSH'd into when using Claude Code remotely). No inbound ports are needed.
+
+**Outbound HTTPS access required to:**
 - `graph.microsoft.com`, `login.microsoftonline.com`
 - `management.azure.com`
 - `api.securitycenter.microsoft.com`
 - `app.ninjarmm.com`
 - Your UniFi controller URL
 - Your Wazuh manager URL
-- `vault.bitwarden.com` (if using BW CLI for credentials)
+- `vault.bitwarden.com` (Bitwarden CLI credential sync)
 
-**Optional but useful:** `bw` (Bitwarden CLI), `jq`, `curl`
+**Also needs:** `bw` (Bitwarden CLI), Node.js 18+
 
 ---
 

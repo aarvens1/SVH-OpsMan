@@ -51,17 +51,6 @@ export function unifiCloudClient(): AxiosInstance {
   });
 }
 
-export function todoistClient(): AxiosInstance {
-  return axios.create({
-    baseURL: "https://api.todoist.com/rest/v2",
-    timeout: DEFAULT_TIMEOUT_MS,
-    headers: {
-      Authorization: `Bearer ${process.env["TODOIST_API_TOKEN"] ?? ""}`,
-      "Content-Type": "application/json",
-    },
-  });
-}
-
 export function armClient(token: string): AxiosInstance {
   return axios.create({
     baseURL: "https://management.azure.com",
