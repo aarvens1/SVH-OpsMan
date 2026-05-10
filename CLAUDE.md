@@ -29,7 +29,7 @@ references/           ← triage and troubleshooting reference docs
 - **No task deletion.** Mark Planner tasks complete at 100% instead. `planner_delete_task` does not exist.
 - **No space/plan destruction.** No Confluence space creation or deletion, no Planner plan deletion.
 - **Read-only defaults.** Most tools are read-only. Write-capable tools: Mail (send, draft), Teams (send message), Planner (create/update tasks), To Do (create/update), OneDrive (create folder, generate link), Confluence (create/update pages and comments), Entra (dismiss risky user), Obsidian (read/write notes), Excalidraw (create/update diagrams).
-- **Diagrams before descriptions.** For network topology, attack paths, asset network position, change impact scope, and project WBS — produce an Excalidraw diagram rather than a prose description when the information is inherently spatial or relational. Save to `Obsidian/Diagrams/<category>/` and embed in the parent note with `![[filename.excalidraw]]`.
+- **Diagrams before descriptions.** For network topology, attack paths, asset network position, change impact scope, and project WBS — produce an Excalidraw diagram rather than a prose description when the information is inherently spatial or relational. Save to `Diagrams/<category>/` (relative to the vault root) and embed in the parent note with `![[filename.excalidraw]]`.
 
 ## Work week
 

@@ -135,6 +135,8 @@ Wazuh first for broad correlation, NinjaOne for anything Wazuh missed, then targ
 
 UniFi Cloud → UniFi Network Controller (VLANs, firewall, switch ports) → Wazuh (IDS/IPS, dropped packets, gateway events) → NinjaOne (affected endpoints) → Desktop Commander (ping, traceroute, port checks). Produces a ranked diagnostic brief and an Excalidraw topology diagram scoped to the affected path — VLANs, segments, and key devices — embedded in the note.
 
+**Diagram:** `Diagrams/Network/[site]-YYYY-MM-DD.excalidraw`
+
 ---
 
 #### Mailflow Investigation
@@ -157,7 +159,7 @@ Runs a triage gate first to classify the situation:
 
 Enrichment: IOC → Defender → Entra sign-in/audit logs → NinjaOne endpoint state → incident brief. For Burning Building and Active Investigation lanes, also produces an Excalidraw attack-path diagram (initial access → lateral movement → impact) embedded in the incident note.
 
-**Output:** `Incidents/Active/YYYY-MM-DD-name.md` + lane-appropriate drafts + attack-path diagram (Active and Burning Building lanes).
+**Output:** `Incidents/Active/YYYY-MM-DD-name.md` + lane-appropriate drafts + `Diagrams/Incidents/INC-YYYY-NNN.excalidraw` (Active and Burning Building lanes).
 
 > This is the only skill that can send non-draft Teams messages. Build it last for that reason.
 
@@ -316,6 +318,7 @@ SVH OpsMan/
 │   ├── Assets/            ← network position diagrams per asset
 │   ├── Changes/           ← impact-scope diagrams per change record
 │   ├── Incidents/         ← attack-path diagrams per incident
+│   ├── Network/           ← topology diagrams from Network Troubleshooter
 │   └── Projects/          ← WBS diagrams per project
 └── References/            ← reference docs from this repo
 ```

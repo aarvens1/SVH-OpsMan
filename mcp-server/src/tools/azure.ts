@@ -25,10 +25,12 @@ function resourceName(id: string | undefined): string | null {
 }
 
 function powerState(statuses: Array<{ code?: string; displayStatus?: string }>): string {
-  return (
-    statuses.find((s) => s.code?.startsWith("PowerState/"))?.displayStatus ?? "Unknown"
-  );
+  return statuses.find((s) => s.code?.startsWith("PowerState/"))?.displayStatus ?? "Unknown";
 }
+
+// ARM API responses have no SDK types; alias avoids per-line eslint suppressions.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type A = Record<string, any>;
 
 // Read-only. Service principal needs: Reader + Cost Management Reader at subscription scope.
 
@@ -56,8 +58,7 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
           `/subscriptions/${sub()}/resourcegroups`,
           { params }
         );
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const groups = (res.data.value ?? []).map((g: any) => ({
+        const groups = (res.data.value ?? []).map((g: A) => ({
           name: g.name,
           location: g.location,
           provisioning_state: g.properties?.provisioningState,
@@ -93,8 +94,7 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
         const res = await armClient(token).get(path, {
           params: { "api-version": "2024-03-01", $expand: "instanceView" },
         });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const vms = (res.data.value ?? []).map((vm: any) => ({
+        const vms = (res.data.value ?? []).map((vm: A) => ({
           name: vm.name,
           location: vm.location,
           resource_group: vm.id?.split("/")[4] ?? null,
@@ -128,9 +128,8 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
           `/subscriptions/${sub()}/resourceGroups/${resource_group}/providers/Microsoft.Compute/virtualMachines/${vm_name}`,
           { params: { "api-version": "2024-03-01", $expand: "instanceView" } }
         );
-        const vm = res.data;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const nics = (vm.properties?.networkProfile?.networkInterfaces ?? []).map((n: any) =>
+        const vm: A = res.data;
+        const nics = (vm.properties?.networkProfile?.networkInterfaces ?? []).map((n: A) =>
           resourceName(n.id)
         );
         return ok({
@@ -174,8 +173,7 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
         const res = await armClient(token).get(path, {
           params: { "api-version": "2023-01-01" },
         });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const accounts = (res.data.value ?? []).map((a: any) => ({
+        const accounts = (res.data.value ?? []).map((a: A) => ({
           name: a.name,
           location: a.location,
           resource_group: a.id?.split("/")[4] ?? null,
@@ -217,8 +215,7 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
         const res = await armClient(token).get(path, {
           params: { "api-version": "2023-12-01" },
         });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const apps = (res.data.value ?? []).map((app: any) => ({
+        const apps = (res.data.value ?? []).map((app: A) => ({
           name: app.name,
           location: app.location,
           resource_group: app.id?.split("/")[4] ?? null,
@@ -261,20 +258,20 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
         const res = await armClient(token).get(path, {
           params: { "api-version": "2024-01-01" },
         });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const vnets = (res.data.value ?? []).map((v: any) => ({
+        const vnets = (res.data.value ?? []).map((v: A) => ({
           name: v.name,
           location: v.location,
           resource_group: v.id?.split("/")[4] ?? null,
           address_space: v.properties?.addressSpace?.addressPrefixes ?? [],
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          subnets: (v.properties?.subnets ?? []).map((s: any) => ({
+          subnets: (v.properties?.subnets ?? []).map((s: A) => ({
             name: s.name,
-            cidr: s.properties?.addressPrefix ?? null,
+            // addressPrefixes (array) supersedes addressPrefix (string) for multi-CIDR subnets
+            cidrs: s.properties?.addressPrefixes ?? (
+              s.properties?.addressPrefix != null ? [s.properties.addressPrefix] : []
+            ),
             nsg: resourceName(s.properties?.networkSecurityGroup?.id),
           })),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          peerings: (v.properties?.virtualNetworkPeerings ?? []).map((p: any) => p.name),
+          peerings: (v.properties?.virtualNetworkPeerings ?? []).map((p: A) => p.name),
           tags: v.tags ?? {},
         }));
         return ok(vnets);
@@ -307,24 +304,23 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
         const res = await armClient(token).get(path, {
           params: { "api-version": "2024-01-01" },
         });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const nsgs = (res.data.value ?? []).map((nsg: any) => ({
+        const nsgs = (res.data.value ?? []).map((nsg: A) => ({
           name: nsg.name,
           location: nsg.location,
           resource_group: nsg.id?.split("/")[4] ?? null,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          rules: (nsg.properties?.securityRules ?? []).map((r: any) => ({
-            name: r.name,
-            priority: r.properties?.priority,
-            direction: r.properties?.direction,
-            access: r.properties?.access,
-            protocol: r.properties?.protocol,
-            source: r.properties?.sourceAddressPrefix,
-            source_port: r.properties?.sourcePortRange,
-            destination: r.properties?.destinationAddressPrefix,
-            destination_port: r.properties?.destinationPortRange,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          })).sort((a: any, b: any) => a.priority - b.priority),
+          rules: (nsg.properties?.securityRules ?? [])
+            .map((r: A) => ({
+              name: r.name,
+              priority: r.properties?.priority,
+              direction: r.properties?.direction,
+              access: r.properties?.access,
+              protocol: r.properties?.protocol,
+              source: r.properties?.sourceAddressPrefix,
+              source_port: r.properties?.sourcePortRange,
+              destination: r.properties?.destinationAddressPrefix,
+              destination_port: r.properties?.destinationPortRange,
+            }))
+            .sort((a: A, b: A) => a.priority - b.priority),
           tags: nsg.tags ?? {},
         }));
         return ok(nsgs);
@@ -363,8 +359,7 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
         const token = await getArmToken();
         const filters: string[] = [`eventTimestamp ge '${start_time}'`];
         if (end_time) filters.push(`eventTimestamp le '${end_time}'`);
-        if (resource_group)
-          filters.push(`resourceGroupName eq '${resource_group}'`);
+        if (resource_group) filters.push(`resourceGroupName eq '${resource_group}'`);
         if (caller) filters.push(`caller eq '${caller}'`);
         if (status) filters.push(`status eq '${status}'`);
 
@@ -378,8 +373,7 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
             },
           }
         );
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const events = (res.data.value ?? []).map((e: any) => ({
+        const events = (res.data.value ?? []).map((e: A) => ({
           timestamp: e.eventTimestamp,
           level: e.level,
           operation: e.operationName?.localizedValue ?? e.operationName?.value ?? null,
@@ -423,9 +417,7 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
           timeframe: period === "BillingMonth" || period === "Month" ? period : "Custom",
           dataset: {
             granularity: "None",
-            aggregation: {
-              totalCost: { name: "Cost", function: "Sum" },
-            },
+            aggregation: { totalCost: { name: "Cost", function: "Sum" } },
             grouping: [{ type: "Dimension", name: group_by }],
           },
         };
@@ -434,11 +426,9 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
           payload,
           { params: { "api-version": "2023-11-01" } }
         );
-        const props = res.data?.properties;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const columns: string[] = (props?.columns ?? []).map((c: any) => c.name as string);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const rows = (props?.rows ?? []).map((row: any[]) => {
+        const props: A = res.data?.properties;
+        const columns: string[] = (props?.columns ?? []).map((c: A) => c.name as string);
+        const rows = (props?.rows ?? []).map((row: unknown[]) => {
           const obj: Record<string, unknown> = {};
           columns.forEach((col, i) => { obj[col] = row[i]; });
           return obj;
@@ -472,8 +462,7 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
           `/subscriptions/${sub()}/providers/Microsoft.Advisor/recommendations`,
           { params }
         );
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const recs = (res.data.value ?? []).map((r: any) => ({
+        const recs = (res.data.value ?? []).map((r: A) => ({
           category: r.properties?.category ?? null,
           impact: r.properties?.impact ?? null,
           problem: r.properties?.shortDescription?.problem ?? null,
