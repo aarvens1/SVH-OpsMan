@@ -40,11 +40,10 @@ Confirmed malicious or suspicious activity, but contained or not clearly in moti
 Suspicious, but likely benign or too vague to act on without more data.
 
 **Criteria (default lane if Burning Building and Active Investigation don't apply):**
-- Single failed sign-in from unfamiliar IP
+- Single failed sign-in from unfamiliar IP with no follow-on activity
 - Low-EPSS CVE (< 0.05) with no KEV hit on an internal-only system
 - Unusual process seen in Wazuh at level 6–8 with no corroborating signals
-- VirusTotal detection ratio < 3/70
-- AbuseIPDB confidence score < 25
+- Defender alert at severity Informational or Low on an isolated, non-critical host
 
 **Action:** Enrichment only. No notifications. Add summary note to Planner if relevant.
 

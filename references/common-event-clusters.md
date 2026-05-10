@@ -91,7 +91,7 @@ Key signals:
 
 ## UniFi Syslog Patterns (via Wazuh)
 
-Requires UniFi syslog forwarding to Wazuh (see `setup-winrm.md` for UniFi syslog config).
+Requires UniFi syslog forwarding to Wazuh. Configure in UniFi Network Controller → Settings → System → Logging → Remote Syslog, pointing to your Wazuh manager IP on UDP 514.
 
 | Pattern | Signal |
 |---------|--------|
