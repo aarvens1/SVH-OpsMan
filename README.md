@@ -28,7 +28,7 @@ You ──► Claude
                                             Bitwarden, Time
 ```
 
-**Obsidian is the staging layer.** Every output — briefings, incident notes, change records, meeting notes — goes to Obsidian first. You review, edit, and decide what to push to Teams, Confluence, Planner, or Mail. Nothing leaves without your sign-off.
+**Obsidian is home base.** Briefings, incident notes, change records, meeting notes — anything Claude produces lives in Obsidian. Claude never sends to Teams, Mail, or Planner without you explicitly asking it to.
 
 **Human-initiated only.** Nothing runs on a schedule. Skills are prompt patterns you trigger — Claude doesn't act autonomously.
 
@@ -59,7 +59,7 @@ You ──► Claude
 | **Wazuh** 🔒 | SIEM alerts, agent inventory, FIM events, vulnerability detections, rootcheck |
 | **PrinterLogic** 🔒 | Printers, drivers, deployment profiles, audit logs, print quotas |
 | **Confluence** | Search and read content, edit pages, manage comments |
-| **Obsidian** | Read and write notes — **primary staging area for all Claude output** |
+| **Obsidian** | Read and write notes — **home base for everything Claude produces** |
 | **GitHub** | Repos, issues, PRs, Actions workflows |
 | **Fathom** | Fetch meeting transcripts and summaries from recorded calls |
 | **Firecrawl** | Web search, fetch URLs as Markdown, structured extraction |
@@ -73,7 +73,7 @@ You ──► Claude
 
 ## Skills
 
-Prompt patterns you trigger by name or by describing what you need. All output lands in Obsidian first.
+Prompt patterns you trigger by name or by describing what you need. Output goes to Obsidian. Nothing gets sent anywhere without you explicitly asking.
 
 ### Daily rhythm
 
@@ -82,7 +82,7 @@ Prompt patterns you trigger by name or by describing what you need. All output l
 
 Covers the last 24 hours. Pulls from every monitoring system and your task and calendar stack, then produces a single prioritized digest: what needs attention now, today's agenda, open tasks, and anything worth watching. Suggested Planner updates and reply drafts are included for your review — nothing changes without your say-so.
 
-**Output:** `01 Briefings/Daily/YYYY-MM-DD.md`
+**Output:** `Briefings/Daily/YYYY-MM-DD.md`
 
 ---
 
@@ -100,7 +100,7 @@ Covers the last 12 hours. What got done, what's still open, anything that needs 
 
 Last week's loose ends plus this week's load: what closed, open threads, upcoming calendar and tasks, anything stale that needs a nudge, and a suggested first move.
 
-**Output:** `01 Briefings/Weekly/YYYY-WW.md`
+**Output:** `Briefings/Weekly/YYYY-WW.md`
 
 ---
 
@@ -156,7 +156,7 @@ Runs a triage gate first to classify the situation:
 
 Enrichment: IOC → Defender → Entra sign-in/audit logs → NinjaOne endpoint state → incident brief.
 
-**Output:** `02 Incidents/Active/YYYY-MM-DD-name.md` + lane-appropriate drafts.
+**Output:** `Incidents/Active/YYYY-MM-DD-name.md` + lane-appropriate drafts.
 
 > This is the only skill that can send non-draft Teams messages. Build it last for that reason.
 
@@ -198,7 +198,7 @@ Routes by asset type:
 - **Server or workstation:** NinjaOne (hardware, services, patches, backups), Wazuh (alerts, FIM), Defender (device profile, CVEs), Azure (if cloud VM)
 - **User:** Entra sign-in history, MFA status, role and group memberships, CA policies, related Defender alerts
 
-**Output:** `06 Assets/[name].md` — persistent note, updated each time you investigate the same asset.
+**Output:** `Assets/[name].md` — persistent note, updated each time you investigate the same asset.
 
 ---
 
@@ -245,34 +245,32 @@ Breaks input into a scope statement, deliverables, WBS, dependencies, and effort
 
 **After a recorded call:** Fetches the Fathom transcript and summary, extracts decisions, action items, and key points, and structures them into an Obsidian note. Action items get suggested as Planner or To Do tasks for your review.
 
-**Output:** `05 Meetings/YYYY-MM-DD-name.md`
+**Output:** `Meetings/YYYY-MM-DD-name.md`
 
 ---
 
 ## Obsidian vault structure
 
-All Claude output lands in `00 Inbox/` first. You promote it to the right folder — Claude won't write directly into deeper folders unless you specify the path.
+Claude writes directly to the relevant folder. Nothing gets sent outside Obsidian unless you say so.
 
 ```
 SVH OpsMan/
-├── 00 Inbox/              ← everything lands here first
-├── 01 Briefings/
+├── Briefings/
 │   ├── Daily/             ← Day Starter / Day Ender
 │   └── Weekly/            ← Week Starter / Week Ender
-├── 02 Incidents/
+├── Incidents/
 │   ├── Active/
 │   └── Archive/
-├── 03 Investigations/
-├── 04 Changes/
-├── 05 Meetings/
-├── 06 Assets/             ← persistent, updated on each investigation
-├── 07 Projects/
-├── 08 Reviews/
+├── Investigations/
+├── Changes/
+├── Meetings/
+├── Assets/                ← persistent, updated on each investigation
+├── Projects/
+├── Reviews/
 │   ├── Access/
 │   └── Patches/
-├── 09 Vulnerabilities/
-├── 10 Reports/
-└── 98 References/         ← reference docs from this repo
+├── Vulnerabilities/
+└── References/            ← reference docs from this repo
 ```
 
 ### Frontmatter
