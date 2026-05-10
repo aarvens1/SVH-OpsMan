@@ -290,30 +290,6 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
     }
   );
 
-  server.registerTool(
-    "planner_delete_task",
-    {
-      description:
-        "Delete a Planner task. Requires the etag from planner_get_task (@odata.etag field).",
-      inputSchema: z.object({
-        task_id: z.string().describe("The Planner task ID"),
-        etag: z.string().describe("The @odata.etag value from the task"),
-      }),
-    },
-    async ({ task_id, etag }) => {
-      if (!enabled) return disabled();
-      try {
-        const token = await getGraphToken(GRAPH_SCOPE);
-        await graphClient(token).delete(`/planner/tasks/${task_id}`, {
-          headers: { "If-Match": etag },
-        });
-        return ok({ success: true, deleted_task_id: task_id });
-      } catch (e) {
-        return err(e);
-      }
-    }
-  );
-
   // ── Task Details (notes + checklist) ───────────────────────────────────────
 
   server.registerTool(
