@@ -39,6 +39,6 @@ Append a **Week Ender** section to `Briefings/Weekly/YYYY-WW.md` (or create if i
 ### 📝 Summary draft (optional)
 ```
 
-The **summary draft** (for a manager or team update) goes at the bottom, clearly labelled as a draft, if the user asks for one. Nothing gets sent without explicit instruction.
+The **summary draft** (for a manager or team update) goes at the bottom, clearly labelled as a draft, if the user asks for one. Draft it in Aaron's voice following the `aaron-voice` rules — use the register matrix to pick the right tone (internal leadership vs. cross-functional group), pick the right opener/closer from the tables, and run the self-check before presenting. Nothing gets sent without explicit instruction.
 
 Optionally stage as a Confluence draft if the user asks.
