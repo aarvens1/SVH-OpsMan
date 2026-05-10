@@ -40,28 +40,28 @@ You ──► Claude
 
 | System | What Claude can do |
 |--------|--------------------|
-| **Microsoft Planner** | Manage plans, tasks, assignments, and due dates |
-| **Microsoft To Do** | Manage task lists and checklist items |
-| **Entra ID** | Audit users, MFA, app registrations, roles, CA policies, sign-in and audit logs; dismiss risky users |
-| **OneDrive** | Browse files, search, create folders, generate sharing links |
-| **SharePoint Sites** 🔒 | Browse sites, lists, pages, and permissions |
-| **Teams** | Read messages, send messages, manage channels and members |
 | **Outlook Mail** | Search and read messages, send, draft, organize folders |
 | **Outlook Calendar** | View and manage events, check availability, find meeting times, book rooms |
+| **Teams** | Read messages, send messages, manage channels and members |
+| **Microsoft Planner** | Manage plans, tasks, assignments, and due dates — no task deletion (complete at 100% instead) |
+| **Microsoft To Do** | Manage task lists and checklist items |
+| **OneDrive** | Browse files, search, create folders, generate sharing links |
+| **SharePoint Sites** 🔒 | Browse sites, lists, pages, and permissions |
 | **Exchange Admin** 🔒 | View mailbox settings, accepted domains, distribution groups; run message trace |
+| **Entra ID** | Audit users, MFA, app registrations, roles, CA policies, sign-in and audit logs; dismiss risky users |
 | **Intune** 🔒 | Device compliance, configuration profiles, deployed apps |
 | **MS Admin** 🔒 | M365 service health, active incidents, Message Center, license subscriptions |
 | **Defender for Endpoint** 🔒 | Devices, alerts, incidents, software inventory, CVEs, TVM recommendations |
 | **Azure** 🔒 | Resource groups, VMs, storage, app services, VNets, NSGs, activity logs, costs, Advisor |
 | **NinjaOne RMM** 🔒 | Servers and workstations — services, patches, event logs, backups, alerts |
+| **Wazuh** 🔒 | SIEM alerts, agent inventory, FIM events, vulnerability detections, rootcheck |
 | **UniFi Cloud** 🔒 | Sites and devices across all locations |
 | **UniFi Network** 🔒 | VLANs, WLANs, firewall rules, switch ports, connected clients |
-| **Wazuh** 🔒 | SIEM alerts, agent inventory, FIM events, vulnerability detections, rootcheck |
 | **PrinterLogic** 🔒 | Printers, drivers, deployment profiles, audit logs, print quotas |
 | **Confluence** | Search and read content, edit pages, manage comments |
 | **Obsidian** | Read and write notes — **home base for everything Claude produces** |
-| **GitHub** | Repos, issues, PRs, Actions workflows |
 | **Fathom** | Fetch meeting transcripts and summaries from recorded calls |
+| **GitHub** | Repos, issues, PRs, Actions workflows |
 | **Firecrawl** | Web search, fetch URLs as Markdown, structured extraction |
 | **Desktop Commander** | Run shell commands on the MCP host |
 | **Bitwarden** 🔒 | Retrieve credentials; also loads MCP server credentials at startup |
