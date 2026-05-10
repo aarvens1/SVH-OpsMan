@@ -251,7 +251,7 @@ Breaks input into a scope statement, deliverables, WBS, dependencies, and effort
 
 ## Obsidian vault structure
 
-All Claude output stages in `00 Inbox/` first. You promote it to the right folder — Claude won't write directly into deeper folders unless you give it the path.
+All Claude output lands in `00 Inbox/` first. You promote it to the right folder — Claude won't write directly into deeper folders unless you specify the path.
 
 ```
 SVH OpsMan/
@@ -340,7 +340,7 @@ The MCP server communicates with Claude over **stdio** — it must run on the sa
 - Your Wazuh manager URL
 - `vault.bitwarden.com` (Bitwarden CLI credential sync)
 
-**Also needs:** `bw` (Bitwarden CLI), Node.js 18+
+**Software dependencies:** Node.js 18+, `bw` (Bitwarden CLI)
 
 ---
 
@@ -537,7 +537,7 @@ az role assignment create --assignee <client-id> \
 
 ## Reference documents
 
-`references/` — Claude reads these automatically during the relevant skills.
+`references/` — supporting content Claude uses when running the relevant skills.
 
 | File | Used by |
 |------|---------|
@@ -552,17 +552,17 @@ az role assignment create --assignee <client-id> \
 
 ## Build order
 
-Start read-only, validate each layer, then layer in write-side skills.
+Start read-only, validate each integration, then add write-side skills one at a time.
 
-| Phase | Skills | Validates |
-|-------|--------|-----------|
-| 1 | Day Starter, Day Ender | All monitoring sources + Obsidian writes |
-| 2 | Week Starter, Week Ender | Weekly cadence |
-| 3 | Troubleshooting, Event Log Triage | NinjaOne + Wazuh + Desktop Commander |
-| 4 | Network Troubleshooter | After UniFi syslog → Wazuh is wired up |
-| 5 | Security Posture, Asset Investigation, Vuln Triage | Read-only health checks |
+| Phase | Skills | Notes |
+|-------|--------|-------|
+| 1 | Day Starter, Day Ender | Validates all monitoring sources + Obsidian writes |
+| 2 | Week Starter, Week Ender | Validates the weekly cadence |
+| 3 | Troubleshooting, Event Log Triage | Validates NinjaOne + Wazuh + Desktop Commander |
+| 4 | Network Troubleshooter | Needs UniFi syslog → Wazuh forwarding configured first |
+| 5 | Security Posture, Asset Investigation, Vuln Triage | Read-only, safe any time after phase 3 |
 | 6 | Patch Campaign, Change Record, Project Creator | Low write risk |
-| 7 | Meeting Prep & Notes | After Fathom is connected |
-| 8 | Access Review | Entra read permissions confirmed |
-| 9 | Mailflow Investigation | Exchange Admin credentials confirmed |
-| 10 | IR Triage | **Last** — only skill with non-draft Teams messages |
+| 7 | Meeting Prep & Notes | Needs Fathom MCP connected |
+| 8 | Access Review | Needs Entra read permissions confirmed |
+| 9 | Mailflow Investigation | Needs Exchange Admin credentials |
+| 10 | IR Triage | **Last** — only skill that sends non-draft Teams messages |
