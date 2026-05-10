@@ -20,6 +20,16 @@ function sub(): string {
   return process.env["AZURE_SUBSCRIPTION_ID"] ?? "";
 }
 
+function resourceName(id: string | undefined): string | null {
+  return id ? (id.split("/").pop() ?? null) : null;
+}
+
+function powerState(statuses: Array<{ code?: string; displayStatus?: string }>): string {
+  return (
+    statuses.find((s) => s.code?.startsWith("PowerState/"))?.displayStatus ?? "Unknown"
+  );
+}
+
 // Read-only. Service principal needs: Reader + Cost Management Reader at subscription scope.
 
 export function registerAzureTools(server: McpServer, enabled: boolean): void {
@@ -46,7 +56,14 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
           `/subscriptions/${sub()}/resourcegroups`,
           { params }
         );
-        return ok(res.data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const groups = (res.data.value ?? []).map((g: any) => ({
+          name: g.name,
+          location: g.location,
+          provisioning_state: g.properties?.provisioningState,
+          tags: g.tags ?? {},
+        }));
+        return ok(groups);
       } catch (e) {
         return err(e);
       }
@@ -58,7 +75,7 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
     {
       description:
         "List virtual machines across the subscription or within a resource group. " +
-        "Returns VM name, size, OS, status, and location.",
+        "Returns VM name, size, OS, power state, and location.",
       inputSchema: z.object({
         resource_group: z
           .string()
@@ -76,7 +93,18 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
         const res = await armClient(token).get(path, {
           params: { "api-version": "2024-03-01", $expand: "instanceView" },
         });
-        return ok(res.data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const vms = (res.data.value ?? []).map((vm: any) => ({
+          name: vm.name,
+          location: vm.location,
+          resource_group: vm.id?.split("/")[4] ?? null,
+          size: vm.properties?.hardwareProfile?.vmSize ?? null,
+          os_type: vm.properties?.storageProfile?.osDisk?.osType ?? null,
+          power_state: powerState(vm.properties?.instanceView?.statuses ?? []),
+          provisioning_state: vm.properties?.provisioningState ?? null,
+          tags: vm.tags ?? {},
+        }));
+        return ok(vms);
       } catch (e) {
         return err(e);
       }
@@ -100,7 +128,23 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
           `/subscriptions/${sub()}/resourceGroups/${resource_group}/providers/Microsoft.Compute/virtualMachines/${vm_name}`,
           { params: { "api-version": "2024-03-01", $expand: "instanceView" } }
         );
-        return ok(res.data);
+        const vm = res.data;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const nics = (vm.properties?.networkProfile?.networkInterfaces ?? []).map((n: any) =>
+          resourceName(n.id)
+        );
+        return ok({
+          name: vm.name,
+          location: vm.location,
+          resource_group: vm.id?.split("/")[4] ?? null,
+          size: vm.properties?.hardwareProfile?.vmSize ?? null,
+          os_type: vm.properties?.storageProfile?.osDisk?.osType ?? null,
+          os_disk: vm.properties?.storageProfile?.osDisk?.name ?? null,
+          power_state: powerState(vm.properties?.instanceView?.statuses ?? []),
+          provisioning_state: vm.properties?.provisioningState ?? null,
+          network_interfaces: nics,
+          tags: vm.tags ?? {},
+        });
       } catch (e) {
         return err(e);
       }
@@ -130,7 +174,20 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
         const res = await armClient(token).get(path, {
           params: { "api-version": "2023-01-01" },
         });
-        return ok(res.data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const accounts = (res.data.value ?? []).map((a: any) => ({
+          name: a.name,
+          location: a.location,
+          resource_group: a.id?.split("/")[4] ?? null,
+          sku: a.sku?.name ?? null,
+          kind: a.kind ?? null,
+          blob_endpoint: a.properties?.primaryEndpoints?.blob ?? null,
+          https_only: a.properties?.supportsHttpsTrafficOnly ?? null,
+          allow_blob_public_access: a.properties?.allowBlobPublicAccess ?? null,
+          provisioning_state: a.properties?.provisioningState ?? null,
+          tags: a.tags ?? {},
+        }));
+        return ok(accounts);
       } catch (e) {
         return err(e);
       }
@@ -160,7 +217,20 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
         const res = await armClient(token).get(path, {
           params: { "api-version": "2023-12-01" },
         });
-        return ok(res.data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const apps = (res.data.value ?? []).map((app: any) => ({
+          name: app.name,
+          location: app.location,
+          resource_group: app.id?.split("/")[4] ?? null,
+          kind: app.kind ?? null,
+          state: app.properties?.state ?? null,
+          default_hostname: app.properties?.defaultHostName ?? null,
+          https_only: app.properties?.httpsOnly ?? null,
+          app_service_plan: resourceName(app.properties?.serverFarmId),
+          provisioning_state: app.properties?.provisioningState ?? null,
+          tags: app.tags ?? {},
+        }));
+        return ok(apps);
       } catch (e) {
         return err(e);
       }
@@ -191,7 +261,23 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
         const res = await armClient(token).get(path, {
           params: { "api-version": "2024-01-01" },
         });
-        return ok(res.data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const vnets = (res.data.value ?? []).map((v: any) => ({
+          name: v.name,
+          location: v.location,
+          resource_group: v.id?.split("/")[4] ?? null,
+          address_space: v.properties?.addressSpace?.addressPrefixes ?? [],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          subnets: (v.properties?.subnets ?? []).map((s: any) => ({
+            name: s.name,
+            cidr: s.properties?.addressPrefix ?? null,
+            nsg: resourceName(s.properties?.networkSecurityGroup?.id),
+          })),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          peerings: (v.properties?.virtualNetworkPeerings ?? []).map((p: any) => p.name),
+          tags: v.tags ?? {},
+        }));
+        return ok(vnets);
       } catch (e) {
         return err(e);
       }
@@ -221,7 +307,27 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
         const res = await armClient(token).get(path, {
           params: { "api-version": "2024-01-01" },
         });
-        return ok(res.data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const nsgs = (res.data.value ?? []).map((nsg: any) => ({
+          name: nsg.name,
+          location: nsg.location,
+          resource_group: nsg.id?.split("/")[4] ?? null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          rules: (nsg.properties?.securityRules ?? []).map((r: any) => ({
+            name: r.name,
+            priority: r.properties?.priority,
+            direction: r.properties?.direction,
+            access: r.properties?.access,
+            protocol: r.properties?.protocol,
+            source: r.properties?.sourceAddressPrefix,
+            source_port: r.properties?.sourcePortRange,
+            destination: r.properties?.destinationAddressPrefix,
+            destination_port: r.properties?.destinationPortRange,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          })).sort((a: any, b: any) => a.priority - b.priority),
+          tags: nsg.tags ?? {},
+        }));
+        return ok(nsgs);
       } catch (e) {
         return err(e);
       }
@@ -248,7 +354,7 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
           .enum(["Succeeded", "Failed", "Started", "Accepted"])
           .optional()
           .describe("Filter by operation status"),
-        top: z.number().int().default(50),
+        top: z.number().int().default(50).describe("Maximum number of events to return (default 50)"),
       }),
     },
     async ({ start_time, end_time, resource_group, caller, status, top }) => {
@@ -272,7 +378,19 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
             },
           }
         );
-        return ok(res.data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const events = (res.data.value ?? []).map((e: any) => ({
+          timestamp: e.eventTimestamp,
+          level: e.level,
+          operation: e.operationName?.localizedValue ?? e.operationName?.value ?? null,
+          caller: e.caller ?? null,
+          resource_group: e.resourceGroupName ?? null,
+          resource: resourceName(e.resourceId),
+          resource_id: e.resourceId ?? null,
+          status: e.status?.localizedValue ?? e.status?.value ?? null,
+          correlation_id: e.correlationId ?? null,
+        }));
+        return ok(events);
       } catch (e) {
         return err(e);
       }
@@ -316,7 +434,16 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
           payload,
           { params: { "api-version": "2023-11-01" } }
         );
-        return ok(res.data);
+        const props = res.data?.properties;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const columns: string[] = (props?.columns ?? []).map((c: any) => c.name as string);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rows = (props?.rows ?? []).map((row: any[]) => {
+          const obj: Record<string, unknown> = {};
+          columns.forEach((col, i) => { obj[col] = row[i]; });
+          return obj;
+        });
+        return ok({ currency: props?.currency ?? "USD", group_by, rows });
       } catch (e) {
         return err(e);
       }
@@ -345,7 +472,19 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
           `/subscriptions/${sub()}/providers/Microsoft.Advisor/recommendations`,
           { params }
         );
-        return ok(res.data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const recs = (res.data.value ?? []).map((r: any) => ({
+          category: r.properties?.category ?? null,
+          impact: r.properties?.impact ?? null,
+          problem: r.properties?.shortDescription?.problem ?? null,
+          solution: r.properties?.shortDescription?.solution ?? null,
+          resource: resourceName(r.properties?.resourceMetadata?.resourceId),
+          resource_id: r.properties?.resourceMetadata?.resourceId ?? null,
+          impacted_field: r.properties?.impactedField ?? null,
+          impacted_value: r.properties?.impactedValue ?? null,
+          last_updated: r.properties?.lastUpdated ?? null,
+        }));
+        return ok(recs);
       } catch (e) {
         return err(e);
       }
