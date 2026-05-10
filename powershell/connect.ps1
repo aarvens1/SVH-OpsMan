@@ -1,9 +1,14 @@
 # connect.ps1 — SVH credential loader and module bootstrapper
-# Usage: . ./connect.ps1   (dot-source to populate $Global:SVHCreds in the caller's session)
+#
+# Usage: . ./connect.ps1   (dot-source into your session)
 #
 # Credential priority:
-#   1. Bitwarden CLI — if $env:BW_SESSION is set, pulls from the "SVH OpsMan" vault item
-#   2. .env file    — reads KEY=VALUE pairs from powershell/.env (same field names as Bitwarden)
+#   1. Bitwarden CLI — if $env:BW_SESSION is set, pulls from 'SVH OpsMan' vault item
+#   2. .env file    — KEY=VALUE pairs from powershell/.env (same names as Bitwarden fields)
+#
+# After loading, all SVH modules are imported into the global scope.
+# Domain constants ($SVHMailDomain, $SVHOnPremDomain, $SVHOnPremNetBIOS) come from SVH.Core.
+# Use Get-SVHTierUsername to look up the right account for each admin tier.
 
 $ErrorActionPreference = 'Stop'
 
@@ -11,36 +16,35 @@ $VAULT_ITEM  = 'SVH OpsMan'
 $ENV_FILE    = Join-Path $PSScriptRoot '.env'
 $MODULES_DIR = Join-Path $PSScriptRoot 'modules'
 
-function script:Load-FromBitwarden {
+function script:Invoke-BitwardenLoad {
     $session = $env:BW_SESSION
     if (-not $session) { return $false }
 
     try {
-        $raw  = bw get item $VAULT_ITEM --session $session 2>$null
-        $item = $raw | ConvertFrom-Json
+        $raw    = bw get item $VAULT_ITEM --session $session 2>$null
+        $item   = $raw | ConvertFrom-Json
         $fields = $item.fields ?? @()
-        $loaded = 0
+        $count  = 0
         foreach ($f in $fields) {
             if ($f.name -and $f.value -and -not $Global:SVHCreds.ContainsKey($f.name)) {
                 $Global:SVHCreds[$f.name] = $f.value
-                $loaded++
+                $count++
             }
         }
-        Write-Host "[svh] Loaded $loaded credential(s) from Bitwarden." -ForegroundColor Green
+        Write-Host "[svh] Loaded $count credential(s) from Bitwarden." -ForegroundColor Green
         return $true
-    }
-    catch {
-        Write-Warning "[svh] Bitwarden fetch failed: $_"
+    } catch {
+        Write-Warning "[svh] Bitwarden fetch failed: $_ — falling back to .env"
         return $false
     }
 }
 
-function script:Load-FromEnv {
+function script:Invoke-EnvFileLoad {
     if (-not (Test-Path $ENV_FILE)) {
-        Write-Warning "[svh] No .env file found at $ENV_FILE"
+        Write-Warning "[svh] No .env file at $ENV_FILE — some modules may not function."
         return
     }
-    $loaded = 0
+    $count = 0
     foreach ($line in Get-Content $ENV_FILE) {
         $line = $line.Trim()
         if (-not $line -or $line.StartsWith('#')) { continue }
@@ -50,23 +54,37 @@ function script:Load-FromEnv {
         $value = $line.Substring($idx + 1).Trim().Trim('"').Trim("'")
         if ($key -and -not $Global:SVHCreds.ContainsKey($key)) {
             $Global:SVHCreds[$key] = $value
-            $loaded++
+            $count++
         }
     }
-    Write-Host "[svh] Loaded $loaded credential(s) from .env file." -ForegroundColor Cyan
+    Write-Host "[svh] Loaded $count credential(s) from .env file." -ForegroundColor Cyan
 }
 
+# Initialize credential store
 $Global:SVHCreds = @{}
 
-$bwOk = Load-FromBitwarden
-if (-not $bwOk) { Load-FromEnv }
+$bwOk = Invoke-BitwardenLoad
+if (-not $bwOk) { Invoke-EnvFileLoad }
 
-# Import all SVH modules
-foreach ($mod in Get-ChildItem -Path $MODULES_DIR -Filter 'SVH.*.psm1') {
-    Import-Module $mod.FullName -Force -Global
+# Import SVH.Core first — it exports domain constants and shared functions
+# that all other modules depend on.
+$coreMod = Join-Path $MODULES_DIR 'SVH.Core.psm1'
+if (Test-Path $coreMod) {
+    Import-Module $coreMod -Force -Global
+} else {
+    Write-Warning "[svh] SVH.Core.psm1 not found at $coreMod"
 }
 
-$loaded = ($Global:SVHCreds.Keys | Measure-Object).Count
-Write-Host "[svh] Session ready — $loaded credential(s) loaded, $(
-    (Get-Module SVH.* | Measure-Object).Count
-) module(s) imported." -ForegroundColor Green
+# Import remaining modules (alphabetical — Core is already loaded above)
+$imported = 0
+foreach ($mod in Get-ChildItem -Path $MODULES_DIR -Filter 'SVH.*.psm1' |
+         Where-Object { $_.Name -ne 'SVH.Core.psm1' } |
+         Sort-Object Name) {
+    Import-Module $mod.FullName -Force -Global
+    $imported++
+}
+
+$credCount = ($Global:SVHCreds.Keys | Measure-Object).Count
+Write-Host "[svh] Ready — $credCount credential(s), $($imported + 1) module(s) loaded." -ForegroundColor Green
+Write-Host "[svh] Mail: @$SVHMailDomain  |  On-prem: $SVHOnPremDomain ($SVHOnPremNetBIOS)" -ForegroundColor DarkGray
+Write-Host "[svh] Run Get-SVHTierUsername -Tier <standard|server|m365|app|domain> to look up admin accounts." -ForegroundColor DarkGray
