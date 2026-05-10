@@ -1,472 +1,348 @@
 # SVH OpsMan
 
-IT operations AI stack for Claude, running natively in WSL. Ask in plain English — Claude queries and acts on your systems directly.
+Your IT operations assistant, powered by Claude. Ask questions and give instructions in plain English — Claude queries your systems and takes action directly.
 
 ```
 "Day starter."
-"Investigate this alert: suspicious sign-in from 185.220.x.x for jsmith."
-"Is CVE-2024-12345 in CISA KEV and do we have any exposed systems?"
-"Troubleshoot why users at Site B can't get to the file server."
+"Is there anything unusual in Wazuh from last night?"
 "Tell me everything about SVH-SQL01."
-"Help me offboard Alex — last day is Friday."
-"Let's plan this month's patching."
+"Why can't users at Site B reach the file server?"
+"Help me plan this month's patching."
 "Prep me for my 2pm with the network vendor."
+"Pull the notes from my call with Contoso this morning."
+"Check if any Azure NSGs have internet-exposed ports."
 ```
 
 ---
 
 ## How it works
 
-Claude connects to a set of MCP servers, each of which talks to one or more of your systems. When you ask a question, Claude picks the right tools, queries the relevant systems, and synthesizes the answer.
+Claude connects to a custom MCP server (this repo) and a set of external MCPs. When you ask something, Claude picks the right tools, queries the relevant systems, and synthesizes a response.
 
 ```
 You ──► Claude
-              ├── Custom MCP server (this repo) ──► Microsoft 365, Azure, NinjaOne,
-              │                                      UniFi, Wazuh, PrinterLogic,
-              │                                      Threat Intel, Confluence, Todoist
-              └── External MCPs ──► GitHub, Obsidian, Fathom, Firecrawl,
-                                    Desktop Commander, Playwright, Bitwarden,
-                                    Time, Sequential Thinking, Excalidraw
+              ├── Custom MCP (this repo) ──► Microsoft 365, Azure, NinjaOne,
+              │                              UniFi, Wazuh, PrinterLogic, Confluence
+              └── External MCPs ──────────► Obsidian, GitHub, Fathom,
+                                            Firecrawl, Desktop Commander,
+                                            Bitwarden, Time
 ```
 
-**Obsidian is the staging layer.** Every output — briefings, incident reports, change records, meeting notes, decisions — goes to Obsidian first. You review, then choose what to push to Teams, Confluence, Planner, or Mail. Nothing gets sent without your sign-off.
+**Obsidian is the staging layer.** Every output — briefings, incident notes, change records, meeting notes — goes to Obsidian first. You review, edit, and decide what to push to Teams, Confluence, Planner, or Mail. Nothing leaves without your sign-off.
 
-**Human-initiated.** Nothing runs on a schedule or fires autonomously. Claude runs when you ask it to. The skills below are prompt patterns, not automation.
+**Human-initiated only.** Nothing runs on a schedule. Skills are prompt patterns you trigger — Claude doesn't act autonomously.
 
 ---
 
-## MCP inventory
+## What Claude has access to
 
-> **🔒** = read-only. That integration will never create, modify, or delete anything.
+> 🔒 = read-only — Claude cannot create, modify, or delete anything in these systems.
 
-| System | What Claude can do | Source |
-|--------|-------------------|--------|
-| **Microsoft Planner** | Create and update plans, tasks, checklists, assignments, and due dates | Custom |
-| **Microsoft To Do** | Manage task lists and tasks, checklist sub-items | Custom |
-| **Entra ID (Azure AD)** | Audit MFA methods, Conditional Access, app registrations, expiring secrets, role members, risky users, sign-in logs, audit logs; dismiss risky users | Custom |
-| **OneDrive / SharePoint files** | Browse drives and libraries, search, create folders, generate sharing links | Custom |
-| **SharePoint Sites** 🔒 | View sites, lists, list items, pages, site permissions, content types | Custom |
-| **Microsoft Teams** | List teams and channels, read messages, send messages, create channels, add members | Custom |
-| **Outlook Mail** | Search and read messages, send, draft, manage folders | Custom |
-| **Outlook Calendar** | View events, check availability, find meeting times, create/update/delete events, book rooms | Custom |
-| **Exchange Admin** 🔒 | View mailbox configs, accepted domains, distribution groups, auto-reply; run message trace | Custom |
-| **MS Intune** 🔒 | List managed devices, compliance policies, configuration profiles, deployed apps | Custom |
-| **MS Admin** 🔒 | M365 service health, active incidents, Message Center, tenant info, domains, license subscriptions | Custom |
-| **Defender for Endpoint** 🔒 | List devices, software inventory, CVEs per device, incidents, alerts, IOC indicators; TVM recommendations | Custom |
-| **Azure** 🔒 | View resource groups, VMs, storage accounts, app services, VNets, NSGs, activity logs, cost data, Advisor recommendations | Custom |
-| **NinjaOne RMM** 🔒 | View servers and workstations — services, processes, patches, event logs, scripts, alerts, backups; read organizations | Custom |
-| **UniFi Cloud** 🔒 | View sites and devices across all locations | Custom |
-| **UniFi Network Controller** 🔒 | View VLANs, WLANs, firewall rules, switch port profiles and states, devices, connected clients | Custom |
-| **Wazuh** 🔒 | Search SIEM alerts, query agent inventory, FIM findings, rootcheck, vulnerability detections; look up rules and decoders | Custom |
-| **PrinterLogic** 🔒 | Browse printers, drivers, deployment profiles; view deployment status, audit logs, print quotas, usage reports | Custom |
-| **Threat Intel** 🔒 | CVE/EPSS/CISA KEV lookups; IOC enrichment via VirusTotal, Shodan, AbuseIPDB, urlscan, GreyNoise; MITRE ATT&CK mapping | Custom |
-| **Confluence** | Search and browse spaces and pages, read and edit content, manage comments | Custom |
-| **Todoist** | List projects and tasks; create, update, close, and delete tasks | Custom |
-| **Obsidian** | Search vault, read and edit notes, manage tags and frontmatter, append to daily notes — **primary staging area** | External |
-| **GitHub** | Browse repos, search code, manage issues and PRs, read and trigger Actions workflows | External |
-| **Fathom** | Fetch meeting transcripts and summaries from recorded calls | External |
-| **Firecrawl** | Web search, fetch URLs as clean Markdown, crawl sites, structured content extraction | External |
-| **Desktop Commander** | Shell access on the MCP host — run commands, edit files, manage processes | External |
-| **Playwright** | Browser automation — navigate, click, fill forms, screenshot, extract content | External |
-| **Bitwarden** 🔒 | Retrieve vault items and TOTP codes; also used to supply MCP server credentials at startup | External |
-| **Excalidraw** | Generate and edit diagrams, flowcharts, and architecture drawings | External |
-| **Time** | Current time, timezone conversions, date arithmetic | External |
-| **Sequential Thinking** | Structured multi-step reasoning for complex troubleshooting | External |
+| System | What Claude can do |
+|--------|--------------------|
+| **Microsoft Planner** | Manage plans, tasks, assignments, and due dates |
+| **Microsoft To Do** | Manage task lists and checklist items |
+| **Entra ID** | Audit users, MFA, app registrations, roles, CA policies, sign-in and audit logs; dismiss risky users |
+| **OneDrive** | Browse files, search, create folders, generate sharing links |
+| **SharePoint Sites** 🔒 | Browse sites, lists, pages, and permissions |
+| **Teams** | Read messages, send messages, manage channels and members |
+| **Outlook Mail** | Search and read messages, send, draft, organize folders |
+| **Outlook Calendar** | View and manage events, check availability, find meeting times, book rooms |
+| **Exchange Admin** 🔒 | View mailbox settings, accepted domains, distribution groups; run message trace |
+| **Intune** 🔒 | Device compliance, configuration profiles, deployed apps |
+| **MS Admin** 🔒 | M365 service health, active incidents, Message Center, license subscriptions |
+| **Defender for Endpoint** 🔒 | Devices, alerts, incidents, software inventory, CVEs, TVM recommendations |
+| **Azure** 🔒 | Resource groups, VMs, storage, app services, VNets, NSGs, activity logs, costs, Advisor |
+| **NinjaOne RMM** 🔒 | Servers and workstations — services, patches, event logs, backups, alerts |
+| **UniFi Cloud** 🔒 | Sites and devices across all locations |
+| **UniFi Network** 🔒 | VLANs, WLANs, firewall rules, switch ports, connected clients |
+| **Wazuh** 🔒 | SIEM alerts, agent inventory, FIM events, vulnerability detections, rootcheck |
+| **PrinterLogic** 🔒 | Printers, drivers, deployment profiles, audit logs, print quotas |
+| **Confluence** | Search and read content, edit pages, manage comments |
+| **Obsidian** | Read and write notes — **primary staging area for all Claude output** |
+| **GitHub** | Repos, issues, PRs, Actions workflows |
+| **Fathom** | Fetch meeting transcripts and summaries from recorded calls |
+| **Firecrawl** | Web search, fetch URLs as Markdown, structured extraction |
+| **Desktop Commander** | Run shell commands on the MCP host |
+| **Bitwarden** 🔒 | Retrieve credentials; also loads MCP server credentials at startup |
+| **Time** | Current time, timezone conversions, date arithmetic |
 
-> **One app registration covers most of Microsoft.** Planner, To Do, Entra ID, OneDrive, SharePoint, Teams, Outlook, Exchange Admin, Intune, and MS Admin all share a single set of Graph credentials. Defender for Endpoint and Azure each need their own.
+> One app registration covers all Microsoft services except Defender and Azure — those each need their own.
 
 ---
 
 ## Skills
 
-Prompt patterns Claude follows when you trigger them. All output lands in Obsidian first. Nothing gets posted anywhere without your explicit approval.
+Prompt patterns you trigger by name or by describing what you need. All output lands in Obsidian first.
 
-### Situational awareness
+### Daily rhythm
 
----
+#### Day Starter
+**Say:** "Day starter" · "Morning briefing" · "What's on my plate"
 
-#### 1. Day Starter
-**Trigger:** "day starter," "morning briefing," "what's on my plate"
+Covers the last 24 hours. Pulls from every monitoring system and your task and calendar stack, then produces a single prioritized digest: what needs attention now, today's agenda, open tasks, and anything worth watching. Suggested Planner updates and reply drafts are included for your review — nothing changes without your say-so.
 
-Covers the **last 24 hours.** Pulls from every monitoring system and your task/calendar stack, then produces a single digest:
-
-- **Needs Attention Now** — active alerts, risky users, failed backups, service incidents
-- **Today's Agenda** — calendar conflicts, meetings, deadlines
-- **On the Plate** — Planner cards, To Do items, Todoist tasks assigned or due today
-- **Watch List** — anything elevated but not yet actionable
-
-Includes **suggested** Planner updates, reply drafts, and calendar notes — you approve before anything changes.
-
-**Output:** Obsidian daily note (`Daily/YYYY-MM-DD.md`)
-
-**Sources:** MS Admin, Defender, NinjaOne, Wazuh, UniFi Cloud, Entra, Outlook Calendar, Todoist, MS To Do, Planner.
+**Output:** `01 Briefings/Daily/YYYY-MM-DD.md`
 
 ---
 
-#### 2. Day Ender
-**Trigger:** "day ender," "wrap up today," "end of day"
+#### Day Ender
+**Say:** "Day ender" · "Wrap up today" · "End of day"
 
-Covers the **last 12 hours.** Focused on cleanup — what's unresolved, what needs a handoff, what should move in Planner before tomorrow.
+Covers the last 12 hours. What got done, what's still open, anything that needs a handoff note or a follow-up message before tomorrow.
 
-- **Closed Today** — tasks completed, alerts resolved
-- **Still Open** — anything that didn't get done
-- **Before Tomorrow** — things that need action or a note tonight
-- **Log** — anything worth capturing in the decision log
-
-Drafts Teams or Mail follow-ups for your review.
-
-**Output:** Updates the day's Obsidian daily note.
+**Output:** Appends to the day's Obsidian note.
 
 ---
 
-#### 3. Week Starter
-**Trigger:** "week starter," Monday morning, "what does the week look like"
+#### Week Starter
+**Say:** "Week starter" · "What does the week look like"
 
-Covers **last week's close + this week's load.** Sections: Last Week's Closeouts / Open Threads / This Week's Load / Stale & Unblocking / First Move.
+Last week's loose ends plus this week's load: what closed, open threads, upcoming calendar and tasks, anything stale that needs a nudge, and a suggested first move.
 
-**Output:** Obsidian weekly note (`Weekly/YYYY-WW.md`) with goals and priorities. Planner changes are suggested, not applied automatically.
-
-**Sources:** Planner, NinjaOne, Confluence, Outlook Calendar, Defender, Wazuh.
+**Output:** `01 Briefings/Weekly/YYYY-WW.md`
 
 ---
 
-#### 4. Week Ender
-**Trigger:** "week ender," Friday, "wrap up the week"
+#### Week Ender
+**Say:** "Week ender" · "Wrap up the week"
 
-Sections: Closed This Week / Slipped or Deferred / Seeds for Next Week / Weekly Notes Draft / Optional Manager Summary.
+What shipped, what slipped, seeds for next week, and an optional summary draft for your manager or team — staged in Confluence for review.
 
-**Output:** Obsidian retrospective + Confluence weekly notes draft staged for review.
-
----
-
-#### 5. Security Posture Snapshot
-**Trigger:** "posture check," "state of the land," "health check," ad-hoc anytime
-
-A cross-system security snapshot scored Green / Yellow / Red per category:
-
-| Category | Sources |
-|----------|---------|
-| Identity | Entra risky users, expiring app secrets, recent audit log anomalies |
-| Endpoints | Defender open incidents + High/Critical alerts, NinjaOne critical alerts, Intune non-compliant devices |
-| Patching | NinjaOne — count of overdue patches by severity, Defender TVM exposure score |
-| Infrastructure | NinjaOne failed backups, offline hosts; UniFi Cloud alert states |
-| SIEM | Wazuh high-severity alerts in last 24h, new agent disconnections |
-| Cloud | Azure Advisor security recommendations |
-
-**Output:** Obsidian snapshot note. No notifications unless you ask.
+**Output:** Obsidian retrospective + Confluence draft.
 
 ---
 
-### Investigation & response
+### When things go wrong
+
+#### Troubleshooting
+**Say:** "X is broken" · "Troubleshoot Y" · "Why isn't Z working"
+
+Systematic isolation — not vibes. Claude restates the problem (expected vs. actual), scopes it (one user or many, one site or all), inventories what's working, generates ranked hypotheses, and works through them cheapest-first. Each result is documented before moving on. References SVH-specific failure patterns for Hyper-V, MABS, CMiC, UniFi, and WSUS.
 
 ---
 
-#### 6. Incident Response Triage
-**Trigger:** alert investigation, IOC enrichment, "is this user/IP/hash suspicious," suspected compromise
+#### Event Log Triage
+**Say:** "Check event logs on X" · "What happened on Z around [time]"
 
-Runs a **triage gate** first (`references/triage-gate.md`) to classify the situation:
+Wazuh first for broad correlation, NinjaOne for anything Wazuh missed, then targeted PowerShell via Desktop Commander for precision deep-dives. Matches findings against known SVH event signatures.
+
+---
+
+#### Network Troubleshooter
+**Say:** "Network issue at [site]" · "Why can't [users] reach [resource]"
+
+UniFi Cloud → UniFi Network Controller (VLANs, firewall, switch ports) → Wazuh (IDS/IPS, dropped packets, gateway events) → NinjaOne (affected endpoints) → Desktop Commander (ping, traceroute, port checks). Produces a ranked diagnostic brief.
+
+---
+
+#### Mailflow Investigation
+**Say:** "Did this email deliver" · "Why didn't X get my message" · delivery bounce or delay
+
+Exchange Admin message trace → Defender (attachment/URL flagging) → Entra (was the mailbox accessible) → diagnostic timeline with root cause.
+
+---
+
+#### IR Triage
+**Say:** alert investigation, IOC enrichment, "is this suspicious," suspected compromise
+
+Runs a triage gate first to classify the situation:
 
 | Lane | Criteria | Action |
 |------|----------|--------|
-| 🔥 **Burning Building** | Active credential theft, mass impact in motion, confirmed compromise | Send Teams alert immediately (not draft) + urgent Planner card, then enrich in parallel |
-| 🔎 **Active Investigation** | Confirmed bad but contained | Standard enrichment, draft Teams + Planner for your review |
-| 🔍 **Background Enrichment** | Suspicious, likely benign | Enrich only, no notifications |
+| 🔥 Burning Building | Active credential theft, mass impact, confirmed compromise | Immediate Teams alert (not a draft) + Planner card, enrich in parallel |
+| 🔎 Active Investigation | Confirmed bad but contained | Enrich first, then draft Teams + Planner for your review |
+| 🔍 Background | Suspicious, likely benign | Enrich only, no notifications |
 
-Enrichment path: IOC type → Threat Intel → Defender → Entra sign-in/audit logs → NinjaOne endpoint state → scope + severity → incident brief.
+Enrichment: IOC → Defender → Entra sign-in/audit logs → NinjaOne endpoint state → incident brief.
 
-**Output:** Obsidian incident note (`Incidents/YYYY-MM-DD-name.md`) + drafts per gate lane.
+**Output:** `02 Incidents/Active/YYYY-MM-DD-name.md` + lane-appropriate drafts.
 
-**Tools:** Threat Intel, Defender, Entra ID, NinjaOne, Teams, Planner.
-
-> Built last — only skill with non-draft Teams writes.
+> This is the only skill that can send non-draft Teams messages. Build it last for that reason.
 
 ---
 
-#### 7. Troubleshooting Methodology
-**Trigger:** "X is broken," "troubleshoot Y," "why isn't Z working"
+### Posture & review
 
-Named *Wolf in Siberia* — systematic isolation, not vibes.
+#### Security Posture Snapshot
+**Say:** "Posture check" · "State of the land" · "Health check"
 
-1. Restate the problem: expected / actual / when it started
-2. Bound the scope: one user or many, one site or all
-3. Build the "what's working" inventory
-4. Generate 3–5 testable hypotheses ranked by likelihood × ease-of-test
-5. Test cheapest first, document each result before moving on
+Cross-system snapshot scored Green / Yellow / Red:
 
-References: `references/common-failure-modes.md` (SVH-specific: Hyper-V, MABS, CMiC, UniFi, WSUS), `references/hypothesis-patterns.md`.
+| Category | Sources |
+|----------|---------|
+| Identity | Entra risky users, expiring app secrets, audit log anomalies |
+| Endpoints | Defender open incidents + High/Critical alerts, Intune non-compliant devices |
+| Patching | NinjaOne overdue patches by severity, Defender TVM exposure score |
+| Infrastructure | NinjaOne failed backups, offline hosts; UniFi Cloud alert states |
+| SIEM | Wazuh high-severity alerts in last 24h, agent disconnections |
+| Cloud | Azure Advisor security recommendations |
 
-Can invoke **Event Log Triage** or **UniFi Troubleshooter** as sub-steps.
-
-**Tools:** NinjaOne, UniFi (both), Wazuh, Defender, Entra ID, Desktop Commander, Confluence.
-
----
-
-#### 8. Event Log Triage
-**Trigger:** "check event logs on X," "what happened on Z around [time]," follow-up from Troubleshooting or IR Triage
-
-Tool order is deliberate — start broad, then narrow:
-
-1. **Wazuh** — query the host + time window + severity, cross-host correlation
-2. **NinjaOne** — endpoint alert state and any events Wazuh didn't ship
-3. **Desktop Commander → PS Remoting** — `Get-WinEvent` precision deep-dive after Wazuh narrows the suspect window
-
-Pattern: scope (host, window, channels, severity floor) → Wazuh query → group by Provider+EventID → match against `references/common-event-clusters.md` → cross-reference Defender and NinjaOne → triage brief.
-
-References: `references/ps-remoting-snippets.md`, `references/setup-winrm.md`.
-
-**Tools:** Wazuh, NinjaOne, Desktop Commander, Defender, Confluence.
+**Output:** Obsidian snapshot note. No alerts sent unless you ask.
 
 ---
 
-#### 9. Vulnerability Triage
-**Trigger:** CVE assessment, Defender TVM finding, "should we patch X"
+#### Vulnerability Triage
+**Say:** CVE name or ID · Defender TVM finding · "Should we patch X"
 
-CVE → NVD metadata + CVSS → EPSS probability → CISA KEV check → Threat Intel (PoC/exploit/ransomware presence) → Defender software inventory (who's exposed) → NinjaOne patch state → composite priority (severity × exposure × exploitability) → triage brief with patch timeline (Emergency / This Week / Next Cycle / Accept).
+CVE → Defender software inventory (who's exposed) → NinjaOne patch state → composite priority score → recommended timeline: Emergency / This Week / Next Cycle / Accept.
 
 **Output:** Obsidian vuln note + Confluence writeup draft + Planner tickets per asset group.
 
-**Tools:** Threat Intel, Defender, NinjaOne, Confluence, Planner.
+---
+
+#### Asset Investigation
+**Say:** "Tell me everything about [server/user/device]" · "Asset report for X"
+
+Routes by asset type:
+- **Server or workstation:** NinjaOne (hardware, services, patches, backups), Wazuh (alerts, FIM), Defender (device profile, CVEs), Azure (if cloud VM)
+- **User:** Entra sign-in history, MFA status, role and group memberships, CA policies, related Defender alerts
+
+**Output:** `06 Assets/[name].md` — persistent note, updated each time you investigate the same asset.
 
 ---
 
-#### 10. UniFi Network Troubleshooter
-**Trigger:** network problem with site/scope/symptom/start-time, or invoked as a sub-step by Troubleshooting Methodology
+#### Access Review
+**Say:** "Access review for [user/group/role]" · "Audit permissions for X"
 
-UniFi Cloud (site alerts) → UniFi Network Controller (VLANs, firewall, switch ports, WLANs, client state) → Wazuh (UniFi syslog: IDS/IPS hits, dropped packets, port flaps, gateway events) → NinjaOne (endpoint state for affected hosts) → Desktop Commander (ping / traceroute / dig / port checks from MCP host) → hypothesis-ranked diagnostic brief.
-
-Prerequisite: UniFi syslog forwarding to Wazuh with decoders configured.
-
-**Tools:** UniFi Cloud, UniFi Network Controller, Wazuh, NinjaOne, Desktop Commander.
-
----
-
-#### 11. Mailflow Investigation
-**Trigger:** "did this email deliver," "why didn't X get my message," delivery delay or bounce
-
-Exchange Admin message trace → Defender attachment/URL detonation results if flagged → Entra sign-in for recipient (was mailbox accessible) → Exchange transport rule scan for matches → diagnostic brief with delivery timeline and root cause.
-
-**Tools:** Exchange Admin, Defender, Entra ID, Outlook Mail.
-
----
-
-#### 12. Asset Investigation
-**Trigger:** "tell me everything about [server/user/device]," "asset report for X"
-
-Detects the asset type and routes accordingly:
-
-**Server/workstation:** NinjaOne (hardware, OS, services, patches, backups, alerts), Wazuh (recent alerts, FIM events, vulnerabilities), Defender (device profile, open alerts, CVEs), Azure (if cloud VM: resource group, size, NSG rules).
-
-**User:** Entra (MFA status, recent sign-in logs, risky user state, license assignments, group memberships, CA policies that apply), Defender (related alerts), Planner (assigned tasks), NinjaOne (devices associated with the user).
-
-**Output:** Obsidian asset note (`Assets/[name].md`) — persistent, updated each time you investigate the same asset.
-
-**Tools:** NinjaOne, Wazuh, Defender, Entra ID, Azure, Planner.
-
----
-
-### Planning & execution
-
----
-
-#### 13. Patch Campaign
-**Trigger:** "patch campaign," "let's plan this month's patching," "what needs patching"
-
-1. Pull all pending patches from NinjaOne across every managed server and workstation
-2. For each CVE in the patch list: EPSS score + CISA KEV check + Defender TVM priority
-3. Group into urgency tiers: Emergency (KEV or EPSS > 0.7) / This Week (Critical, high EPSS) / Next Cycle (High, not actively exploited) / Accept (Low/Informational, no exposure)
-4. Produce a Planner board for tracking: one card per server group, checklist per patch tier
-5. Obsidian campaign note with the full breakdown
-
-**Tools:** NinjaOne, Threat Intel, Defender, Planner, Obsidian.
-
----
-
-#### 14. Change Record
-**Trigger:** "about to make a change," "document this rollout," "change record for X"
-
-Captures: scope, risk classification, test plan, rollback procedure, comms plan, schedule.
-
-**Output:**
-- Obsidian change note (`Changes/YYYY-MM-DD-name.md`)
-- Confluence change page draft
-- Planner deployment card
-- Teams pre-change and post-change notification drafts (staged for review)
-
-**Tools:** Confluence, Planner, Teams, Obsidian.
-
----
-
-#### 15. Project Creator
-**Trigger:** large task description needing decomposition, "turn this into a project"
-
-Decomposes input into: scope statement, deliverables, WBS, dependencies, owners (if inferable), effort estimate. Pulls context from Confluence (similar past projects) and Obsidian (relevant notes). Pulls technical state as needed (e.g., "migrate VM" → Hyper-V inventory from NinjaOne).
-
-Output shape depends on WBS size:
-- **≤ 8 work items** → single Planner card with a detailed checklist
-- **> 8 work items** → full Planner plan with buckets, cards, labels, and dates + Confluence project page
-
-**Tools:** Planner, Confluence, Obsidian, plus any technical-state MCPs the description implicates.
-
----
-
-#### 16. Meeting Prep
-**Trigger:** "prep me for [meeting/time]," "what do I need for my 2pm," before a calendar event
-
-1. Pull the event from Outlook Calendar (attendees, agenda, location)
-2. Search Fathom for past meeting notes with the same attendees or topic
-3. Search Confluence and Obsidian for relevant context
-4. Check Planner for open tasks involving the attendees or meeting topics
-
-**Output:** Obsidian meeting note (`Meetings/YYYY-MM-DD-name.md`) with context brief + empty agenda template ready to fill in during the call.
-
-**Tools:** Outlook Calendar, Fathom, Confluence, Obsidian, Planner.
-
----
-
-### Access & compliance
-
----
-
-#### 17. Offboarding Checklist
-**Trigger:** "offboard [name]," "user is leaving," "help me offboard"
-
-Systematically checks every system the user may have a presence in:
-
-| System | What to check |
-|--------|--------------|
-| Entra ID | Account status, licenses to reclaim, owned app registrations, MFA methods |
-| Teams | Owned teams and channels — identify handoff owners |
-| OneDrive | Confirm data transfer initiated, sharing links to revoke |
-| Exchange | Forwarding rules, shared mailbox access, distribution group ownership |
-| Planner | Assigned and owned tasks — suggest reassignment |
-| NinjaOne | Devices associated with the user — flag for collection |
-| GitHub | Organization membership, owned repos |
-| Todoist / MS To Do | Active tasks to hand off |
-
-**Output:** Obsidian offboarding checklist + suggested Planner card for tracking progress.
-
-**Tools:** Entra ID, Teams, Outlook Mail, OneDrive, Planner, NinjaOne, GitHub, Todoist, MS To Do.
-
----
-
-#### 18. Access Review
-**Trigger:** "access review for [user/group/role]," "audit permissions for X," "quarterly review"
-
-For a **user:** Entra role assignments, group memberships, owned app registrations, CA policies that apply, recent sign-in activity, MFA status, license assignments.
-
-For a **group or role:** All members (Entra), recent sign-in activity for members, associated CA policies, assigned Planner tasks.
-
-Flags: inactive users with privileged roles, users without MFA in sensitive roles, stale group memberships, app registrations owned by the subject with broad permissions.
+For a user: roles, groups, owned app registrations, recent sign-ins, MFA status, applicable CA policies. For a group or role: all members, activity, associated policies. Flags inactive privileged accounts, missing MFA in sensitive roles, stale memberships.
 
 **Output:** Obsidian access report + optional Confluence audit page draft.
 
-**Tools:** Entra ID, Planner, Defender.
+---
+
+### Planning & coordination
+
+#### Patch Campaign
+**Say:** "Patch campaign" · "What needs patching" · "Let's plan patching"
+
+Pulls pending patches from NinjaOne across all managed devices. Checks each CVE against Defender TVM priority. Groups into tiers: Emergency / This Week / Next Cycle / Accept. Produces a Planner board for tracking.
+
+**Output:** Obsidian campaign note + Planner board.
+
+---
+
+#### Change Record
+**Say:** "About to make a change" · "Document this rollout" · "Change record for X"
+
+Captures scope, risk classification, test plan, rollback procedure, comms plan, and schedule.
+
+**Output:** Obsidian change note + Confluence draft + Planner card + Teams notification drafts — all staged for your review.
+
+---
+
+#### Project Creator
+**Say:** large task that needs decomposing · "Turn this into a project"
+
+Breaks input into a scope statement, deliverables, WBS, dependencies, and effort estimate. Pulls context from Confluence and Obsidian. Small projects (≤8 items) → single Planner card with checklist. Larger → full Planner plan with buckets and dates + Confluence project page.
+
+---
+
+#### Meeting Prep & Notes
+**Say:** "Prep me for [meeting/time]" · "Pull notes from my [meeting name] call"
+
+**Before a meeting:** Pulls the calendar event, searches Fathom for past notes with the same attendees, checks Confluence and Obsidian for context, reviews open Planner tasks tied to those people. Produces a brief and a blank agenda template ready to fill in during the call.
+
+**After a recorded call:** Fetches the Fathom transcript and summary, extracts decisions, action items, and key points, and structures them into an Obsidian note. Action items get suggested as Planner or To Do tasks for your review.
+
+**Output:** `05 Meetings/YYYY-MM-DD-name.md`
 
 ---
 
 ## Obsidian vault structure
 
-Suggested layout — Claude writes to these paths when skills run. The structure keeps everything findable and gives you a natural audit trail.
+All Claude output stages in `00 Inbox/` first. You promote it to the right folder — Claude won't write directly into deeper folders unless you give it the path.
 
 ```
 SVH OpsMan/
-├── 00 Inbox/                  ← Claude drops everything here first
-│   └── 2026-05-09 1430 day-starter.md
+├── 00 Inbox/              ← everything lands here first
 ├── 01 Briefings/
-│   ├── Daily/
-│   │   └── 2026-05-09.md     ← Day Starter output; Day Ender appends
-│   └── Weekly/
-│       └── 2026-W19.md       ← Week Starter goals; Week Ender retrospective
+│   ├── Daily/             ← Day Starter / Day Ender
+│   └── Weekly/            ← Week Starter / Week Ender
 ├── 02 Incidents/
 │   ├── Active/
-│   │   └── 2026-05-09-jsmith-anomalous-signin.md
-│   └── Archive/              ← You move here when closed
-├── 03 Investigations/         ← Phishing triage, IOC enrichment, ad-hoc deep dives
+│   └── Archive/
+├── 03 Investigations/
 ├── 04 Changes/
-│   └── 2026-05-10-cmic-maintenance-window.md
 ├── 05 Meetings/
-│   └── 2026-05-09-network-vendor-review.md
-├── 06 Assets/
-│   ├── SVH-SQL01.md          ← Updated each time Asset Investigation runs
-│   └── jsmith.md
+├── 06 Assets/             ← persistent, updated on each investigation
 ├── 07 Projects/
-│   └── vm-migration-q3.md
 ├── 08 Reviews/
-│   ├── Access/               ← Quarterly access reviews, stale user reports
-│   └── Patches/              ← Patch campaign notes
+│   ├── Access/
+│   └── Patches/
 ├── 09 Vulnerabilities/
-│   └── CVE-2024-12345.md
-├── 10 Reports/               ← Management-facing summaries
-└── 98 References/            ← The reference docs from this repo (symlink or copy)
-    ├── triage-gate.md
-    └── ...
+├── 10 Reports/
+└── 98 References/         ← reference docs from this repo
 ```
 
-**Obsidian is the inbox.** Every Claude output lands in `00 Inbox/` first. You promote it to the right folder (or delete it) — Claude never writes directly into deeper folders unless you tell it the destination.
+### Frontmatter
 
----
-
-### Frontmatter conventions
-
-Every note Claude produces should open with YAML frontmatter. This lets you filter, search, and track status across the vault.
+Every note Claude writes opens with:
 
 ```yaml
 ---
-date: 2026-05-09
+date: 2026-05-10
 skill: Day Starter
 status: draft
 tags: [briefing, daily]
 ---
 ```
 
-**Standard fields:**
+**Status lifecycle:** `draft` → `reviewed` → `filed` or `promoted`
 
-| Field | Values | Meaning |
-|-------|--------|---------|
-| `date` | ISO date | When the note was created |
-| `skill` | skill name | Which skill produced it |
-| `status` | `draft` / `reviewed` / `filed` / `promoted` | Where it is in your review workflow |
-| `tags` | array | Freeform — system names, categories, people |
-
-**Status lifecycle:**
-
-```
-draft  →  reviewed  →  filed      (reviewed, no further action)
-                    →  promoted   (content pushed to Confluence, Teams, or Mail)
-```
-
-Claude writes `status: draft`. You flip it to `reviewed` when you've read it, then `filed` or `promoted` when you're done with it. Nothing leaves Obsidian until it's `reviewed`.
+- **draft** — Claude wrote it, you haven't touched it yet
+- **reviewed** — you've read and edited it
+- **filed** — done, no further action needed
+- **promoted** — content pushed to Confluence, Teams, or Mail; original stays in Obsidian
 
 **Extra fields for specific note types:**
 
 ```yaml
 # Incidents
 incident_id: INC-2026-042
-severity: high          # critical / high / medium / low
-status: open            # open / contained / closed
-affected: [SVH-SQL01, jsmith]
+severity: high            # critical / high / medium / low
+status: open              # open / contained / closed
 
 # Changes
 change_id: CHG-2026-018
-risk: medium            # low / medium / high
+risk: medium              # low / medium / high
 window: 2026-05-10 22:00 – 23:30
 
 # Vulnerabilities
 cve: CVE-2024-12345
-epss: 0.71
-kev: true
-priority: emergency     # emergency / this-week / next-cycle / accept
+priority: this-week       # emergency / this-week / next-cycle / accept
 ```
-
-**Decision log:** Any significant finding, recommendation, or action should be appended to a `06 Assets/decisions.md` note (or the relevant asset/incident note) so you have a trail when something goes wrong. Trigger it explicitly: *"Log that decision to Obsidian."*
 
 ---
 
 ## Setup
 
-### 1. Custom MCP server
+### System requirements
 
-Prerequisites: **Node.js 18+** and **Bitwarden CLI** (`bw`) in WSL.
+The MCP server is a lightweight Node.js process — it just proxies API calls, so it needs almost nothing in terms of compute.
+
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| CPU | 1 vCPU | 2 vCPU |
+| RAM | 512 MB | 1 GB |
+| Disk | 5 GB | 10 GB |
+| OS | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS |
+| Node.js | 18+ | 20 LTS |
+
+**Network:** Outbound HTTPS only. No inbound ports needed — the server communicates with Claude over stdio. Needs access to:
+- `graph.microsoft.com`, `login.microsoftonline.com`
+- `management.azure.com`
+- `api.securitycenter.microsoft.com`
+- `app.ninjarmm.com`
+- Your UniFi controller URL
+- Your Wazuh manager URL
+- `vault.bitwarden.com` (if using BW CLI for credentials)
+
+**Optional but useful:** `bw` (Bitwarden CLI), `jq`, `curl`
+
+---
+
+### 1. Build the server
 
 ```bash
 cd mcp-server
@@ -474,56 +350,35 @@ npm install
 npm run build
 ```
 
-#### Credentials — Bitwarden (recommended)
+### 2. Credentials
 
-Store all credentials as **custom fields** on a single vault item named **"SVH OpsMan"**. Field names must match the env var keys exactly (e.g., a field named `GRAPH_CLIENT_SECRET` with the secret as its value).
+Credentials live as **custom fields on a single Bitwarden vault item** named **"SVH OpsMan"**. Field names must match the env var key exactly (e.g., a field named `GRAPH_CLIENT_SECRET` with the client secret as its value).
 
-Before starting the server, unlock your Bitwarden vault:
+Unlock your vault before starting the server:
 
 ```bash
 export BW_SESSION=$(bw unlock --raw)
 ```
 
-The server will automatically pull all credentials from the vault item at startup. You can add `BW_SESSION` to your shell profile or set it per-session.
-
-#### Credentials — .env file (fallback / development)
+The server reads all credentials from the vault item at startup. If `BW_SESSION` isn't set, it falls back to a `.env` file:
 
 ```bash
-cp .env.example .env
-# Fill in only the services you're setting up
+cp mcp-server/.env.example mcp-server/.env
+# fill in only the services you're setting up
 ```
 
-The server checks for `BW_SESSION` first. If it isn't set, it falls back to env vars and the `.env` file.
-
-#### Verify startup
+**Verify startup:**
 
 ```bash
 npm start
-# [svh-opsman] Loaded 22 credential(s) from Bitwarden vault
-# [svh-opsman] Starting — 9/12 service groups configured
+# [svh-opsman] Loaded 20 credential(s) from Bitwarden vault
+# [svh-opsman] Starting — 9/10 service groups configured
 # [svh-opsman] Ready — listening on stdio
 ```
 
 ---
 
-### 2. External MCPs
-
-| MCP | Install |
-|-----|---------|
-| GitHub | `npx -y @modelcontextprotocol/server-github` |
-| Obsidian | `npx -y mcp-obsidian` — requires [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) plugin |
-| Fathom | See [Fathom MCP docs](https://help.fathom.video) for current package |
-| Firecrawl | `npx -y @mendableai/firecrawl-mcp-server` |
-| Desktop Commander | `npx -y @wonderwhy-er/desktop-commander` |
-| Playwright | `npx -y @playwright/mcp` |
-| Bitwarden | `npx -y @bitwarden/mcp` — run `bw unlock` first |
-| Excalidraw | `npx -y excalidraw-mcp` |
-| Time | `npx -y @modelcontextprotocol/server-time` |
-| Sequential Thinking | `npx -y @modelcontextprotocol/server-sequential-thinking` |
-
----
-
-### 3. Claude config
+### 3. Register MCPs with Claude
 
 **Claude Code:**
 
@@ -531,19 +386,30 @@ npm start
 # Custom server
 claude mcp add svh-opsman -- node /path/to/SVH-OpsMan/mcp-server/dist/index.js
 
-# External MCPs (set env vars as needed)
-claude mcp add github -e GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxx -- npx -y @modelcontextprotocol/server-github
-claude mcp add obsidian -e OBSIDIAN_API_KEY=xxx -- npx -y mcp-obsidian http://127.0.0.1:27123
-claude mcp add firecrawl -e FIRECRAWL_API_KEY=xxx -- npx -y @mendableai/firecrawl-mcp-server
-claude mcp add desktop-commander -- npx -y @wonderwhy-er/desktop-commander
-claude mcp add playwright -- npx -y @playwright/mcp
-claude mcp add bitwarden -- npx -y @bitwarden/mcp
-claude mcp add time -- npx -y @modelcontextprotocol/server-time
-claude mcp add sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
-claude mcp add excalidraw -- npx -y excalidraw-mcp
+# External MCPs
+claude mcp add github -e GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxx \
+  -- npx -y @modelcontextprotocol/server-github
+
+claude mcp add obsidian -e OBSIDIAN_API_KEY=xxx \
+  -- npx -y mcp-obsidian http://127.0.0.1:27123
+
+claude mcp add fathom -e FATHOM_API_KEY=xxx \
+  -- npx -y fathom-mcp    # check Fathom docs for current package name
+
+claude mcp add firecrawl -e FIRECRAWL_API_KEY=xxx \
+  -- npx -y @mendableai/firecrawl-mcp-server
+
+claude mcp add desktop-commander \
+  -- npx -y @wonderwhy-er/desktop-commander
+
+claude mcp add bitwarden \
+  -- npx -y @bitwarden/mcp
+
+claude mcp add time \
+  -- npx -y @modelcontextprotocol/server-time
 ```
 
-**Claude Desktop** (`%APPDATA%\Claude\claude_desktop_config.json` on Windows / `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+**Claude Desktop** (`claude_desktop_config.json`):
 
 ```json
 {
@@ -563,17 +429,28 @@ claude mcp add excalidraw -- npx -y excalidraw-mcp
       "args": ["-y", "mcp-obsidian", "http://127.0.0.1:27123"],
       "env": { "OBSIDIAN_API_KEY": "your-key" }
     },
+    "fathom": {
+      "command": "npx",
+      "args": ["-y", "fathom-mcp"],
+      "env": { "FATHOM_API_KEY": "your-key" }
+    },
     "firecrawl": {
       "command": "npx",
       "args": ["-y", "@mendableai/firecrawl-mcp-server"],
       "env": { "FIRECRAWL_API_KEY": "your-key" }
     },
-    "desktop-commander": { "command": "npx", "args": ["-y", "@wonderwhy-er/desktop-commander"] },
-    "playwright":         { "command": "npx", "args": ["-y", "@playwright/mcp"] },
-    "bitwarden":          { "command": "npx", "args": ["-y", "@bitwarden/mcp"] },
-    "time":               { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-time"] },
-    "sequential-thinking":{ "command": "npx", "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"] },
-    "excalidraw":         { "command": "npx", "args": ["-y", "excalidraw-mcp"] }
+    "desktop-commander": {
+      "command": "npx",
+      "args": ["-y", "@wonderwhy-er/desktop-commander"]
+    },
+    "bitwarden": {
+      "command": "npx",
+      "args": ["-y", "@bitwarden/mcp"]
+    },
+    "time": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-time"]
+    }
   }
 }
 ```
@@ -582,11 +459,11 @@ claude mcp add excalidraw -- npx -y excalidraw-mcp
 
 ## Credential reference
 
-### Microsoft Graph (one app registration for most of Microsoft)
+### Microsoft Graph — one app registration for most of Microsoft
 
 Covers: Planner, To Do, Entra ID, OneDrive, SharePoint, Teams, Outlook Mail, Outlook Calendar, Exchange Admin, Intune, MS Admin.
 
-In **Entra ID → App registrations → New registration**, then add these **Application permissions** under Microsoft Graph and grant admin consent:
+In **Entra ID → App registrations → New registration**, add these **Application permissions** under Microsoft Graph and grant admin consent:
 
 | Permission | Used by |
 |-----------|---------|
@@ -619,22 +496,22 @@ In **Entra ID → App registrations → New registration**, then add these **App
 
 ---
 
-### Microsoft Defender for Endpoint (separate app registration)
+### Defender for Endpoint — separate app registration
 
-**API permissions → APIs my organization uses → WindowsDefenderATP → Application:**
+In Entra ID → **APIs my organization uses → WindowsDefenderATP → Application:**
+
 `Machine.Read.All`, `Alert.Read.All`, `Ti.Read`, `Vulnerability.Read.All`, `Software.Read.All`, `AdvancedQuery.Read.All`
 
 **Bitwarden fields:** `MDE_TENANT_ID` · `MDE_CLIENT_ID` · `MDE_CLIENT_SECRET`
 
 ---
 
-### Azure Resource Manager (service principal)
-
-Create with Reader + Cost Management Reader at subscription scope:
+### Azure Resource Manager — service principal
 
 ```bash
 az ad sp create-for-rbac --name "Claude OpsMan ARM" --role Reader \
   --scopes /subscriptions/<id>
+
 az role assignment create --assignee <client-id> \
   --role "Cost Management Reader" --scope /subscriptions/<id>
 ```
@@ -647,52 +524,43 @@ az role assignment create --assignee <client-id> \
 
 | Service | Where to get credentials | Bitwarden fields |
 |---------|--------------------------|-----------------|
-| **UniFi Cloud** | [account.ui.com](https://account.ui.com) → API Keys | `UNIFI_API_KEY` |
-| **UniFi Network Controller** | Local admin account on UDM Pro / CloudKey | `UNIFI_CONTROLLER_URL` · `UNIFI_USERNAME` · `UNIFI_PASSWORD` |
+| **UniFi Cloud** | account.ui.com → API Keys | `UNIFI_API_KEY` |
+| **UniFi Network** | Local admin on UDM Pro / CloudKey | `UNIFI_CONTROLLER_URL` · `UNIFI_USERNAME` · `UNIFI_PASSWORD` |
 | **NinjaOne** | Administration → Apps → API → Client Credentials | `NINJA_CLIENT_ID` · `NINJA_CLIENT_SECRET` |
-| **Confluence** | [id.atlassian.com](https://id.atlassian.com) → Security → API tokens | `CONFLUENCE_DOMAIN` · `CONFLUENCE_EMAIL` · `CONFLUENCE_API_TOKEN` |
-| **Todoist** | Settings → Integrations → Developer | `TODOIST_API_TOKEN` |
+| **Confluence** | id.atlassian.com → Security → API tokens | `CONFLUENCE_DOMAIN` · `CONFLUENCE_EMAIL` · `CONFLUENCE_API_TOKEN` |
 | **Wazuh** | Wazuh manager API user | `WAZUH_URL` · `WAZUH_USERNAME` · `WAZUH_PASSWORD` |
 | **PrinterLogic** | PrinterLogic admin console → API token | `PRINTERLOGIC_URL` · `PRINTERLOGIC_API_TOKEN` |
-| **VirusTotal** | [virustotal.com](https://www.virustotal.com) (free: 500 req/day) | `VIRUSTOTAL_API_KEY` |
-| **Shodan** | [shodan.io](https://account.shodan.io) (free tier) | `SHODAN_API_KEY` |
-| **AbuseIPDB** | [abuseipdb.com](https://www.abuseipdb.com/api) (free: 1000 req/day) | `ABUSEIPDB_API_KEY` |
-| **urlscan.io** | [urlscan.io](https://urlscan.io/user/profile/) (free tier) | `URLSCAN_API_KEY` |
-| **GreyNoise** | [greynoise.io](https://www.greynoise.io) (community tier) | `GREYNOISE_API_KEY` |
-
-NVD, EPSS, CISA KEV, and MITRE ATT&CK are free with no API key required.
 
 ---
 
 ## Reference documents
 
-Supporting content in `references/` — Claude reads these automatically during the relevant skills.
+`references/` — Claude reads these automatically during the relevant skills.
 
 | File | Used by |
 |------|---------|
-| `triage-gate.md` | IR Triage — lane classification criteria, escalation path |
-| `common-failure-modes.md` | Troubleshooting — SVH-specific failure patterns (Hyper-V cluster, MABS/SQL, CMiC/Kemp, UniFi, WSUS) |
-| `hypothesis-patterns.md` | Troubleshooting — generic isolation moves by problem class |
-| `common-event-clusters.md` | Event Log Triage — Wazuh/Windows event signatures for SVH infrastructure |
-| `ps-remoting-snippets.md` | Event Log Triage — Get-WinEvent recipes by scenario |
-| `setup-winrm.md` | Event Log Triage — one-time WinRM trust setup between WSL MCP host and Windows targets |
+| `triage-gate.md` | IR Triage — lane classification criteria |
+| `common-failure-modes.md` | Troubleshooting — SVH-specific failure patterns |
+| `hypothesis-patterns.md` | Troubleshooting — isolation moves by problem class |
+| `common-event-clusters.md` | Event Log Triage — Wazuh/Windows event signatures |
+| `ps-remoting-snippets.md` | Event Log Triage — Get-WinEvent recipes |
+| `setup-winrm.md` | Event Log Triage — one-time WinRM trust setup |
 
 ---
 
 ## Build order
 
-Validate each layer before adding skills that depend on it. Start with the skills that have no write-side risk.
+Start read-only, validate each layer, then layer in write-side skills.
 
-| Phase | Skills (#) | Notes |
-|-------|-----------|-------|
-| 1 | Day Starter (1), Day Ender (2) | Validates all monitoring sources and Obsidian writes |
-| 2 | Week Starter (3), Week Ender (4) | Validates the weekly cadence |
-| 3 | Security Posture Snapshot (5) | Validates the cross-system security read path |
-| 4 | Troubleshooting Methodology (7) | Validates NinjaOne + Desktop Commander + Wazuh together |
-| 5 | Event Log Triage (8) | Add after Wazuh syslog confirmed shipping |
-| 6 | UniFi Troubleshooter (10) | Add after UniFi syslog → Wazuh wired up |
-| 7 | Asset Investigation (12), Vuln Triage (9), Patch Campaign (13) | Read-only, safe to add anytime after phase 4 |
-| 8 | Meeting Prep (16), Project Creator (15) | Light dependencies, add when ready |
-| 9 | Change Record (14), Offboarding (17), Access Review (18) | Draft-only by default, validate each carefully |
-| 10 | IR Triage (6) | **Last** — only skill that sends non-draft Teams messages |
-| 11 | Mailflow Investigation (11) | Any time after Exchange Admin credentials confirmed |
+| Phase | Skills | Validates |
+|-------|--------|-----------|
+| 1 | Day Starter, Day Ender | All monitoring sources + Obsidian writes |
+| 2 | Week Starter, Week Ender | Weekly cadence |
+| 3 | Troubleshooting, Event Log Triage | NinjaOne + Wazuh + Desktop Commander |
+| 4 | Network Troubleshooter | After UniFi syslog → Wazuh is wired up |
+| 5 | Security Posture, Asset Investigation, Vuln Triage | Read-only health checks |
+| 6 | Patch Campaign, Change Record, Project Creator | Low write risk |
+| 7 | Meeting Prep & Notes | After Fathom is connected |
+| 8 | Access Review | Entra read permissions confirmed |
+| 9 | Mailflow Investigation | Exchange Admin credentials confirmed |
+| 10 | IR Triage | **Last** — only skill with non-draft Teams messages |

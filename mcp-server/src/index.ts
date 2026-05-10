@@ -28,11 +28,9 @@ import { registerWazuhTools } from "./tools/wazuh.js";
 
 // Productivity / knowledge
 import { registerConfluenceTools } from "./tools/confluence.js";
-import { registerTodoistTools } from "./tools/todoist.js";
 
 // Specialised
 import { registerPrinterLogicTools } from "./tools/printerlogic.js";
-import { registerThreatIntelTools } from "./tools/threat-intel.js";
 
 // Load credentials from Bitwarden before checking env vars.
 // Falls back silently to env vars / .env file if BW_SESSION is not set.
@@ -60,9 +58,7 @@ const services = {
   ninjaone: checkEnv("NINJA_CLIENT_ID", "NINJA_CLIENT_SECRET"),
   wazuh: checkEnv("WAZUH_URL", "WAZUH_USERNAME", "WAZUH_PASSWORD"),
   confluence: checkEnv("CONFLUENCE_DOMAIN", "CONFLUENCE_EMAIL", "CONFLUENCE_API_TOKEN"),
-  todoist: checkEnv("TODOIST_API_TOKEN"),
   printerlogic: checkEnv("PRINTERLOGIC_URL", "PRINTERLOGIC_API_TOKEN"),
-  threatIntel: checkEnv("VIRUSTOTAL_API_KEY"),
 };
 
 // Microsoft Graph — covers all Graph-backed services
@@ -90,11 +86,9 @@ registerWazuhTools(server, services.wazuh);
 
 // Productivity / knowledge
 registerConfluenceTools(server, services.confluence);
-registerTodoistTools(server, services.todoist);
 
 // Specialised
 registerPrinterLogicTools(server, services.printerlogic);
-registerThreatIntelTools(server, services.threatIntel);
 
 const enabledCount = Object.values(services).filter(Boolean).length;
 console.error(
