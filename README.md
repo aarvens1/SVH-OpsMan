@@ -74,12 +74,12 @@ You ──► Claude
 
 ## Skills
 
-Prompt patterns you trigger by name or by describing what you need. Output goes to Obsidian. Nothing gets sent anywhere without you explicitly asking.
+Trigger by slash command or by saying any of the listed phrases. Skills load on demand — their instructions and tool lists live in `.claude/skills/`. Output goes to Obsidian. Nothing gets sent anywhere without you explicitly asking.
 
 ### Daily rhythm
 
 #### Day Starter
-**Say:** "Day starter" · "Morning briefing" · "What's on my plate"
+**Invoke:** `/day-starter` · "Day starter" · "Morning briefing" · "What's on my plate"
 
 Covers the last 24 hours — or since end of Thursday if it's Monday (picks up the full weekend). Pulls from every monitoring system and your task and calendar stack, then produces a single prioritized digest: what needs attention now, today's agenda, open tasks, and anything worth watching. Suggested Planner updates and reply drafts are included for your review — nothing changes without your say-so.
 
@@ -88,7 +88,7 @@ Covers the last 24 hours — or since end of Thursday if it's Monday (picks up t
 ---
 
 #### Day Ender
-**Say:** "Day ender" · "Wrap up today" · "End of day"
+**Invoke:** `/day-ender` · "Day ender" · "Wrap up today" · "End of day"
 
 Covers the last 12 hours. What got done, what's still open, anything that needs a handoff note or a follow-up message before tomorrow.
 
@@ -97,7 +97,7 @@ Covers the last 12 hours. What got done, what's still open, anything that needs 
 ---
 
 #### Week Starter
-**Say:** "Week starter" · "What does the week look like"
+**Invoke:** `/week-starter` · "Week starter" · "What does the week look like"
 
 Last week's loose ends plus this week's load: what closed, open threads, upcoming calendar and tasks, anything stale that needs a nudge, and a suggested first move.
 
@@ -106,7 +106,7 @@ Last week's loose ends plus this week's load: what closed, open threads, upcomin
 ---
 
 #### Week Ender
-**Say:** "Week ender" · "Wrap up the week" · Thursday end of day
+**Invoke:** `/week-ender` · "Week ender" · "Wrap up the week" · Thursday end of day
 
 What shipped, what slipped, seeds for next week, and an optional summary draft for your manager or team — staged in Confluence for review.
 
@@ -117,21 +117,21 @@ What shipped, what slipped, seeds for next week, and an optional summary draft f
 ### When things go wrong
 
 #### Troubleshooting
-**Say:** "X is broken" · "Troubleshoot Y" · "Why isn't Z working"
+**Invoke:** `/troubleshoot` · "X is broken" · "Troubleshoot Y" · "Why isn't Z working"
 
 Systematic isolation — not vibes. Claude restates the problem (expected vs. actual), scopes it (one user or many, one site or all), inventories what's working, generates ranked hypotheses, and works through them cheapest-first. Each result is documented before moving on. References SVH-specific failure patterns for Hyper-V, MABS, CMiC, UniFi, and WSUS.
 
 ---
 
 #### Event Log Triage
-**Say:** "Check event logs on X" · "What happened on Z around [time]"
+**Invoke:** `/event-log-triage` · "Check event logs on X" · "What happened on Z around [time]"
 
 Wazuh first for broad correlation, NinjaOne for anything Wazuh missed, then targeted PowerShell via Desktop Commander for precision deep-dives. Matches findings against known SVH event signatures.
 
 ---
 
 #### Network Troubleshooter
-**Say:** "Network issue at [site]" · "Why can't [users] reach [resource]"
+**Invoke:** `/network-troubleshooter` · "Network issue at [site]" · "Why can't [users] reach [resource]"
 
 UniFi Cloud → UniFi Network Controller (VLANs, firewall, switch ports) → Wazuh (IDS/IPS, dropped packets, gateway events) → NinjaOne (affected endpoints) → Desktop Commander (ping, traceroute, port checks). Produces a ranked diagnostic brief and an Excalidraw topology diagram scoped to the affected path — VLANs, segments, and key devices — embedded in the note.
 
@@ -140,14 +140,14 @@ UniFi Cloud → UniFi Network Controller (VLANs, firewall, switch ports) → Waz
 ---
 
 #### Mailflow Investigation
-**Say:** "Did this email deliver" · "Why didn't X get my message" · delivery bounce or delay
+**Invoke:** `/mailflow-investigation` · "Did this email deliver" · "Why didn't X get my message" · delivery bounce or delay
 
 Exchange Admin message trace → Defender (attachment/URL flagging) → Entra (was the mailbox accessible) → diagnostic timeline with root cause.
 
 ---
 
 #### IR Triage
-**Say:** alert investigation, IOC enrichment, "is this suspicious," suspected compromise
+**Invoke:** `/ir-triage` · alert investigation, IOC enrichment, "is this suspicious," suspected compromise
 
 Runs a triage gate first to classify the situation:
 
@@ -168,7 +168,7 @@ Enrichment: IOC → Defender → Entra sign-in/audit logs → NinjaOne endpoint 
 ### Posture & review
 
 #### Security Posture Snapshot
-**Say:** "Posture check" · "State of the land" · "Health check"
+**Invoke:** `/posture-check` · "Posture check" · "State of the land" · "Health check"
 
 Cross-system snapshot scored Green / Yellow / Red:
 
@@ -186,7 +186,7 @@ Cross-system snapshot scored Green / Yellow / Red:
 ---
 
 #### Vulnerability Triage
-**Say:** CVE name or ID · Defender TVM finding · "Should we patch X"
+**Invoke:** `/vuln-triage` · CVE name or ID · Defender TVM finding · "Should we patch X"
 
 CVE → Defender software inventory (who's exposed) → NinjaOne patch state → composite priority score → recommended timeline: Emergency / This Week / Next Cycle / Accept.
 
@@ -195,7 +195,7 @@ CVE → Defender software inventory (who's exposed) → NinjaOne patch state →
 ---
 
 #### Asset Investigation
-**Say:** "Tell me everything about [server/user/device]" · "Asset report for X"
+**Invoke:** `/asset-investigation` · "Tell me everything about [server/user/device]" · "Asset report for X"
 
 Routes by asset type:
 - **Server or workstation:** NinjaOne (hardware, services, patches, backups), Wazuh (alerts, FIM), Defender (device profile, CVEs), Azure (if cloud VM) — produces an Excalidraw diagram of the asset's network position: VLAN, adjacent devices, and active firewall rules
@@ -206,7 +206,7 @@ Routes by asset type:
 ---
 
 #### Access Review
-**Say:** "Access review for [user/group/role]" · "Audit permissions for X"
+**Invoke:** `/access-review` · "Access review for [user/group/role]" · "Audit permissions for X"
 
 For a user: roles, groups, owned app registrations, recent sign-ins, MFA status, applicable CA policies. For a group or role: all members, activity, associated policies. Flags inactive privileged accounts, missing MFA in sensitive roles, stale memberships.
 
@@ -217,7 +217,7 @@ For a user: roles, groups, owned app registrations, recent sign-ins, MFA status,
 ### Planning & coordination
 
 #### Patch Campaign
-**Say:** "Patch campaign" · "What needs patching" · "Let's plan patching"
+**Invoke:** `/patch-campaign` · "Patch campaign" · "What needs patching" · "Let's plan patching"
 
 Pulls pending patches from NinjaOne across all managed devices. Checks each CVE against Defender TVM priority. Groups into tiers: Emergency / This Week / Next Cycle / Accept. Produces a Planner board for tracking.
 
@@ -226,7 +226,7 @@ Pulls pending patches from NinjaOne across all managed devices. Checks each CVE 
 ---
 
 #### Change Record
-**Say:** "About to make a change" · "Document this rollout" · "Change record for X"
+**Invoke:** `/change-record` · "About to make a change" · "Document this rollout" · "Change record for X"
 
 Captures scope, risk classification, test plan, rollback procedure, comms plan, and schedule. Produces an Excalidraw impact-scope diagram: what's changing, what depends on it, and what's out of scope.
 
@@ -235,14 +235,14 @@ Captures scope, risk classification, test plan, rollback procedure, comms plan, 
 ---
 
 #### Project Creator
-**Say:** large task that needs decomposing · "Turn this into a project"
+**Invoke:** `/project-creator` · large task that needs decomposing · "Turn this into a project"
 
 Breaks input into a scope statement, deliverables, WBS, dependencies, and effort estimate. Pulls context from Confluence and Obsidian. Small projects (≤8 items) → single Planner card with checklist. Larger → full Planner plan with buckets and dates + Confluence project page + Excalidraw WBS diagram (`Diagrams/Projects/[name].excalidraw`) embedded in the project note.
 
 ---
 
 #### Meeting Prep & Notes
-**Say:** "Prep me for [meeting/time]" · "Pull notes from my [meeting name] call"
+**Invoke:** `/meeting-prep` · "Prep me for [meeting/time]" · "Pull notes from my [meeting name] call"
 
 **Before a meeting:** Pulls the calendar event, searches Fathom for past notes with the same attendees, checks Confluence and Obsidian for context, reviews open Planner tasks tied to those people. Produces a brief and a blank agenda template ready to fill in during the call.
 
@@ -255,7 +255,7 @@ Breaks input into a scope statement, deliverables, WBS, dependencies, and effort
 ### Content & documentation
 
 #### TicketSmith
-**Say:** "Write a ticket for this" · "Clean up this complaint" · "Turn this into a ticket"
+**Invoke:** `/ticketsmith` · "Write a ticket for this" · "Clean up this complaint" · "Turn this into a ticket"
 
 Paste a raw user complaint, rant, or rough description and Claude rewrites it as a calm, professional IT ticket: one-line title, clear problem description, impact statement, steps to reproduce, and a suggested priority. Accepts pasted text, `.txt`, or `.pdf`. Nothing is submitted anywhere — output lands in Obsidian for your review first.
 
@@ -264,7 +264,7 @@ Paste a raw user complaint, rant, or rough description and Claude rewrites it as
 ---
 
 #### Scribe
-**Say:** "Write this up" · "Document what I did" · "Make this a how-to" · "Write the closure notes"
+**Invoke:** `/scribe` · "Write this up" · "Document what I did" · "Make this a how-to" · "Write the closure notes"
 
 Paste rough technician notes — shorthand, out-of-order, half-finished — and Claude structures them into clean documentation. Five output styles you can specify:
 
@@ -283,7 +283,7 @@ Accepts paste, `.txt`, `.md`, `.pdf`, or screenshots. Output staged in Obsidian;
 ---
 
 #### Event Log Analyzer
-**Say:** "Analyze this event log" · "Triage these Windows events" · "Look at the event log export from X"
+**Invoke:** `/event-log-analyzer` · "Analyze this event log" · "Triage these Windows events" · "Look at the event log export from X"
 
 For when you have an exported log file rather than live query access. Paste or attach an export (`.xml` preferred for richness, `.csv`, `.txt`, `.log` also work) and Claude produces a triage report: findings, patterns, probable cause, and recommended next steps. References SVH-specific event signatures from `references/common-event-clusters.md`.
 
@@ -392,7 +392,20 @@ The MCP server communicates with Claude over **stdio** — it must run on the sa
 
 ---
 
-### 1. Build the server
+### 1. Claude Code project config
+
+The `.claude/` directory is checked into this repo. It configures permissions, hooks, and skills automatically when you open the project in Claude Code — no extra setup needed.
+
+- **Permissions** — common git and npm operations are pre-approved so Claude doesn't prompt for them.
+- **SessionStart hook** — injects branch name, uncommitted file count, and Bitwarden status at the start of every session.
+- **Skills** — all 15 skills in `.claude/skills/` load on demand when invoked by name or trigger phrase. No context cost until you use them.
+- **Rules** — `.claude/rules/typescript.md` (TypeScript conventions, path-scoped to `mcp-server/src/**`) and `.claude/rules/obsidian-output.md` (Obsidian writing conventions, always loaded).
+
+`.claude/settings.local.json` is gitignored — use it for personal overrides.
+
+---
+
+### 2. Build the server
 
 ```bash
 cd mcp-server
