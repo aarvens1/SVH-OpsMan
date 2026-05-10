@@ -25,14 +25,14 @@ Apply the criteria in `triage-gate.md` above. Be conservative with Burning Build
 
 ### 🔥 Burning Building
 
-1. Post immediately to the Teams IT techs channel via `teams_send_message` — bare facts only: what, which systems, assigned owner. This is the **only non-draft send** allowed.
+1. Post immediately to the Teams IT techs channel via `teams_send_message` — bare facts only: what, which systems, assigned owner. This is the **only non-draft send** allowed. Write the message in Aaron's voice following the `aaron-voice` rules: no greeting, no exclamation marks, plain declarative sentences, one bold imperative if an action is required now (e.g. `**Do not log in to <system> until further notice.**`).
 2. Create an urgent Planner card via `planner_create_task` with the owner assigned and due date of today.
 3. Continue enrichment in parallel (see below).
 
 ### 🔎 Active Investigation
 
 1. Run full enrichment (see below).
-2. Draft a Teams notification and Planner card — present both to the operator for review. Do not send.
+2. Draft a Teams notification and Planner card — present both to the operator for review. Do not send. Draft the Teams message in Aaron's voice following the `aaron-voice` rules (same guidance as Burning Building above). Run the self-check before presenting.
 
 ### 🔍 Background Enrichment
 

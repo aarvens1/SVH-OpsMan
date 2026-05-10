@@ -59,3 +59,5 @@ From the transcript, pull:
 Update (or create) `Meetings/YYYY-MM-DD-[meeting-name].md` with a post-call section.
 
 Suggest action items as `planner_create_task` or `todo_create_task` entries — presented as drafts for review. Nothing creates without confirmation.
+
+If the user asks for a follow-up email or Teams message to attendees, draft it in Aaron's voice following the `aaron-voice` rules. For a post-call recap to attendees, Template E (long-story-short narrative) is usually the right shape. Run the self-check before presenting. Nothing gets sent without explicit instruction.
