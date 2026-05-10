@@ -1,3 +1,5 @@
+// Note: planner_delete_task is intentionally not implemented.
+// Tasks are marked complete at 100% to preserve history — see CLAUDE.md conventions.
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getGraphToken } from "../auth/graph.js";

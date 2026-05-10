@@ -254,6 +254,15 @@ Breaks input into a scope statement, deliverables, WBS, dependencies, and effort
 
 ### Content & documentation
 
+#### Draft
+**Invoke:** `/draft` · "Draft an email" · "Write a message to" · "Draft this for me" · "Help me write this"
+
+Give Claude rough notes, bullet points, or a plain description of what you need to say — it drafts an email, Teams message, or meeting invite body in Aaron's voice. Picks the right template shape automatically based on audience and situation. Nothing is sent; output lands in Obsidian as a clearly-labelled draft.
+
+**Output:** `Drafts/YYYY-MM-DD-[recipient or topic].md`
+
+---
+
 #### TicketSmith
 **Invoke:** `/ticketsmith` · "Write a ticket for this" · "Clean up this complaint" · "Turn this into a ticket"
 
@@ -300,7 +309,7 @@ Claude writes directly to the relevant folder. Nothing gets sent outside Obsidia
 ```
 SVH OpsMan/
 ├── Briefings/
-│   ├── Daily/             ← Day Starter / Day Ender
+│   ├── Daily/             ← Day Starter / Day Ender / Posture Check snapshots
 │   └── Weekly/            ← Week Starter / Week Ender
 ├── Incidents/
 │   ├── Active/

@@ -57,3 +57,12 @@ Invoke by name (`/day-starter`) or trigger phrase (e.g., "morning briefing", "X 
 ## References
 
 `references/` contains triage guides and SVH-specific failure patterns. Copy to `Obsidian/References/` so the Obsidian MCP can serve them in any Claude session, not just when this repo is open.
+
+| File | Used by |
+|------|---------|
+| `triage-gate.md` | IR Triage — lane classification criteria and escalation path |
+| `common-failure-modes.md` | Troubleshooting — SVH-specific failure patterns (Hyper-V, MABS, CMiC, UniFi, WSUS) |
+| `hypothesis-patterns.md` | Troubleshooting — isolation moves by problem class |
+| `common-event-clusters.md` | Event Log Triage — Wazuh/Windows event signatures grouped by scenario |
+| `ps-remoting-snippets.md` | Event Log Triage — Get-WinEvent recipes for common investigation scenarios |
+| `setup-winrm.md` | Event Log Triage — one-time WinRM trust setup from WSL to Windows targets |
