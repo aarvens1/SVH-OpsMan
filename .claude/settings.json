@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(npm run lint)",
+      "Bash(npm install)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git fetch *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(git stash *)",
+      "Bash(find . -name *.ts *)",
+      "Bash(grep * mcp-server/src/**)",
+      "Read(.claude/**)",
+      "Read(mcp-server/src/**)",
+      "Read(mcp-server/package.json)",
+      "Read(mcp-server/tsconfig.json)",
+      "Read(mcp-server/.env.example)",
+      "Read(references/**)",
+      "Read(README.md)",
+      "Read(CLAUDE.md)",
+      "Read(.gitignore)"
+    ],
+    "deny": [
+      "Read(mcp-server/.env)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
