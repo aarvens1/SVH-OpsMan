@@ -26,9 +26,14 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
   server.registerTool(
     "azure_list_resource_groups",
     {
-      description: "List all resource groups in the Azure subscription.",
+      description:
+        "List all resource groups in the Azure subscription. " +
+        "Use this to discover what resource groups exist before scoping other azure_ tools.",
       inputSchema: z.object({
-        filter: z.string().optional().describe("OData $filter expression"),
+        filter: z
+          .string()
+          .optional()
+          .describe("OData $filter expression, e.g. \"tagName eq 'env' and tagValue eq 'prod'\""),
       }),
     },
     async ({ filter }) => {
@@ -105,9 +110,14 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
   server.registerTool(
     "azure_list_storage_accounts",
     {
-      description: "List storage accounts in the subscription or resource group.",
+      description:
+        "List storage accounts in the subscription or resource group. " +
+        "Returns account name, SKU, kind, location, and primary endpoints.",
       inputSchema: z.object({
-        resource_group: z.string().optional(),
+        resource_group: z
+          .string()
+          .optional()
+          .describe("Scope to a specific resource group. Omit to list across the subscription."),
       }),
     },
     async ({ resource_group }) => {
@@ -130,9 +140,14 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
   server.registerTool(
     "azure_list_app_services",
     {
-      description: "List App Service web apps, function apps, and API apps in the subscription.",
+      description:
+        "List App Service web apps, function apps, and API apps in the subscription. " +
+        "Returns app name, kind, state, hostnames, and App Service Plan.",
       inputSchema: z.object({
-        resource_group: z.string().optional(),
+        resource_group: z
+          .string()
+          .optional()
+          .describe("Scope to a specific resource group. Omit to list across the subscription."),
       }),
     },
     async ({ resource_group }) => {
@@ -155,9 +170,15 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
   server.registerTool(
     "azure_list_vnets",
     {
-      description: "List virtual networks and their subnets in the subscription.",
+      description:
+        "List virtual networks and their subnets in the subscription. " +
+        "Returns VNet name, address space, subnets with CIDRs, and peering connections. " +
+        "Use when mapping cloud network topology or investigating routing.",
       inputSchema: z.object({
-        resource_group: z.string().optional(),
+        resource_group: z
+          .string()
+          .optional()
+          .describe("Scope to a specific resource group. Omit to list across the subscription."),
       }),
     },
     async ({ resource_group }) => {
@@ -180,9 +201,14 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
   server.registerTool(
     "azure_list_nsgs",
     {
-      description: "List network security groups and their security rules.",
+      description:
+        "List network security groups and their inbound/outbound security rules. " +
+        "Use when auditing internet-exposed ports or reviewing firewall posture for Azure resources.",
       inputSchema: z.object({
-        resource_group: z.string().optional(),
+        resource_group: z
+          .string()
+          .optional()
+          .describe("Scope to a specific resource group. Omit to list across the subscription."),
       }),
     },
     async ({ resource_group }) => {
@@ -213,7 +239,10 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
           .string()
           .describe("Start time in ISO 8601 (e.g. 2025-05-01T00:00:00Z)"),
         end_time: z.string().optional().describe("End time in ISO 8601. Defaults to now."),
-        resource_group: z.string().optional(),
+        resource_group: z
+          .string()
+          .optional()
+          .describe("Scope to a specific resource group. Omit for subscription-wide logs."),
         caller: z.string().optional().describe("Filter by caller UPN or service principal"),
         status: z
           .enum(["Succeeded", "Failed", "Started", "Accepted"])
@@ -263,7 +292,8 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
           .describe("Time grain: BillingMonth, Month, or a custom range"),
         group_by: z
           .enum(["ResourceGroup", "ServiceName", "ResourceType"])
-          .default("ResourceGroup"),
+          .default("ResourceGroup")
+          .describe("Dimension to group costs by — ResourceGroup, ServiceName, or ResourceType"),
       }),
     },
     async ({ period, group_by }) => {
