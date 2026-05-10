@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import axios from "axios";
 import https from "https";
-import { formatError } from "../utils/http.js";
+import { wazuhClient, formatError } from "../utils/http.js";
 
 const DISABLED_MSG =
   "Wazuh service not configured: set WAZUH_URL, WAZUH_USERNAME, WAZUH_PASSWORD";
@@ -17,6 +17,7 @@ function err(e: unknown) {
   return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
 }
 
+// Shared TLS agent for the auth POST (same cert-skip as wazuhClient)
 const tlsAgent = new https.Agent({ rejectUnauthorized: false });
 
 let cachedJwt: { token: string; expires_at: number } | null = null;
@@ -31,26 +32,13 @@ async function getJwt(): Promise<string> {
   const res = await axios.post<{ data: { token: string } }>(
     `${url}/security/user/authenticate`,
     {},
-    {
-      auth: { username, password },
-      httpsAgent: tlsAgent,
-      timeout: 15_000,
-    }
+    { auth: { username, password }, httpsAgent: tlsAgent, timeout: 15_000 }
   );
   cachedJwt = {
     token: res.data.data.token,
     expires_at: Date.now() + 15 * 60 * 1000,
   };
   return cachedJwt.token;
-}
-
-function wazuh(jwt: string) {
-  return axios.create({
-    baseURL: process.env["WAZUH_URL"] ?? "https://localhost:55000",
-    timeout: 30_000,
-    headers: { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
-    httpsAgent: tlsAgent,
-  });
 }
 
 export function registerWazuhTools(server: McpServer, enabled: boolean): void {
@@ -85,7 +73,7 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
         if (status) params.status = status;
         if (os_platform) params["os.platform"] = os_platform;
         if (search) params.search = search;
-        const res = await wazuh(jwt).get("/agents", { params });
+        const res = await wazuhClient(jwt).get("/agents", { params });
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -140,7 +128,7 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
         if (time_to) params.timestamp_to = time_to;
         if (rule_group) params["rule.groups"] = rule_group;
         if (query) params.q = query;
-        const res = await wazuh(jwt).get("/alerts", { params });
+        const res = await wazuhClient(jwt).get("/alerts", { params });
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -169,7 +157,7 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
         const jwt = await getJwt();
         const params: Record<string, string | number> = { limit };
         if (severity) params.severity = severity;
-        const res = await wazuh(jwt).get(
+        const res = await wazuhClient(jwt).get(
           `/vulnerability/${agent_id}`,
           { params }
         );
@@ -207,7 +195,7 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
         if (time_to) params.date_add_to = time_to;
         if (path) params.path = path;
         if (event_type) params.type = event_type;
-        const res = await wazuh(jwt).get(`/syscheck/${agent_id}`, { params });
+        const res = await wazuhClient(jwt).get(`/syscheck/${agent_id}`, { params });
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -236,7 +224,7 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
         const jwt = await getJwt();
         const params: Record<string, string | number> = { limit };
         if (status !== "all") params.status = status;
-        const res = await wazuh(jwt).get(`/rootcheck/${agent_id}`, { params });
+        const res = await wazuhClient(jwt).get(`/rootcheck/${agent_id}`, { params });
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -267,7 +255,7 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
         if (group) params.groups = group;
         if (min_level) params["level.from"] = min_level;
         if (rule_id) params.rule_ids = rule_id;
-        const res = await wazuh(jwt).get("/rules", { params });
+        const res = await wazuhClient(jwt).get("/rules", { params });
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -291,7 +279,7 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
         const jwt = await getJwt();
         const params: Record<string, string | number> = { limit };
         if (search) params.search = search;
-        const res = await wazuh(jwt).get("/decoders", { params });
+        const res = await wazuhClient(jwt).get("/decoders", { params });
         return ok(res.data);
       } catch (e) {
         return err(e);

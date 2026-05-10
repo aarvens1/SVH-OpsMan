@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { loadBitwardenSecrets } from "./secrets.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 // Microsoft Graph integrations
@@ -32,6 +33,10 @@ import { registerTodoistTools } from "./tools/todoist.js";
 // Specialised
 import { registerPrinterLogicTools } from "./tools/printerlogic.js";
 import { registerThreatIntelTools } from "./tools/threat-intel.js";
+
+// Load credentials from Bitwarden before checking env vars.
+// Falls back silently to env vars / .env file if BW_SESSION is not set.
+await loadBitwardenSecrets();
 
 function checkEnv(...vars: string[]): boolean {
   const missing = vars.filter((v) => !process.env[v]);
