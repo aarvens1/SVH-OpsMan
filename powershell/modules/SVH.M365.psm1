@@ -104,23 +104,8 @@ function Get-SVHMailFolders {
 }
 Export-ModuleMember -Function Get-SVHMailFolders
 
-function Get-SVHMailboxSettings {
-    <#
-    .SYNOPSIS  Get mailbox settings — OOO state, timezone, working hours.
-    .EXAMPLE   Get-SVHMailboxSettings jdoe@shoestringvalley.com
-    #>
-    [CmdletBinding()]
-    [OutputType([PSObject])]
-    param(
-        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
-        [Alias('UPN')]
-        [string]$UserPrincipalName
-    )
-    process { gGet "/users/$UserPrincipalName/mailboxSettings" }
-}
-Export-ModuleMember -Function Get-SVHMailboxSettings
-
 # ── VERIFY: Outlook Calendar ───────────────────────────────────────────────────
+# Get-SVHMailboxSettings and Set-SVHMailboxAutoReply live in SVH.Exchange.psm1
 
 function Get-SVHCalendarEvents {
     <#
@@ -448,38 +433,8 @@ function Send-SVHMail {
 }
 Export-ModuleMember -Function Send-SVHMail
 
-function Set-SVHMailboxAutoReply {
-    <#
-    .SYNOPSIS  Configure or clear the automatic reply (OOO) for a mailbox.
-    .EXAMPLE   Set-SVHMailboxAutoReply -UPN jdoe@svh.com -Status disabled
-    .EXAMPLE   Set-SVHMailboxAutoReply -UPN jdoe@svh.com -Status scheduled `
-                   -InternalMessage 'Back Monday' -ExternalMessage 'Out of office' `
-                   -StartTime (Get-Date) -EndTime (Get-Date).AddDays(5)
-    #>
-    [CmdletBinding(SupportsShouldProcess)]
-    param(
-        [Parameter(Mandatory)][string]$UserPrincipalName,
-        [Parameter(Mandatory)][ValidateSet('disabled','enabled','scheduled')][string]$Status,
-        [string]$InternalMessage = '',
-        [string]$ExternalMessage = '',
-        [datetime]$StartTime,
-        [datetime]$EndTime
-    )
-    $ooo = @{ status = $Status }
-    if ($InternalMessage) { $ooo['internalReplyMessage'] = $InternalMessage }
-    if ($ExternalMessage) { $ooo['externalReplyMessage'] = $ExternalMessage }
-    if ($Status -eq 'scheduled' -and $StartTime -and $EndTime) {
-        $ooo['scheduledStartDateTime'] = @{ dateTime = $StartTime.ToUniversalTime().ToString('o'); timeZone = 'UTC' }
-        $ooo['scheduledEndDateTime']   = @{ dateTime = $EndTime.ToUniversalTime().ToString('o');   timeZone = 'UTC' }
-    }
-    if ($PSCmdlet.ShouldProcess($UserPrincipalName, "Set auto-reply to '$Status'")) {
-        gPatch "/users/$UserPrincipalName/mailboxSettings" @{ automaticRepliesSetting = $ooo }
-        Write-Verbose "Auto-reply set to '$Status' for $UserPrincipalName"
-    }
-}
-Export-ModuleMember -Function Set-SVHMailboxAutoReply
-
 # ── ACT: Calendar ─────────────────────────────────────────────────────────────
+# Set-SVHMailboxAutoReply lives in SVH.Exchange.psm1
 
 function New-SVHCalendarEvent {
     <#

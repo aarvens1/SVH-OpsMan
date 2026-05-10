@@ -32,6 +32,8 @@ You ──► Claude
 
 **Human-initiated only.** Nothing runs on a schedule. Skills are prompt patterns you trigger — Claude doesn't act autonomously.
 
+**PowerShell module suite** lives in `powershell/`. Load with `. ./connect.ps1` from Windows Terminal. The modules expose write operations and on-prem checks that Claude doesn't perform autonomously — things like disabling an account, isolating a device, rebooting a server, or pulling Hyper-V and MABS job state via PSRemoting. See [PowerShell modules](#powershell-modules) below.
+
 ---
 
 ## What Claude has access to
@@ -624,6 +626,57 @@ az role assignment create --assignee <client-id> \
 | `common-event-clusters.md` | Event Log Triage — Wazuh/Windows event signatures grouped by scenario |
 | `ps-remoting-snippets.md` | Event Log Triage — Get-WinEvent recipes for common investigation scenarios |
 | `setup-winrm.md` | Event Log Triage — one-time WinRM trust setup from WSL to Windows targets |
+
+---
+
+## PowerShell modules
+
+Load with `. ./connect.ps1` from Windows Terminal (WSL). Credentials come from Bitwarden (`bw unlock`) or `powershell/.env`.
+
+| Module | What it covers |
+|--------|---------------|
+| `SVH.Core` | Foundation — token cache, REST wrapper, credential accessor, domain constants, tier usernames |
+| `SVH.Entra` | Entra ID + Intune — user/group/device lifecycle, MFA gap, license waste, stale devices, risky users, TAPs |
+| `SVH.M365` | Teams, Mail, Calendar, Planner, To Do, OneDrive, SharePoint |
+| `SVH.Exchange` | Exchange Online admin — mailbox settings, forwarding, litigation hold, message trace, service health |
+| `SVH.Azure` | Azure ARM + Defender MDE + Recovery Services — VMs, storage, NSGs, backup jobs (including MABS), MDE isolation/scan |
+| `SVH.NinjaOne` | RMM — device discovery, services, disk, patches, backups, event logs, fleet-wide alert and offline summaries |
+| `SVH.Wazuh` | SIEM — alerts, agents, FIM, vulnerabilities, auth failure detection |
+| `SVH.UniFi` | Network — sites, devices, clients, WLANs, firewall rules, AP health, rogue client detection |
+| `SVH.Confluence` | Confluence pages, search, and comments |
+| `SVH.PrinterLogic` | Printers, drivers, deployment, quotas, audit log |
+| `SVH.OnPrem` | PSRemoting — disk, services, pending reboot, Hyper-V VMs, cluster state, MABS job log, SQL memory config |
+| `SVH.Cross` | Cross-system composites — user/asset summaries, patch surface, backup health, compliance gap, IR lockdown |
+
+### Credential tiers
+
+| Tier | Account | Auth | PSCredential |
+|------|---------|------|-------------|
+| `standard` | `astevens@shoestringvalley.com` | Passkey (BW) | ✗ — interactive browser only |
+| `server` | `sa_stevens@andersen-cost.com` | Password | ✓ — PSRemoting, Kerberos from domain terminal |
+| `m365` | `ma_stevens@shoestringvalley.com` | Passkey (BW) | ✗ — interactive browser only |
+| `app` | `aa_stevens@shoestringvalley.com` | Passkey (BW) | ✗ — interactive browser only |
+| `domain` | `ACCO\da_stevens` | Password | ✓ — AD domain operations |
+
+Use `Get-SVHTierUsername -Tier server` to get the correct account name for PSRemoting credentials.
+
+### Credential reference
+
+Bitwarden item: **SVH OpsMan** (custom fields match `.env` key names exactly)
+
+| Key | Used by |
+|-----|---------|
+| `GRAPH_TENANT_ID` / `GRAPH_CLIENT_ID` / `GRAPH_CLIENT_SECRET` | Entra, M365, Exchange |
+| `MDE_TENANT_ID` / `MDE_CLIENT_ID` / `MDE_CLIENT_SECRET` | Azure (MDE) |
+| `AZURE_TENANT_ID` / `AZURE_CLIENT_ID` / `AZURE_CLIENT_SECRET` / `AZURE_SUBSCRIPTION_ID` | Azure (ARM) |
+| `NINJA_CLIENT_ID` / `NINJA_CLIENT_SECRET` | NinjaOne |
+| `SVH_NINJA_DEFAULT_ORG` | NinjaOne — default org ID for server fleet queries |
+| `WAZUH_URL` / `WAZUH_USERNAME` / `WAZUH_PASSWORD` | Wazuh |
+| `UNIFI_API_KEY` | UniFi Cloud |
+| `UNIFI_CONTROLLER_URL` / `UNIFI_USERNAME` / `UNIFI_PASSWORD` | UniFi Controller |
+| `SVH_UNIFI_DEFAULT_SITE` | UniFi — default site ID for most-used site |
+| `CONFLUENCE_DOMAIN` / `CONFLUENCE_EMAIL` / `CONFLUENCE_API_TOKEN` | Confluence |
+| `PRINTERLOGIC_URL` / `PRINTERLOGIC_API_TOKEN` | PrinterLogic |
 
 ---
 

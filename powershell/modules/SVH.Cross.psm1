@@ -62,10 +62,10 @@ function Get-SVHUserSummary {
         Write-Verbose "[Cross] Pulling user summary for '$UserPrincipalName'"
         $result = [ordered]@{ UPN = $UserPrincipalName }
 
-        try { $result['EntraUser']     = Get-SVHUser -UserPrincipalName $UserPrincipalName } catch { $result['EntraUser'] = "Error: $_" }
-        try { $result['MFAMethods']    = (Get-SVHUserMFA -UserPrincipalName $UserPrincipalName).value } catch { $result['MFAMethods'] = "Error: $_" }
-        try { $result['Licenses']      = (Get-SVHUserLicenses -UserPrincipalName $UserPrincipalName).value } catch { $result['Licenses'] = "Error: $_" }
-        try { $result['RecentSignIns'] = (Get-SVHSignInLogs -UserPrincipalName $UserPrincipalName -Hours 72 -Top 10).value } catch { $result['RecentSignIns'] = "Error: $_" }
+        try { $result['EntraUser']     = Get-SVHUser -Identity $UserPrincipalName } catch { $result['EntraUser'] = "Error: $_" }
+        try { $result['MFAMethods']    = Get-SVHUserMFA -Identity $UserPrincipalName } catch { $result['MFAMethods'] = "Error: $_" }
+        try { $result['Licenses']      = Get-SVHUserLicenses -Identity $UserPrincipalName } catch { $result['Licenses'] = "Error: $_" }
+        try { $result['RecentSignIns'] = Get-SVHSignInLogs -Identity $UserPrincipalName -Hours 72 -Top 10 } catch { $result['RecentSignIns'] = "Error: $_" }
         try { $result['IntuneDevices'] = Get-SVHIntuneDevice | Where-Object { $_.userPrincipalName -eq $UserPrincipalName } } catch { $result['IntuneDevices'] = "Error: $_" }
         try { $result['MailboxSettings'] = Get-SVHMailboxSettings -Identity $UserPrincipalName } catch { $result['MailboxSettings'] = "Error: $_" }
 
@@ -116,18 +116,25 @@ Export-ModuleMember -Function Get-SVHPatchSurface
 
 function Get-SVHBackupHealth {
     <#
-    .SYNOPSIS  Cross-system backup status: NinjaOne jobs + Azure Recovery Services vaults.
+    .SYNOPSIS  Cross-system backup status: NinjaOne + Azure RSV (including MABS jobs).
     .DESCRIPTION
-        Returns a unified view of backup failures from NinjaOne (managed backup) and
-        Azure Recovery Services. Red-flags any job not in 'Completed' or 'CompletedWithWarnings'.
+        Returns a unified view of backup jobs from:
+          - NinjaOne managed backup
+          - Azure Recovery Services vaults (native VM backup AND MABS/DPM jobs)
+
+        MABS jobs appear as Source='AzureRSV-MABS' with BackupType='MAB'.
+        Filter for failures: Where-Object Status -notin 'Completed','CompletedWithWarnings'
     .EXAMPLE   Get-SVHBackupHealth | Where-Object Status -notin 'Completed','CompletedWithWarnings'
+    .EXAMPLE   Get-SVHBackupHealth | Where-Object Source -eq 'AzureRSV-MABS'
     #>
     [CmdletBinding()]
     [OutputType([PSObject])]
     param(
-        [string]$SubscriptionId,
         [int]$NinjaPageSize = 100
     )
+    # Resolve subscription ID from credentials — shared across all SVH companies
+    $subId = try { Get-SVHCredential 'AZURE_SUBSCRIPTION_ID' } catch { $null }
+
     Write-Verbose '[Cross] Pulling backup health'
 
     # NinjaOne managed backups
@@ -136,38 +143,45 @@ function Get-SVHBackupHealth {
         foreach ($b in $ninjaBackups) {
             [PSCustomObject]@{
                 Source     = 'NinjaOne'
+                BackupType = 'NinjaManaged'
                 DeviceName = $b.deviceName ?? $b.systemName
                 JobName    = $b.planName
                 Status     = $b.lastRunStatus
                 LastRun    = $b.lastRunTime
                 NextRun    = $b.nextScheduledTime
+                ErrorDetail = $null
             }
         }
     } catch {
         Write-Verbose "[Cross] NinjaOne backup query failed: $_"
     }
 
-    # Azure Recovery Services
-    if ($SubscriptionId) {
+    # Azure Recovery Services (native VM + MABS)
+    if ($subId) {
         try {
-            $vaults = Get-SVHRecoveryVaults -SubscriptionId $SubscriptionId
+            $vaults = Get-SVHRecoveryVaults
             foreach ($v in $vaults) {
                 try {
-                    $jobs = Get-SVHRecoveryJobs -SubscriptionId $SubscriptionId `
-                        -ResourceGroupName $v.resourceGroup -VaultName $v.name
+                    $rg   = $v.id -split '/' | Select-Object -Index 4
+                    $jobs = Get-SVHRecoveryJobs -ResourceGroupName $rg -VaultName $v.name
                     foreach ($j in $jobs) {
+                        $mgmtType = $j.properties?.backupManagementType
                         [PSCustomObject]@{
-                            Source     = 'AzureRSV'
-                            DeviceName = $j.properties?.entityFriendlyName
-                            JobName    = $v.name
-                            Status     = $j.properties?.status
-                            LastRun    = $j.properties?.startTime
-                            NextRun    = $null
+                            Source      = if ($mgmtType -eq 'MAB') { 'AzureRSV-MABS' } else { 'AzureRSV' }
+                            BackupType  = $mgmtType
+                            DeviceName  = $j.properties?.entityFriendlyName
+                            JobName     = $v.name
+                            Status      = $j.properties?.status
+                            LastRun     = $j.properties?.startTime
+                            NextRun     = $null
+                            ErrorDetail = $j.properties?.errorDetails?.errorMessage
                         }
                     }
                 } catch { Write-Verbose "[Cross] Azure vault '$($v.name)' job query failed: $_" }
             }
         } catch { Write-Verbose "[Cross] Azure Recovery Services query failed: $_" }
+    } else {
+        Write-Verbose '[Cross] AZURE_SUBSCRIPTION_ID not set — skipping Azure RSV check'
     }
 }
 Export-ModuleMember -Function Get-SVHBackupHealth
@@ -212,7 +226,7 @@ function Get-SVHComplianceGap {
     } catch { emit 'Licensing' 'Query failed' "$_" }
 
     try {
-        $stale = Get-SVHStaleIntuneDevices -DaysThreshold $StaleDeviceDays
+        $stale = Get-SVHStaleIntuneDevices -DaysSinceSync $StaleDeviceDays
         foreach ($d in $stale) { emit 'Intune' "Device not seen in $StaleDeviceDays days" "$($d.deviceName) (last: $($d.lastSyncDateTime))" }
     } catch { emit 'Intune' 'Query failed' "$_" }
 

@@ -264,6 +264,70 @@ function Get-SVHAdvisorRecommendations {
 }
 Export-ModuleMember -Function Get-SVHAdvisorRecommendations
 
+# ── VERIFY: Recovery Services (Backup) ───────────────────────────────────────
+
+function Get-SVHRecoveryVaults {
+    <#
+    .SYNOPSIS  List all Azure Recovery Services vaults in the subscription.
+    .DESCRIPTION
+        Returns vaults used for both native Azure VM backup and MABS/DPM-managed backup.
+        Pass results to Get-SVHRecoveryJobs to see job status per vault.
+    .EXAMPLE   Get-SVHRecoveryVaults | Select-Object name, location, resourceGroup
+    #>
+    [CmdletBinding()]
+    [OutputType([PSObject])]
+    param()
+    Write-Verbose '[Azure] Listing Recovery Services vaults'
+    (armGet "/subscriptions/$(subId)/providers/Microsoft.RecoveryServices/vaults" '2023-01-01').value | ForEach-Object {
+        $_ | Add-Member -NotePropertyName resourceGroup -NotePropertyValue ($_.id -split '/' | Select-Object -Index 4) -Force -PassThru
+    }
+}
+Export-ModuleMember -Function Get-SVHRecoveryVaults
+
+function Get-SVHRecoveryJobs {
+    <#
+    .SYNOPSIS  List backup jobs for an Azure Recovery Services vault.
+    .DESCRIPTION
+        Returns recent jobs including native Azure VM backup (AzureIaasVM),
+        MABS/DPM-managed backup (MAB), Azure Storage backup (AzureStorage),
+        and Azure Workload backup (AzureWorkload).
+
+        MABS jobs are identified by properties.backupManagementType = 'MAB'.
+        Get-SVHBackupHealth in SVH.Cross uses this to present a unified backup view.
+    .PARAMETER ResourceGroupName
+        Resource group containing the vault.
+    .PARAMETER VaultName
+        Name of the Recovery Services vault.
+    .PARAMETER Status
+        Filter by job status. 'all' returns everything.
+    .PARAMETER Hours
+        How many hours of history to retrieve (approximate — API returns recent jobs).
+    .EXAMPLE
+        Get-SVHRecoveryVaults | ForEach-Object { Get-SVHRecoveryJobs -ResourceGroupName $_.resourceGroup -VaultName $_.name }
+    .EXAMPLE
+        Get-SVHRecoveryJobs -ResourceGroupName RG-SVH -VaultName SVH-Vault -Status Failed
+    #>
+    [CmdletBinding()]
+    [OutputType([PSObject])]
+    param(
+        [Parameter(Mandatory)][string]$ResourceGroupName,
+        [Parameter(Mandatory)][string]$VaultName,
+        [ValidateSet('Completed','Failed','InProgress','Cancelled','CompletedWithWarnings','all')]
+        [string]$Status = 'all',
+        [ValidateSet('AzureIaasVM','MAB','AzureStorage','AzureWorkload','all')]
+        [string]$BackupType = 'all',
+        [int]$Top = 50
+    )
+    $q = @{ '$top' = $Top }
+    $filters = @()
+    if ($Status -ne 'all')     { $filters += "properties/status eq '$Status'" }
+    if ($BackupType -ne 'all') { $filters += "properties/backupManagementType eq '$BackupType'" }
+    if ($filters) { $q['$filter'] = $filters -join ' and ' }
+    Write-Verbose "[Azure] Getting backup jobs for vault $VaultName"
+    (armGet "/subscriptions/$(subId)/resourceGroups/$ResourceGroupName/providers/Microsoft.RecoveryServices/vaults/$VaultName/backupJobs" '2023-01-01' $q).value
+}
+Export-ModuleMember -Function Get-SVHRecoveryJobs
+
 # ── VERIFY: Defender for Endpoint ─────────────────────────────────────────────
 
 function Get-SVHMDEDevices {

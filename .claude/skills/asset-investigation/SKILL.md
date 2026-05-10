@@ -67,8 +67,12 @@ date: YYYY-MM-DD
 skill: Asset Investigation
 status: draft
 tags: [asset]
+ninja_device_id: <id field from ninja_get_server response>
+mde_machine_id: <id field from mde_get_device response>
 ---
 ```
+
+Populate `ninja_device_id` and `mde_machine_id` from the API responses whenever available — leave blank if the asset isn't in that system. These IDs are used by `Get-SVHPatchSurface` and `Invoke-SVHUserLockdown` in the PowerShell module suite, and storing them in the note saves having to look them up each time.
 
 This is a **persistent note** — each investigation appends a dated section rather than overwriting. Structure: Asset summary → Current state → Recent findings → Open items → History (dated sections).
 

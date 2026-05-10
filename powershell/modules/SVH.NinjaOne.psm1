@@ -30,6 +30,12 @@ function script:Get-NinjaToken {
 
 function script:nHeaders { @{ Authorization = "Bearer $(Get-NinjaToken)" } }
 
+function script:ResolveNinjaOrg([int]$OrgId) {
+    if ($OrgId -gt 0) { return $OrgId }
+    $v = $Global:SVHCreds?['SVH_NINJA_DEFAULT_ORG']
+    if ($v) { [int]$v } else { 0 }
+}
+
 function script:nGet($path, $query = @{}) {
     Invoke-SVHRest -Uri "https://app.ninjarmm.com/api/v2$path" -Headers (nHeaders) -Query $query
 }
@@ -52,9 +58,10 @@ function Get-SVHNinjaServers {
         [int]$OrgId       = 0,
         [int]$PageSize    = 50
     )
-    $filterStr = ($OsFilter -split ',' | ForEach-Object { "osType:$($_.Trim())" }) -join ','
-    $query = @{ pageSize = $PageSize; filter = $filterStr }
-    if ($OrgId -gt 0) { $query['organizationId'] = $OrgId }
+    $filterStr  = ($OsFilter -split ',' | ForEach-Object { "osType:$($_.Trim())" }) -join ','
+    $query      = @{ pageSize = $PageSize; filter = $filterStr }
+    $resolvedOrg = ResolveNinjaOrg $OrgId
+    if ($resolvedOrg -gt 0) { $query['organizationId'] = $resolvedOrg }
     nGet '/devices' $query
 }
 Export-ModuleMember -Function Get-SVHNinjaServers
@@ -106,13 +113,21 @@ Export-ModuleMember -Function Get-SVHNinjaOrg
 function Get-SVHNinjaOfflineDevices {
     <#
     .SYNOPSIS  List all devices currently offline — quick fleet health check.
+    .DESCRIPTION
+        When SVH_NINJA_DEFAULT_ORG is set in credentials, scopes to that org automatically.
     .EXAMPLE   Get-SVHNinjaOfflineDevices | Select-Object systemName, lastContact, os
     #>
     [CmdletBinding()]
     [OutputType([PSObject])]
-    param([int]$PageSize = 200)
+    param(
+        [int]$OrgId    = 0,
+        [int]$PageSize = 200
+    )
     Write-Verbose '[Ninja] Querying offline devices'
-    nGet '/devices' @{ pageSize = $PageSize; filter = 'status:OFFLINE' }
+    $query = @{ pageSize = $PageSize; filter = 'status:OFFLINE' }
+    $resolvedOrg = ResolveNinjaOrg $OrgId
+    if ($resolvedOrg -gt 0) { $query['organizationId'] = $resolvedOrg }
+    nGet '/devices' $query
 }
 Export-ModuleMember -Function Get-SVHNinjaOfflineDevices
 
@@ -363,7 +378,8 @@ function Get-SVHNinjaAllBackups {
         [int]$PageSize = 50
     )
     $query = @{ pageSize = $PageSize }
-    if ($OrgId -gt 0) { $query['organizationId'] = $OrgId }
+    $resolvedOrg = ResolveNinjaOrg $OrgId
+    if ($resolvedOrg -gt 0) { $query['organizationId'] = $resolvedOrg }
     nGet '/devices/backup' $query
 }
 Export-ModuleMember -Function Get-SVHNinjaAllBackups
