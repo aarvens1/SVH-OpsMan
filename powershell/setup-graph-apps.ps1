@@ -62,8 +62,7 @@ Import-Module MSAL.PS -Force
 # Microsoft Graph PowerShell public client app ID (well-known, used by the PS module itself)
 $msalToken = Get-MsalToken `
     -ClientId '14d82eec-204b-4c2f-b7e8-296a70dab67e' `
-    -Scopes 'https://graph.microsoft.com/Application.ReadWrite.All',
-            'https://graph.microsoft.com/Directory.ReadAll' `
+    -Scopes 'https://graph.microsoft.com/.default' `
     -DeviceCode
 
 $secureToken = $msalToken.AccessToken | ConvertTo-SecureString -AsPlainText -Force
