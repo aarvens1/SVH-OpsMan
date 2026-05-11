@@ -6,8 +6,11 @@
 #   3. Azure ARM service principal       "SVH OpsMan ARM"
 #   4. Exchange ApplicationAccessPolicy  restricts mail to astevens only
 #
-# Run as your aa_ app-tier account for the app registrations (needs Application Administrator).
-# The Exchange policy step connects as your ma_ account (needs Exchange Administrator).
+# Run as your ma_ account throughout. Required Entra roles on that account:
+#   - Application Administrator  (create app regs + grant admin consent)
+#   - Exchange Administrator      (ApplicationAccessPolicy step)
+#   - User Access Administrator   (assign Reader roles on the Azure subscription)
+#     OR Owner on the subscription -- whichever is already assigned
 #
 # Usage:
 #   Connect-AzAccount                   # sign in first if not already connected
@@ -64,11 +67,12 @@ if ($needsRestart) {
 # Device code flow is used throughout -- it opens microsoft.com/devicelogin in
 # your normal browser, where passkeys work. Follow the prompt in each step.
 
-Write-Step "Connecting to Microsoft Graph (device code -- sign in as your aa_ account)"
+Write-Step "Connecting to Microsoft Graph (device code -- sign in as your ma_ account)"
+$ProgressPreference = 'SilentlyContinue'
 Connect-MgGraph -Scopes "Application.ReadWrite.All", "Directory.Read.All" -UseDeviceCode -NoWelcome
 Write-Ok "Microsoft Graph connected"
 
-Write-Step "Connecting to Azure (device code -- same aa_ account)"
+Write-Step "Connecting to Azure (device code -- same ma_ account)"
 Connect-AzAccount -UseDeviceAuthentication | Out-Null
 $azContext = Get-AzContext
 Write-Ok "Azure connected as $($azContext.Account.Id) -- subscription: $($azContext.Subscription.Name)"
@@ -199,7 +203,7 @@ Write-Ok "ARM service principal created -- app ID: $($armSp.AppId)"
 
 # ── 5. Exchange ApplicationAccessPolicy ───────────────────────────────────────
 Write-Step "Configuring Exchange ApplicationAccessPolicy"
-Write-Warn "Connecting to Exchange Online (device code -- sign in as your ma_ account)"
+Write-Warn "Connecting to Exchange Online (device code -- same ma_ account)"
 
 Connect-ExchangeOnline -Device -ShowProgress $false
 
