@@ -34,7 +34,7 @@ function New-AppSecret {
 }
 
 # ── 0. Prerequisites ──────────────────────────────────────────────────────────
-Write-Step "Checking required modules"
+Write-Step "Checking and updating required modules"
 $required = @(
     'Az.Accounts',
     'Az.Resources',
@@ -42,20 +42,31 @@ $required = @(
     'Microsoft.Graph.Identity.DirectoryManagement',
     'ExchangeOnlineManagement'
 )
+$needsRestart = $false
 foreach ($mod in $required) {
     if (-not (Get-Module -ListAvailable -Name $mod)) {
         Write-Warn "$mod not found -- installing..."
         Install-Module $mod -Scope CurrentUser -Force -AllowClobber
+        $needsRestart = $true
+        Write-Ok "$mod installed"
+    } else {
+        # Keep modules current to avoid Azure.Identity version conflicts
+        Update-Module $mod -Force -ErrorAction SilentlyContinue
+        Write-Ok "$mod up to date"
     }
-    Write-Ok "$mod available"
+}
+if ($needsRestart) {
+    Write-Host "`n  Modules were just installed. Please close and reopen PowerShell, then run the script again." -ForegroundColor Yellow
+    exit
 }
 
 # ── 1. Connect ────────────────────────────────────────────────────────────────
-Write-Step "Connecting to Microsoft Graph and Azure"
-
+# Connect to Graph BEFORE importing/connecting Az to avoid Azure.Identity DLL conflicts.
+Write-Step "Connecting to Microsoft Graph"
 Connect-MgGraph -Scopes "Application.ReadWrite.All", "Directory.Read.All" -NoWelcome
 Write-Ok "Microsoft Graph connected"
 
+Write-Step "Connecting to Azure"
 if (-not (Get-AzContext)) {
     Connect-AzAccount
 }
