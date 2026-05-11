@@ -67,7 +67,35 @@ else
   ok "Bitwarden CLI $(bw --version) already installed"
 fi
 
-# ── 4. Claude Code (native binary) ───────────────────────────────────────────
+# ── 4. GitHub SSH key ────────────────────────────────────────────────────────
+step "GitHub SSH key"
+SSH_KEY="$HOME/.ssh/id_ed25519"
+if [ ! -f "$SSH_KEY" ]; then
+  ssh-keygen -t ed25519 -C "astevens@shoestringvalley.com" -f "$SSH_KEY" -N ""
+  ok "SSH key generated: $SSH_KEY"
+  echo -e "\n  ${YELLOW}Action required:${RESET} add this public key to github.com/settings/keys"
+  echo -e "  ${BOLD}$(cat "${SSH_KEY}.pub")${RESET}\n"
+else
+  ok "SSH key already exists: $SSH_KEY"
+fi
+
+# Ensure github.com is a known host (avoids interactive prompt on first push)
+if ! ssh-keygen -F github.com &>/dev/null; then
+  ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+  ok "github.com added to known_hosts"
+fi
+
+# Switch remote to SSH if it's currently HTTPS
+CURRENT_REMOTE=$(git -C "$REPO_DIR" remote get-url origin 2>/dev/null || echo "")
+if [[ "$CURRENT_REMOTE" == https://github.com/* ]]; then
+  SSH_REMOTE="${CURRENT_REMOTE/https:\/\/github.com\//git@github.com:}"
+  git -C "$REPO_DIR" remote set-url origin "$SSH_REMOTE"
+  ok "Remote switched from HTTPS to SSH: $SSH_REMOTE"
+else
+  ok "Remote already using SSH"
+fi
+
+# ── 5. Claude Code (native binary) ──────────────────────────────────────────
 step "Claude Code CLI"
 mkdir -p "$HOME/.local/bin"
 
@@ -92,7 +120,7 @@ else
   ok "Claude Code $(claude --version 2>/dev/null | head -1) already installed"
 fi
 
-# ── 5. Build mcp-server ───────────────────────────────────────────────────────
+# ── 6. Build mcp-server ───────────────────────────────────────────────────────
 step "mcp-server build"
 cd "$REPO_DIR/mcp-server"
 npm install --silent
@@ -100,11 +128,11 @@ npm run build --silent
 ok "mcp-server built → dist/"
 cd "$REPO_DIR"
 
-# ── 6. Hook permissions ───────────────────────────────────────────────────────
+# ── 7. Hook permissions ───────────────────────────────────────────────────────
 step "Hook permissions"
 chmod +x "$REPO_DIR/.claude/hooks/"*.sh 2>/dev/null && ok "Hooks marked executable" || true
 
-# ── 7. Register svh-opsman MCP ───────────────────────────────────────────────
+# ── 8. Register svh-opsman MCP ───────────────────────────────────────────────
 step "MCP registration — svh-opsman"
 if claude mcp list 2>/dev/null | grep -q "svh-opsman"; then
   ok "svh-opsman already registered"
@@ -113,7 +141,7 @@ else
   ok "svh-opsman registered"
 fi
 
-# ── 8. Register external MCPs ─────────────────────────────────────────────────
+# ── 9. Register external MCPs ─────────────────────────────────────────────────
 step "MCP registration — external MCPs"
 
 register_mcp_simple() {
@@ -167,7 +195,7 @@ register_mcp_with_key "firecrawl" FIRECRAWL_API_KEY \
   firecrawl -e FIRECRAWL_API_KEY="${FIRECRAWL_API_KEY:-placeholder}" \
   -- npx -y @mendableai/firecrawl-mcp-server
 
-# ── 9. .env scaffold ──────────────────────────────────────────────────────────
+# ── 10. .env scaffold ─────────────────────────────────────────────────────────
 step "mcp-server .env"
 if [ ! -f "$REPO_DIR/mcp-server/.env" ]; then
   cp "$REPO_DIR/mcp-server/.env.example" "$REPO_DIR/mcp-server/.env"
@@ -180,9 +208,10 @@ fi
 echo -e "\n${GREEN}${BOLD}Setup complete.${RESET}"
 echo -e "\nNext steps:"
 echo -e "  1. ${BOLD}source ~/.bashrc${RESET}  (or open a new terminal)"
-echo -e "  2. ${BOLD}export BW_SESSION=\$(bw unlock --raw)${RESET}  — unlock Bitwarden"
+echo -e "  2. If a new SSH key was generated above, add it to ${BOLD}github.com/settings/keys${RESET}"
+echo -e "  3. ${BOLD}export BW_SESSION=\$(bw unlock --raw)${RESET}  — unlock Bitwarden"
 echo -e "     ${CYAN}or${RESET} fill in ${BOLD}mcp-server/.env${RESET} directly"
-echo -e "  3. Register any skipped MCPs (github, obsidian, fathom, firecrawl)"
+echo -e "  4. Register any skipped MCPs (github, obsidian, fathom, firecrawl)"
 echo -e "     by setting the env var and re-running, or with: ${BOLD}claude mcp add ...${RESET}"
-echo -e "  4. ${BOLD}cd mcp-server && npm start${RESET}  — verify the server starts cleanly"
-echo -e "  5. Open the repo in Claude Code: ${BOLD}claude${RESET}"
+echo -e "  5. ${BOLD}cd mcp-server && npm start${RESET}  — verify the server starts cleanly"
+echo -e "  6. Open the repo in Claude Code: ${BOLD}claude${RESET}"
