@@ -15,6 +15,20 @@ function Write-Step ($msg) { Write-Host "`n>> $msg" -ForegroundColor Cyan }
 function Write-Ok   ($msg) { Write-Host "   OK  $msg" -ForegroundColor Green }
 function Write-Warn ($msg) { Write-Host "   !!  $msg" -ForegroundColor Yellow }
 
+# ── PS version check ──────────────────────────────────────────────────────────
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    Write-Host ""
+    Write-Host "  This script requires PowerShell 7." -ForegroundColor Red
+    Write-Host "  You are running Windows PowerShell $($PSVersionTable.PSVersion)." -ForegroundColor Red
+    Write-Host ""
+    Write-Host "  Install PowerShell 7:" -ForegroundColor Yellow
+    Write-Host "    winget install Microsoft.PowerShell" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  Then reopen as 'PowerShell 7' (not 'Windows PowerShell') and run again." -ForegroundColor Yellow
+    exit 1
+}
+Write-Ok "PowerShell $($PSVersionTable.PSVersion) -- OK"
+
 # ── 0. Module ─────────────────────────────────────────────────────────────────
 Write-Step "Checking ExchangeOnlineManagement (only module loaded in this session)"
 if (-not (Get-Module -ListAvailable -Name ExchangeOnlineManagement)) {
@@ -36,8 +50,9 @@ Write-Ok "State loaded -- Graph app ID: $($state.graphClientId)"
 
 # ── 2. Connect to Exchange Online ─────────────────────────────────────────────
 Write-Step "Connecting to Exchange Online -- ma_ account"
-Write-Host "  A browser window will open. Sign in with your passkey." -ForegroundColor Cyan
-Connect-ExchangeOnline -ShowProgress $false
+Write-Host "  A code will appear below. Go to https://microsoft.com/devicelogin," -ForegroundColor Cyan
+Write-Host "  enter the code, and sign in with your passkey." -ForegroundColor Cyan
+Connect-ExchangeOnline -Device -ShowProgress $false
 Write-Ok "Connected"
 
 # ── 3. Distribution group ─────────────────────────────────────────────────────
