@@ -403,20 +403,45 @@ The MCP server communicates with Claude over **stdio** — it must run on the sa
 
 ---
 
-### 1. Claude Code project config
+### 1. Install Claude Code (native build)
+
+Install Claude Code as a native binary rather than the npm global package. The npm-installed version lives under `/usr/bin` (root-owned) and requires `sudo` for auto-updates — the native build goes to `~/.local/bin` and updates cleanly without elevated permissions.
+
+```bash
+claude install stable
+```
+
+Then make sure `~/.local/bin` is on your PATH (add once, then restart your shell or `source ~/.bashrc`):
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
+```
+
+Verify the right binary is active:
+
+```bash
+which claude   # should be ~/.local/bin/claude
+claude --version
+```
+
+If you previously installed Claude via `npm install -g`, the system copy at `/usr/bin/claude` remains but `~/.local/bin` takes precedence as long as it appears first in `PATH`.
+
+---
+
+### 2. Claude Code project config
 
 The `.claude/` directory is checked into this repo. It configures permissions, hooks, and skills automatically when you open the project in Claude Code — no extra setup needed.
 
 - **Permissions** — common git and npm operations are pre-approved so Claude doesn't prompt for them.
 - **SessionStart hook** — injects branch name, uncommitted file count, and Bitwarden status at the start of every session.
-- **Skills** — all 15 skills in `.claude/skills/` load on demand when invoked by name or trigger phrase. No context cost until you use them.
+- **Skills** — all 21 skills in `.claude/skills/` load on demand when invoked by name or trigger phrase. No context cost until you use them.
 - **Rules** — `.claude/rules/typescript.md` (TypeScript conventions, path-scoped to `mcp-server/src/**`) and `.claude/rules/obsidian-output.md` (Obsidian writing conventions, always loaded).
 
 `.claude/settings.local.json` is gitignored — use it for personal overrides.
 
 ---
 
-### 2. Build the server
+### 3. Build the server
 
 ```bash
 cd mcp-server
@@ -424,7 +449,7 @@ npm install
 npm run build
 ```
 
-### 2. Credentials
+### 4. Credentials
 
 Credentials live as **custom fields on a single Bitwarden vault item** named **"SVH OpsMan"**. Field names must match the env var key exactly (e.g., a field named `GRAPH_CLIENT_SECRET` with the client secret as its value).
 
@@ -452,7 +477,7 @@ npm start
 
 ---
 
-### 3. Register MCPs with Claude
+### 5. Register MCPs with Claude
 
 **Claude Code:**
 
