@@ -48,11 +48,11 @@ if ($needsRestart) {
 }
 
 # ── 1. Connect to Graph ───────────────────────────────────────────────────────
-Write-Step "Connecting to Microsoft Graph (device code -- ma_ account)"
+# Interactive browser is used (not device code) -- Edge/WebView2 on Windows
+# supports passkeys natively. A browser window will open; sign in as ma_.
+Write-Step "Connecting to Microsoft Graph (browser popup -- ma_ account)"
 $ProgressPreference = 'SilentlyContinue'
-Connect-MgGraph -Scopes "Application.ReadWrite.All", "Directory.Read.All" -UseDeviceCode -NoWelcome
-# Brief pause -- device code token sometimes needs a moment to fully initialize
-Start-Sleep -Seconds 3
+Connect-MgGraph -Scopes "Application.ReadWrite.All", "Directory.Read.All" -NoWelcome
 $tenantId = (Get-MgContext).TenantId
 Write-Ok "Connected -- tenant: $tenantId"
 
@@ -199,7 +199,7 @@ if (-not $mdeSp) {
 Write-Step "Configuring Exchange ApplicationAccessPolicy (restricts mail to $OWNER_UPN)"
 Write-Warn "Connecting to Exchange Online (device code -- same ma_ account)"
 
-Connect-ExchangeOnline -Device -ShowProgress $false
+Connect-ExchangeOnline -ShowProgress $false
 
 $groupAlias = "svh-opsman-mailbox"
 $groupName  = "SVH OpsMan Mailbox Access"

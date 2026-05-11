@@ -45,8 +45,8 @@ $state = Get-Content $stateFile | ConvertFrom-Json
 Write-Ok "State loaded from step 1 (tenant: $($state.tenantId))"
 
 # ── 2. Connect to Azure ───────────────────────────────────────────────────────
-Write-Step "Connecting to Azure (device code -- ma_ account)"
-Connect-AzAccount -UseDeviceAuthentication -TenantId $state.tenantId | Out-Null
+Write-Step "Connecting to Azure (browser popup -- ma_ account)"
+Connect-AzAccount -TenantId $state.tenantId | Out-Null
 $azContext = Get-AzContext
 Write-Ok "Connected as $($azContext.Account.Id) -- subscription: $($azContext.Subscription.Name)"
 
