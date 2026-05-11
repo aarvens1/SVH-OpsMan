@@ -1,30 +1,17 @@
-# setup-azure-apps.ps1 -- Create Azure app registrations and service principal for SVH OpsMan
+# setup-graph-apps.ps1 -- STEP 1 of 2
 #
-# Creates:
-#   1. Microsoft Graph app registration  "SVH OpsMan (Aaron Stevens)" -- M365, Entra, Exchange, Intune
-#   2. Defender for Endpoint app reg     "SVH OpsMan MDE"
-#   3. Azure ARM service principal       "SVH OpsMan ARM"
-#   4. Exchange ApplicationAccessPolicy  restricts mail to astevens only
+# Creates the Microsoft Graph and MDE app registrations and configures
+# the Exchange ApplicationAccessPolicy. Run this first in a fresh
+# PowerShell window, then run setup-azure-arm.ps1 in a NEW window.
 #
-# Run as your ma_ account throughout. Required Entra roles on that account:
-#   - Application Administrator  (create app regs + grant admin consent)
-#   - Exchange Administrator      (ApplicationAccessPolicy step)
-#   - User Access Administrator   (assign Reader roles on the Azure subscription)
-#     OR Owner on the subscription -- whichever is already assigned
+# Sign in as your ma_ account (needs Global Administrator activated in PIM).
 #
-# Usage:
-#   Connect-AzAccount                   # sign in first if not already connected
-#   .\setup-azure-apps.ps1
-#
-# Output: prints all credential values at the end -- paste into Bitwarden as
-#         custom fields on the "SVH OpsMan" vault item.
+# Saves state to $env:TEMP\svh-opsman-state.json for setup-azure-arm.ps1 to read.
 
 $ErrorActionPreference = 'Stop'
 
-$OWNER_UPN       = 'astevens@shoestringvalley.com'
-$SUBSCRIPTION_ID = ''   # fill in before running, or leave blank to use current az context
+$OWNER_UPN = 'astevens@shoestringvalley.com'
 
-# ── helpers ───────────────────────────────────────────────────────────────────
 function Write-Step ($msg) { Write-Host "`n>> $msg" -ForegroundColor Cyan }
 function Write-Ok   ($msg) { Write-Host "   OK  $msg" -ForegroundColor Green }
 function Write-Warn ($msg) { Write-Host "   !!  $msg" -ForegroundColor Yellow }
@@ -36,11 +23,9 @@ function New-AppSecret {
     return $cred.SecretText
 }
 
-# ── 0. Prerequisites ──────────────────────────────────────────────────────────
-Write-Step "Checking and updating required modules"
+# ── 0. Modules ────────────────────────────────────────────────────────────────
+Write-Step "Checking modules (Graph and Exchange only -- no Az)"
 $required = @(
-    'Az.Accounts',
-    'Az.Resources',
     'Microsoft.Graph.Applications',
     'Microsoft.Graph.Identity.DirectoryManagement',
     'ExchangeOnlineManagement'
@@ -53,34 +38,21 @@ foreach ($mod in $required) {
         $needsRestart = $true
         Write-Ok "$mod installed"
     } else {
-        # Keep modules current to avoid Azure.Identity version conflicts
         Update-Module $mod -Force -ErrorAction SilentlyContinue
         Write-Ok "$mod up to date"
     }
 }
 if ($needsRestart) {
-    Write-Host "`n  Modules were just installed. Please close and reopen PowerShell, then run the script again." -ForegroundColor Yellow
+    Write-Host "`n  New modules installed. Close this window, open a fresh PowerShell, and run again." -ForegroundColor Yellow
     exit
 }
 
-# ── 1. Connect ────────────────────────────────────────────────────────────────
-# Device code flow is used throughout -- it opens microsoft.com/devicelogin in
-# your normal browser, where passkeys work. Follow the prompt in each step.
-
-Write-Step "Connecting to Microsoft Graph (device code -- sign in as your ma_ account)"
+# ── 1. Connect to Graph ───────────────────────────────────────────────────────
+Write-Step "Connecting to Microsoft Graph (device code -- ma_ account)"
 $ProgressPreference = 'SilentlyContinue'
 Connect-MgGraph -Scopes "Application.ReadWrite.All", "Directory.Read.All" -UseDeviceCode -NoWelcome
-Write-Ok "Microsoft Graph connected"
-
-Write-Step "Connecting to Azure (device code -- same ma_ account)"
-Connect-AzAccount -UseDeviceAuthentication | Out-Null
-$azContext = Get-AzContext
-Write-Ok "Azure connected as $($azContext.Account.Id) -- subscription: $($azContext.Subscription.Name)"
-
-if (-not $SUBSCRIPTION_ID) {
-    $SUBSCRIPTION_ID = $azContext.Subscription.Id
-    Write-Ok "Using subscription: $SUBSCRIPTION_ID"
-}
+$tenantId = (Get-MgContext).TenantId
+Write-Ok "Connected -- tenant: $tenantId"
 
 # ── 2. Graph app registration ─────────────────────────────────────────────────
 Write-Step "Creating Graph app registration: SVH OpsMan (Aaron Stevens)"
@@ -134,21 +106,22 @@ Write-Ok "Admin consent granted"
 $graphSecret = New-AppSecret -AppObjectId $graphApp.Id -Label "OpsMan MCP server"
 Write-Ok "Client secret created (expires 2 years)"
 
-# ── 3. Defender for Endpoint app registration ─────────────────────────────────
+# ── 3. MDE app registration ───────────────────────────────────────────────────
 Write-Step "Creating MDE app registration: SVH OpsMan MDE"
 
 $mdeSp = Get-MgServicePrincipal -Filter "displayName eq 'WindowsDefenderATP'" |
     Select-Object -First 1
+
+$mdeAppId = '(skipped)'
+$mdeSecret = '(skipped -- WindowsDefenderATP not found)'
+
 if (-not $mdeSp) {
     Write-Warn "WindowsDefenderATP service principal not found -- Defender may not be licensed"
-    $mdeApp    = $null
-    $mdeSecret = '(skipped -- WindowsDefenderATP not found)'
 } else {
     $mdePermNames = @(
         'Machine.Read.All', 'Alert.Read.All', 'Ti.Read',
         'Vulnerability.Read.All', 'Software.Read.All', 'AdvancedQuery.Read.All'
     )
-
     $resolvedMdePerms = [System.Collections.Generic.List[hashtable]]::new()
     foreach ($name in $mdePermNames) {
         $role = $mdeSp.AppRoles | Where-Object { $_.Value -eq $name }
@@ -161,9 +134,7 @@ if (-not $mdeSp) {
             resourceAppId  = $mdeSp.AppId
             resourceAccess = $resolvedMdePerms.ToArray()
         }
-
     $mdeSvc = New-MgServicePrincipal -AppId $mdeApp.AppId
-    Write-Ok "MDE app created -- app ID: $($mdeApp.AppId)"
 
     foreach ($p in $resolvedMdePerms) {
         try {
@@ -179,30 +150,12 @@ if (-not $mdeSp) {
     Write-Ok "MDE admin consent granted"
 
     $mdeSecret = New-AppSecret -AppObjectId $mdeApp.Id -Label "OpsMan MCP server"
-    Write-Ok "MDE client secret created"
+    $mdeAppId  = $mdeApp.AppId
+    Write-Ok "MDE app created -- app ID: $mdeAppId"
 }
 
-# ── 4. Azure ARM service principal ────────────────────────────────────────────
-Write-Step "Creating Azure ARM service principal: SVH OpsMan ARM"
-
-$armSp     = New-AzADServicePrincipal -DisplayName "SVH OpsMan ARM"
-$armCred   = $armSp | New-AzADSpCredential
-$armSecret = $armCred.SecretText
-
-New-AzRoleAssignment -ApplicationId $armSp.AppId `
-    -RoleDefinitionName "Reader" `
-    -Scope "/subscriptions/$SUBSCRIPTION_ID" | Out-Null
-Write-Ok "Reader role assigned"
-
-New-AzRoleAssignment -ApplicationId $armSp.AppId `
-    -RoleDefinitionName "Cost Management Reader" `
-    -Scope "/subscriptions/$SUBSCRIPTION_ID" | Out-Null
-Write-Ok "Cost Management Reader role assigned"
-
-Write-Ok "ARM service principal created -- app ID: $($armSp.AppId)"
-
-# ── 5. Exchange ApplicationAccessPolicy ───────────────────────────────────────
-Write-Step "Configuring Exchange ApplicationAccessPolicy"
+# ── 4. Exchange ApplicationAccessPolicy ───────────────────────────────────────
+Write-Step "Configuring Exchange ApplicationAccessPolicy (restricts mail to $OWNER_UPN)"
 Write-Warn "Connecting to Exchange Online (device code -- same ma_ account)"
 
 Connect-ExchangeOnline -Device -ShowProgress $false
@@ -214,16 +167,14 @@ if (-not (Get-DistributionGroup -Identity $groupAlias -ErrorAction SilentlyConti
     New-DistributionGroup -Name $groupName -Alias $groupAlias -Type Security | Out-Null
     Write-Ok "Security group created: $groupName"
 } else {
-    Write-Ok "Security group already exists: $groupName"
+    Write-Ok "Security group already exists"
 }
 
 Add-DistributionGroupMember -Identity $groupAlias -Member $OWNER_UPN -ErrorAction SilentlyContinue
 Write-Ok "$OWNER_UPN added to group"
 
-$existingPolicy = Get-ApplicationAccessPolicy -ErrorAction SilentlyContinue |
-    Where-Object { $_.AppId -eq $graphApp.AppId }
-
-if (-not $existingPolicy) {
+if (-not (Get-ApplicationAccessPolicy -ErrorAction SilentlyContinue |
+        Where-Object { $_.AppId -eq $graphApp.AppId })) {
     New-ApplicationAccessPolicy `
         -AppId              $graphApp.AppId `
         -PolicyScopeGroupId $groupAlias `
@@ -234,7 +185,7 @@ if (-not $existingPolicy) {
     Write-Ok "ApplicationAccessPolicy already exists"
 }
 
-Write-Warn "Waiting 30s for policy to propagate before testing..."
+Write-Warn "Waiting 30s for policy to propagate..."
 Start-Sleep -Seconds 30
 
 $grantedTest = Test-ApplicationAccessPolicy -AppId $graphApp.AppId -Identity $OWNER_UPN
@@ -242,41 +193,34 @@ Write-Ok "Policy test -- ${OWNER_UPN}: $($grantedTest.AccessCheckResult)"
 
 $deniedTest = Test-ApplicationAccessPolicy -AppId $graphApp.AppId `
     -Identity "bbates@shoestringvalley.com" -ErrorAction SilentlyContinue
-if ($deniedTest) {
-    Write-Ok "Policy test -- bbates: $($deniedTest.AccessCheckResult)"
-}
+if ($deniedTest) { Write-Ok "Policy test -- bbates: $($deniedTest.AccessCheckResult)" }
 
 Disconnect-ExchangeOnline -Confirm:$false
 
+# ── 5. Save state for setup-azure-arm.ps1 ────────────────────────────────────
+$stateFile = Join-Path $env:TEMP "svh-opsman-state.json"
+@{
+    tenantId      = $tenantId
+    graphClientId = $graphApp.AppId
+    graphSecret   = $graphSecret
+    graphUserId   = $OWNER_UPN
+    mdeClientId   = $mdeAppId
+    mdeSecret     = $mdeSecret
+} | ConvertTo-Json | Set-Content $stateFile
+Write-Ok "State saved to $stateFile"
+
 # ── 6. Summary ────────────────────────────────────────────────────────────────
-$tenantId = (Get-MgContext).TenantId
-
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Green
-Write-Host "  SVH OpsMan -- Bitwarden vault fields" -ForegroundColor Green
-Write-Host "  Add these as custom fields on the 'SVH OpsMan' item" -ForegroundColor Green
+Write-Host "  Step 1 complete. Graph credentials:" -ForegroundColor Green
 Write-Host "========================================================" -ForegroundColor Green
-
-$output = [ordered]@{
-    GRAPH_TENANT_ID       = $tenantId
-    GRAPH_CLIENT_ID       = $graphApp.AppId
-    GRAPH_CLIENT_SECRET   = $graphSecret
-    GRAPH_USER_ID         = $OWNER_UPN
-    MDE_TENANT_ID         = $tenantId
-    MDE_CLIENT_ID         = if ($mdeApp) { $mdeApp.AppId } else { '(skipped)' }
-    MDE_CLIENT_SECRET     = $mdeSecret
-    AZURE_TENANT_ID       = $tenantId
-    AZURE_CLIENT_ID       = $armSp.AppId
-    AZURE_CLIENT_SECRET   = $armSecret
-    AZURE_SUBSCRIPTION_ID = $SUBSCRIPTION_ID
-}
-
-foreach ($kv in $output.GetEnumerator()) {
-    Write-Host ("  {0,-28} = {1}" -f $kv.Key, $kv.Value)
-}
-
+Write-Host ("  {0,-28} = {1}" -f "GRAPH_TENANT_ID",     $tenantId)
+Write-Host ("  {0,-28} = {1}" -f "GRAPH_CLIENT_ID",     $graphApp.AppId)
+Write-Host ("  {0,-28} = {1}" -f "GRAPH_CLIENT_SECRET", $graphSecret)
+Write-Host ("  {0,-28} = {1}" -f "GRAPH_USER_ID",       $OWNER_UPN)
+Write-Host ("  {0,-28} = {1}" -f "MDE_TENANT_ID",       $tenantId)
+Write-Host ("  {0,-28} = {1}" -f "MDE_CLIENT_ID",       $mdeAppId)
+Write-Host ("  {0,-28} = {1}" -f "MDE_CLIENT_SECRET",   $mdeSecret)
 Write-Host "========================================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "Next: paste the above into Bitwarden, then from WSL run:" -ForegroundColor Cyan
-Write-Host "  export BW_SESSION=`$(bw unlock --raw)" -ForegroundColor White
-Write-Host "  cd ~/SVH-OpsMan/mcp-server && npm start" -ForegroundColor White
+Write-Host "Now open a NEW PowerShell window and run setup-azure-arm.ps1" -ForegroundColor Cyan
