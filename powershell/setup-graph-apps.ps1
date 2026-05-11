@@ -26,6 +26,7 @@ function New-AppSecret {
 # ── 0. Modules ────────────────────────────────────────────────────────────────
 Write-Step "Checking modules (Graph and Exchange only -- no Az)"
 $required = @(
+    'MSAL.PS',
     'Microsoft.Graph.Applications',
     'Microsoft.Graph.Identity.DirectoryManagement',
     'ExchangeOnlineManagement'
@@ -48,11 +49,25 @@ if ($needsRestart) {
 }
 
 # ── 1. Connect to Graph ───────────────────────────────────────────────────────
-# Interactive browser is used (not device code) -- Edge/WebView2 on Windows
-# supports passkeys natively. A browser window will open; sign in as ma_.
-Write-Step "Connecting to Microsoft Graph (browser popup -- ma_ account)"
+# MSAL.PS handles device code auth separately from the Graph module, avoiding
+# a null reference bug in DeviceCodeCredential. The flow is:
+#   1. A code appears in the console
+#   2. Open microsoft.com/devicelogin in your real browser
+#   3. Enter the code and sign in with your passkey
+#   4. Return here -- the script continues automatically
+Write-Step "Connecting to Microsoft Graph via MSAL device code -- ma_ account"
 $ProgressPreference = 'SilentlyContinue'
-Connect-MgGraph -Scopes "Application.ReadWrite.All", "Directory.Read.All" -NoWelcome
+Import-Module MSAL.PS -Force
+
+# Microsoft Graph PowerShell public client app ID (well-known, used by the PS module itself)
+$msalToken = Get-MsalToken `
+    -ClientId '14d82eec-204b-4c2f-b7e8-296a70dab67e' `
+    -Scopes 'https://graph.microsoft.com/Application.ReadWrite.All',
+            'https://graph.microsoft.com/Directory.ReadAll' `
+    -DeviceCode
+
+$secureToken = $msalToken.AccessToken | ConvertTo-SecureString -AsPlainText -Force
+Connect-MgGraph -AccessToken $secureToken -NoWelcome
 $tenantId = (Get-MgContext).TenantId
 Write-Ok "Connected -- tenant: $tenantId"
 
