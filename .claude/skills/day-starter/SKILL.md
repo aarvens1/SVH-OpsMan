@@ -39,12 +39,20 @@ Do NOT attempt to run this as an MCP tool — `Get-SVHComplianceGap` is a PowerS
 Run these in parallel:
 
 - `calendar_list_events` — today's events. Note any meetings in the next 2 hours and any prep required.
-- `planner_list_plans` then `planner_list_tasks` — open tasks, overdue tasks, anything due today.
+- `planner_list_plans` (IT Team group: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) then `planner_list_tasks` for the active operational plans: IT Sysadmin Tasks, IT Support Tasks, IT Recurring Tasks, IT Endpoint Tasks, IT Management Tasks, and any plans created within the last 30 days.
 - `todo_list_task_lists` then `todo_list_tasks` — personal task lists, anything flagged important or due today.
+
+### Separating your tasks from team tasks
+
+When processing Planner results, split tasks into two buckets:
+
+**Your tasks** — tasks where the `assignments` object contains Aaron's Entra object ID. To identify Aaron's ID at runtime: look at the `createdBy.user.id` field on tasks in IT Sysadmin Tasks or IT Recurring Tasks (plans Aaron owns). That creator ID is Aaron's object ID. Any task with that ID as an assignment key belongs in "your tasks."
+
+**Team tasks** — all other open tasks from IT boards (unassigned, or assigned to someone else). Show these as a compact reference section — titles and owners only, no detailed breakdown unless overdue.
 
 ## Step 3 — Synthesise and write
 
-Write `Briefings/Daily/YYYY-MM-DD.md` to the Obsidian vault with frontmatter:
+Write `Briefings/Daily/YYYY-MM-DD.md` to the Obsidian vault at `/mnt/c/Users/astevens/vaults/OpsManVault/` with frontmatter:
 ```yaml
 ---
 date: YYYY-MM-DD
@@ -62,8 +70,11 @@ Any Critical/High alerts, risky users, active M365 incidents, or overdue tasks. 
 ### 📅 Today
 Calendar events in time order. Flag any meeting that needs prep.
 
-### 📋 Open tasks
-Planner and To Do items due today or overdue. Suggested priority order.
+### 📋 Your tasks
+Tasks assigned directly to Aaron — Planner and To Do items. Due today or overdue first, then upcoming. Suggested priority order.
+
+### 📋 IT team boards
+Compact view of open tasks across IT plans that are assigned to others or unassigned. Group by plan. Overdue items only get a full row; everything else is a one-liner. This is context, not a to-do list.
 
 ### 🟡 Worth watching
 Medium-severity findings, anything that could escalate. No action required yet.
