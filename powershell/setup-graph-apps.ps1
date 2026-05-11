@@ -1,16 +1,17 @@
-# setup-graph-apps.ps1 -- STEP 1 of 2
+# setup-graph-apps.ps1 -- STEP 1 of 3
 #
-# Creates the Microsoft Graph and MDE app registrations and configures
-# the Exchange ApplicationAccessPolicy. Run this first in a fresh
-# PowerShell window, then run setup-azure-arm.ps1 in a NEW window.
+# Creates the Microsoft Graph and MDE app registrations.
+# Run in a fresh PowerShell window as your ma_ account (GA activated in PIM).
 #
-# Sign in as your ma_ account (needs Global Administrator activated in PIM).
-#
-# Saves state to $env:TEMP\svh-opsman-state.json for setup-azure-arm.ps1 to read.
+# After this completes:
+#   - Go to the Entra portal URL printed at the end and click Grant admin consent
+#   - Run setup-exchange-policy.ps1 in a NEW PowerShell window
+#   - Run setup-azure-arm.ps1 in another NEW PowerShell window
 
 $ErrorActionPreference = 'Stop'
 
 $OWNER_UPN = 'astevens@shoestringvalley.com'
+$stateFile = Join-Path $env:TEMP "svh-opsman-state.json"
 
 function Write-Step ($msg) { Write-Host "`n>> $msg" -ForegroundColor Cyan }
 function Write-Ok   ($msg) { Write-Host "   OK  $msg" -ForegroundColor Green }
@@ -24,13 +25,8 @@ function New-AppSecret {
 }
 
 # ── 0. Modules ────────────────────────────────────────────────────────────────
-Write-Step "Checking modules (Graph and Exchange only -- no Az)"
-$required = @(
-    'MSAL.PS',
-    'Microsoft.Graph.Applications',
-    'Microsoft.Graph.Identity.DirectoryManagement',
-    'ExchangeOnlineManagement'
-)
+Write-Step "Checking modules"
+$required = @('MSAL.PS', 'Microsoft.Graph.Applications', 'Microsoft.Graph.Identity.DirectoryManagement')
 $needsRestart = $false
 foreach ($mod in $required) {
     if (-not (Get-Module -ListAvailable -Name $mod)) {
@@ -48,21 +44,16 @@ if ($needsRestart) {
     exit
 }
 
-# ── 1. Connect to Graph ───────────────────────────────────────────────────────
-# MSAL.PS handles device code auth separately from the Graph module, avoiding
-# a null reference bug in DeviceCodeCredential. The flow is:
-#   1. A code appears in the console
-#   2. Open microsoft.com/devicelogin in your real browser
-#   3. Enter the code and sign in with your passkey
-#   4. Return here -- the script continues automatically
-Write-Step "Connecting to Microsoft Graph via MSAL device code -- ma_ account"
+# ── 1. Connect to Graph via MSAL device code ──────────────────────────────────
+Write-Step "Connecting to Microsoft Graph -- ma_ account"
+Write-Host "  A code will appear below. Go to https://microsoft.com/devicelogin," -ForegroundColor Cyan
+Write-Host "  enter the code, and sign in with your passkey." -ForegroundColor Cyan
 $ProgressPreference = 'SilentlyContinue'
 Import-Module MSAL.PS -Force
 
-# Microsoft Graph PowerShell public client app ID (well-known, used by the PS module itself)
 $msalToken = Get-MsalToken `
     -ClientId '14d82eec-204b-4c2f-b7e8-296a70dab67e' `
-    -Scopes 'https://graph.microsoft.com/.default' `
+    -Scopes   'https://graph.microsoft.com/.default' `
     -DeviceCode
 
 $secureToken = $msalToken.AccessToken | ConvertTo-SecureString -AsPlainText -Force
@@ -96,7 +87,6 @@ foreach ($name in $graphPermNames) {
     $resolvedPerms.Add(@{ id = $role.Id; type = 'Role' })
 }
 
-# Idempotent -- reuse existing app reg if it was already created
 $graphApp = Get-MgApplication -Filter "displayName eq 'SVH OpsMan (Aaron Stevens)'" |
     Select-Object -First 1
 if ($graphApp) {
@@ -110,56 +100,31 @@ if ($graphApp) {
     Write-Ok "App created -- app ID: $($graphApp.AppId)"
 }
 
-$graphSvc = Get-MgServicePrincipal -Filter "appId eq '$($graphApp.AppId)'" |
-    Select-Object -First 1
-if (-not $graphSvc) {
-    $graphSvc = New-MgServicePrincipal -AppId $graphApp.AppId
+if (-not (Get-MgServicePrincipal -Filter "appId eq '$($graphApp.AppId)'" | Select-Object -First 1)) {
+    New-MgServicePrincipal -AppId $graphApp.AppId | Out-Null
 }
 
-Write-Warn "Granting admin consent for all Graph permissions..."
-foreach ($p in $resolvedPerms) {
-    try {
-        New-MgServicePrincipalAppRoleAssignment `
-            -ServicePrincipalId $graphSvc.Id `
-            -PrincipalId        $graphSvc.Id `
-            -ResourceId         $graphSp.Id `
-            -AppRoleId          $p.id | Out-Null
-    } catch {
-        # Ignore duplicate assignment errors
-        if ($_ -notmatch 'Permission being assigned already exists') {
-            Write-Warn "  Could not grant $($p.id): $_"
-        }
-    }
-}
-Write-Ok "Admin consent granted"
-
-# Only create a new secret if we don't already have one stored in state
-$stateFile = Join-Path $env:TEMP "svh-opsman-state.json"
+# ── 3. Graph client secret ────────────────────────────────────────────────────
 $existingState = if (Test-Path $stateFile) { Get-Content $stateFile | ConvertFrom-Json } else { $null }
 if ($existingState -and $existingState.graphSecret) {
     $graphSecret = $existingState.graphSecret
-    Write-Ok "Reusing existing client secret from previous run"
+    Write-Ok "Reusing Graph secret from previous run"
 } else {
     $graphSecret = New-AppSecret -AppObjectId $graphApp.Id -Label "OpsMan MCP server"
-    Write-Ok "Client secret created (expires 2 years)"
+    Write-Ok "Graph client secret created (expires 2 years)"
 }
 
-# ── 3. MDE app registration ───────────────────────────────────────────────────
+# ── 4. MDE app registration ───────────────────────────────────────────────────
 Write-Step "MDE app registration: SVH OpsMan MDE"
 
-$mdeSp = Get-MgServicePrincipal -Filter "displayName eq 'WindowsDefenderATP'" |
-    Select-Object -First 1
-
+$mdeSp     = Get-MgServicePrincipal -Filter "displayName eq 'WindowsDefenderATP'" | Select-Object -First 1
 $mdeAppId  = '(skipped)'
 $mdeSecret = '(skipped -- WindowsDefenderATP not found)'
 
 if (-not $mdeSp) {
-    Write-Warn "WindowsDefenderATP service principal not found -- Defender may not be licensed"
+    Write-Warn "WindowsDefenderATP not found -- Defender may not be licensed"
 } else {
-    $mdePermNames = @(
-        'Machine.Read.All', 'Alert.Read.All', 'Ti.Read',
-        'Vulnerability.Read.All', 'Software.Read.All', 'AdvancedQuery.Read.All'
-    )
+    $mdePermNames = @('Machine.Read.All','Alert.Read.All','Vulnerability.Read.All','Software.Read.All','AdvancedQuery.Read.All')
     $resolvedMdePerms = [System.Collections.Generic.List[hashtable]]::new()
     foreach ($name in $mdePermNames) {
         $role = $mdeSp.AppRoles | Where-Object { $_.Value -eq $name }
@@ -167,8 +132,7 @@ if (-not $mdeSp) {
         $resolvedMdePerms.Add(@{ id = $role.Id; type = 'Role' })
     }
 
-    $mdeApp = Get-MgApplication -Filter "displayName eq 'SVH OpsMan MDE'" |
-        Select-Object -First 1
+    $mdeApp = Get-MgApplication -Filter "displayName eq 'SVH OpsMan MDE'" | Select-Object -First 1
     if ($mdeApp) {
         Write-Ok "MDE app already exists -- reusing (app ID: $($mdeApp.AppId))"
     } else {
@@ -180,28 +144,13 @@ if (-not $mdeSp) {
         Write-Ok "MDE app created -- app ID: $($mdeApp.AppId)"
     }
 
-    $mdeSvc = Get-MgServicePrincipal -Filter "appId eq '$($mdeApp.AppId)'" |
-        Select-Object -First 1
-    if (-not $mdeSvc) { $mdeSvc = New-MgServicePrincipal -AppId $mdeApp.AppId }
-
-    foreach ($p in $resolvedMdePerms) {
-        try {
-            New-MgServicePrincipalAppRoleAssignment `
-                -ServicePrincipalId $mdeSvc.Id `
-                -PrincipalId        $mdeSvc.Id `
-                -ResourceId         $mdeSp.Id `
-                -AppRoleId          $p.id | Out-Null
-        } catch {
-            if ($_ -notmatch 'Permission being assigned already exists') {
-                Write-Warn "  Could not grant $($p.id): $_"
-            }
-        }
+    if (-not (Get-MgServicePrincipal -Filter "appId eq '$($mdeApp.AppId)'" | Select-Object -First 1)) {
+        New-MgServicePrincipal -AppId $mdeApp.AppId | Out-Null
     }
-    Write-Ok "MDE admin consent granted"
 
-    if ($existingState -and $existingState.mdeSecret -and $existingState.mdeSecret -ne '(skipped)') {
+    if ($existingState -and $existingState.mdeSecret -and $existingState.mdeSecret -notmatch 'skipped') {
         $mdeSecret = $existingState.mdeSecret
-        Write-Ok "Reusing existing MDE secret from previous run"
+        Write-Ok "Reusing MDE secret from previous run"
     } else {
         $mdeSecret = New-AppSecret -AppObjectId $mdeApp.Id -Label "OpsMan MCP server"
         Write-Ok "MDE client secret created"
@@ -209,51 +158,7 @@ if (-not $mdeSp) {
     $mdeAppId = $mdeApp.AppId
 }
 
-# ── 4. Exchange ApplicationAccessPolicy ───────────────────────────────────────
-Write-Step "Configuring Exchange ApplicationAccessPolicy (restricts mail to $OWNER_UPN)"
-Write-Warn "Connecting to Exchange Online (device code -- same ma_ account)"
-
-Connect-ExchangeOnline -ShowProgress $false
-
-$groupAlias = "svh-opsman-mailbox"
-$groupName  = "SVH OpsMan Mailbox Access"
-
-if (-not (Get-DistributionGroup -Identity $groupAlias -ErrorAction SilentlyContinue)) {
-    New-DistributionGroup -Name $groupName -Alias $groupAlias -Type Security | Out-Null
-    Write-Ok "Security group created: $groupName"
-} else {
-    Write-Ok "Security group already exists"
-}
-
-Add-DistributionGroupMember -Identity $groupAlias -Member $OWNER_UPN -ErrorAction SilentlyContinue
-Write-Ok "$OWNER_UPN added to group"
-
-if (-not (Get-ApplicationAccessPolicy -ErrorAction SilentlyContinue |
-        Where-Object { $_.AppId -eq $graphApp.AppId })) {
-    New-ApplicationAccessPolicy `
-        -AppId              $graphApp.AppId `
-        -PolicyScopeGroupId $groupAlias `
-        -AccessRight        RestrictAccess `
-        -Description        "Limit Claude OpsMan mail access to ${OWNER_UPN} only" | Out-Null
-    Write-Ok "ApplicationAccessPolicy created"
-} else {
-    Write-Ok "ApplicationAccessPolicy already exists"
-}
-
-Write-Warn "Waiting 30s for policy to propagate..."
-Start-Sleep -Seconds 30
-
-$grantedTest = Test-ApplicationAccessPolicy -AppId $graphApp.AppId -Identity $OWNER_UPN
-Write-Ok "Policy test -- ${OWNER_UPN}: $($grantedTest.AccessCheckResult)"
-
-$deniedTest = Test-ApplicationAccessPolicy -AppId $graphApp.AppId `
-    -Identity "bbates@shoestringvalley.com" -ErrorAction SilentlyContinue
-if ($deniedTest) { Write-Ok "Policy test -- bbates: $($deniedTest.AccessCheckResult)" }
-
-Disconnect-ExchangeOnline -Confirm:$false
-
-# ── 5. Save state for setup-azure-arm.ps1 ────────────────────────────────────
-$stateFile = Join-Path $env:TEMP "svh-opsman-state.json"
+# ── 5. Save state ─────────────────────────────────────────────────────────────
 @{
     tenantId      = $tenantId
     graphClientId = $graphApp.AppId
@@ -264,10 +169,12 @@ $stateFile = Join-Path $env:TEMP "svh-opsman-state.json"
 } | ConvertTo-Json | Set-Content $stateFile
 Write-Ok "State saved to $stateFile"
 
-# ── 6. Summary ────────────────────────────────────────────────────────────────
+# ── 6. Summary and next steps ─────────────────────────────────────────────────
+$portalUrl = "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/CallAnAPI/appId/$($graphApp.AppId)"
+
 Write-Host ""
 Write-Host "========================================================" -ForegroundColor Green
-Write-Host "  Step 1 complete. Graph credentials:" -ForegroundColor Green
+Write-Host "  Step 1 complete. Credentials so far:" -ForegroundColor Green
 Write-Host "========================================================" -ForegroundColor Green
 Write-Host ("  {0,-28} = {1}" -f "GRAPH_TENANT_ID",     $tenantId)
 Write-Host ("  {0,-28} = {1}" -f "GRAPH_CLIENT_ID",     $graphApp.AppId)
@@ -278,4 +185,14 @@ Write-Host ("  {0,-28} = {1}" -f "MDE_CLIENT_ID",       $mdeAppId)
 Write-Host ("  {0,-28} = {1}" -f "MDE_CLIENT_SECRET",   $mdeSecret)
 Write-Host "========================================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "Now open a NEW PowerShell window and run setup-azure-arm.ps1" -ForegroundColor Cyan
+Write-Host "NEXT STEPS (in order):" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "  1. Grant admin consent -- open this URL in your browser," -ForegroundColor Cyan
+Write-Host "     then click 'Grant admin consent for Shoestring Valley Holdings':" -ForegroundColor Cyan
+Write-Host "     $portalUrl" -ForegroundColor White
+Write-Host ""
+Write-Host "  2. Open a NEW PowerShell window and run:" -ForegroundColor Cyan
+Write-Host "     .\setup-exchange-policy.ps1" -ForegroundColor White
+Write-Host ""
+Write-Host "  3. Open another NEW PowerShell window and run:" -ForegroundColor Cyan
+Write-Host "     .\setup-azure-arm.ps1" -ForegroundColor White
