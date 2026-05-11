@@ -5,9 +5,14 @@ import { graphClient, GRAPH_SCOPE, formatError } from "../utils/http.js";
 
 const DISABLED_MSG =
   "Graph service not configured: set GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET";
+const NO_USER_MSG =
+  "Calendar tools are not configured: set GRAPH_USER_ID to your UPN (e.g. you@company.com)";
 
 function disabled() {
   return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
+}
+function noUser() {
+  return { isError: true as const, content: [{ type: "text" as const, text: NO_USER_MSG }] };
 }
 function ok(data: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
@@ -16,12 +21,18 @@ function err(e: unknown) {
   return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
 }
 
-export function registerOutlookCalendarTools(server: McpServer, enabled: boolean): void {
+// Calendar tools are scoped to a single mailbox (GRAPH_USER_ID).
+// See outlook-mail.ts for the rationale.
+export function registerOutlookCalendarTools(
+  server: McpServer,
+  enabled: boolean,
+  userId: string | undefined
+): void {
   server.registerTool(
     "calendar_list_events",
     {
       description:
-        "List calendar events in a date range. Returns subject, organizer, attendees, start/end times, and location.",
+        "List your calendar events in a date range. Returns subject, organizer, attendees, start/end times, and location.",
       inputSchema: z.object({
         start: z
           .string()
@@ -29,19 +40,15 @@ export function registerOutlookCalendarTools(server: McpServer, enabled: boolean
         end: z
           .string()
           .describe("Range end in ISO 8601 (e.g. 2025-05-12T23:59:59)"),
-        user_id: z
-          .string()
-          .optional()
-          .describe("UPN or object ID. Defaults to the service account."),
         top: z.number().int().min(1).max(100).default(50),
       }),
     },
-    async ({ start, end, user_id, top }) => {
+    async ({ start, end, top }) => {
       if (!enabled) return disabled();
+      if (!userId) return noUser();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const base = user_id ? `/users/${user_id}` : "/me";
-        const res = await graphClient(token).get(`${base}/calendarView`, {
+        const res = await graphClient(token).get(`/users/${userId}/calendarView`, {
           params: {
             startDateTime: start,
             endDateTime: end,
@@ -64,15 +71,14 @@ export function registerOutlookCalendarTools(server: McpServer, enabled: boolean
       description: "Get full details of a specific calendar event.",
       inputSchema: z.object({
         event_id: z.string().describe("Event ID"),
-        user_id: z.string().optional().describe("UPN or object ID. Defaults to the service account."),
       }),
     },
-    async ({ event_id, user_id }) => {
+    async ({ event_id }) => {
       if (!enabled) return disabled();
+      if (!userId) return noUser();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const base = user_id ? `/users/${user_id}` : "/me";
-        const res = await graphClient(token).get(`${base}/events/${event_id}`);
+        const res = await graphClient(token).get(`/users/${userId}/events/${event_id}`);
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -83,12 +89,12 @@ export function registerOutlookCalendarTools(server: McpServer, enabled: boolean
   server.registerTool(
     "calendar_create_event",
     {
-      description: "Create a new calendar event.",
+      description: "Create a new calendar event in your calendar.",
       inputSchema: z.object({
         subject: z.string().describe("Event title"),
         start: z.string().describe("Start time in ISO 8601 (e.g. 2025-05-15T14:00:00)"),
         end: z.string().describe("End time in ISO 8601"),
-        timezone: z.string().default("America/Chicago").describe("IANA timezone for start/end"),
+        timezone: z.string().default("America/Los_Angeles").describe("IANA timezone for start/end"),
         body: z.string().optional().describe("Event body / agenda"),
         body_type: z.enum(["text", "html"]).default("text"),
         attendees: z
@@ -100,14 +106,13 @@ export function registerOutlookCalendarTools(server: McpServer, enabled: boolean
           .boolean()
           .default(false)
           .describe("Create as Teams meeting"),
-        user_id: z.string().optional().describe("UPN or object ID. Defaults to the service account."),
       }),
     },
-    async ({ subject, start, end, timezone, body, body_type, attendees, location, is_online, user_id }) => {
+    async ({ subject, start, end, timezone, body, body_type, attendees, location, is_online }) => {
       if (!enabled) return disabled();
+      if (!userId) return noUser();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const base = user_id ? `/users/${user_id}` : "/me";
         const payload: Record<string, unknown> = {
           subject,
           start: { dateTime: start, timeZone: timezone },
@@ -124,7 +129,7 @@ export function registerOutlookCalendarTools(server: McpServer, enabled: boolean
               }
             : {}),
         };
-        const res = await graphClient(token).post(`${base}/events`, payload);
+        const res = await graphClient(token).post(`/users/${userId}/events`, payload);
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -145,22 +150,21 @@ export function registerOutlookCalendarTools(server: McpServer, enabled: boolean
         body: z.string().optional(),
         body_type: z.enum(["text", "html"]).default("text"),
         location: z.string().optional(),
-        user_id: z.string().optional().describe("UPN or object ID. Defaults to the service account."),
       }),
     },
-    async ({ event_id, subject, start, end, timezone, body, body_type, location, user_id }) => {
+    async ({ event_id, subject, start, end, timezone, body, body_type, location }) => {
       if (!enabled) return disabled();
+      if (!userId) return noUser();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const base = user_id ? `/users/${user_id}` : "/me";
-        const tz = timezone ?? "America/Chicago";
+        const tz = timezone ?? "America/Los_Angeles";
         const payload: Record<string, unknown> = {};
         if (subject) payload.subject = subject;
         if (start) payload.start = { dateTime: start, timeZone: tz };
         if (end) payload.end = { dateTime: end, timeZone: tz };
         if (body) payload.body = { contentType: body_type, content: body };
         if (location) payload.location = { displayName: location };
-        const res = await graphClient(token).patch(`${base}/events/${event_id}`, payload);
+        const res = await graphClient(token).patch(`/users/${userId}/events/${event_id}`, payload);
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -174,15 +178,14 @@ export function registerOutlookCalendarTools(server: McpServer, enabled: boolean
       description: "Delete (cancel) a calendar event.",
       inputSchema: z.object({
         event_id: z.string().describe("Event ID"),
-        user_id: z.string().optional().describe("UPN or object ID. Defaults to the service account."),
       }),
     },
-    async ({ event_id, user_id }) => {
+    async ({ event_id }) => {
       if (!enabled) return disabled();
+      if (!userId) return noUser();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const base = user_id ? `/users/${user_id}` : "/me";
-        await graphClient(token).delete(`${base}/events/${event_id}`);
+        await graphClient(token).delete(`/users/${userId}/events/${event_id}`);
         return ok({ deleted: true, event_id });
       } catch (e) {
         return err(e);
@@ -205,15 +208,14 @@ export function registerOutlookCalendarTools(server: McpServer, enabled: boolean
         end: z
           .string()
           .describe("Search window end in ISO 8601 (e.g. 2025-05-16T17:00:00)"),
-        timezone: z.string().default("America/Chicago").describe("IANA timezone"),
-        user_id: z.string().optional().describe("UPN or object ID. Defaults to the service account."),
+        timezone: z.string().default("America/Los_Angeles").describe("IANA timezone"),
       }),
     },
-    async ({ attendees, duration_minutes, start, end, timezone, user_id }) => {
+    async ({ attendees, duration_minutes, start, end, timezone }) => {
       if (!enabled) return disabled();
+      if (!userId) return noUser();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const base = user_id ? `/users/${user_id}` : "/me";
         const payload = {
           attendees: attendees.map((a) => ({ emailAddress: { address: a }, type: "required" })),
           timeConstraint: {
@@ -224,7 +226,7 @@ export function registerOutlookCalendarTools(server: McpServer, enabled: boolean
           returnSuggestionReasons: true,
           minimumAttendeePercentage: 100,
         };
-        const res = await graphClient(token).post(`${base}/findMeetingTimes`, payload);
+        const res = await graphClient(token).post(`/users/${userId}/findMeetingTimes`, payload);
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -242,6 +244,7 @@ export function registerOutlookCalendarTools(server: McpServer, enabled: boolean
     },
     async ({ top }) => {
       if (!enabled) return disabled();
+      if (!userId) return noUser();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get("/places/microsoft.graph.room", {

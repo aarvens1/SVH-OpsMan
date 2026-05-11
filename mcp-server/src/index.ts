@@ -49,6 +49,13 @@ function checkEnv(...vars: string[]): boolean {
 
 const server = new McpServer({ name: "svh-opsman", version: "2.0.0" });
 
+const graphUserId = process.env["GRAPH_USER_ID"] || undefined;
+if (!graphUserId) {
+  console.error(
+    "[svh-opsman] WARNING: GRAPH_USER_ID not set — mail and calendar tools will return errors"
+  );
+}
+
 const services = {
   graph: checkEnv("GRAPH_TENANT_ID", "GRAPH_CLIENT_ID", "GRAPH_CLIENT_SECRET"),
   mde: checkEnv("MDE_TENANT_ID", "MDE_CLIENT_ID", "MDE_CLIENT_SECRET"),
@@ -68,8 +75,8 @@ registerEntraAdminTools(server, services.graph);
 registerOneDriveTools(server, services.graph);
 registerSharePointTools(server, services.graph);
 registerTeamsTools(server, services.graph);
-registerOutlookMailTools(server, services.graph);
-registerOutlookCalendarTools(server, services.graph);
+registerOutlookMailTools(server, services.graph, graphUserId);
+registerOutlookCalendarTools(server, services.graph, graphUserId);
 registerExchangeAdminTools(server, services.graph);
 registerIntuneTools(server, services.graph);
 registerMsAdminTools(server, services.graph);

@@ -5,9 +5,14 @@ import { graphClient, GRAPH_SCOPE, formatError } from "../utils/http.js";
 
 const DISABLED_MSG =
   "Graph service not configured: set GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET";
+const NO_USER_MSG =
+  "Mail tools are not configured: set GRAPH_USER_ID to your UPN (e.g. you@company.com)";
 
 function disabled() {
   return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
+}
+function noUser() {
+  return { isError: true as const, content: [{ type: "text" as const, text: NO_USER_MSG }] };
 }
 function ok(data: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
@@ -16,19 +21,23 @@ function err(e: unknown) {
   return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
 }
 
-export function registerOutlookMailTools(server: McpServer, enabled: boolean): void {
+// Mail and calendar tools are scoped to a single mailbox (GRAPH_USER_ID).
+// Application-permission client-credentials tokens can access any mailbox in
+// the tenant, so we hard-lock to the configured owner rather than accepting
+// an arbitrary user_id at call time.
+export function registerOutlookMailTools(
+  server: McpServer,
+  enabled: boolean,
+  userId: string | undefined
+): void {
   server.registerTool(
     "mail_search",
     {
       description:
-        "Search Outlook messages using KQL (keyword query language). " +
+        "Search your Outlook messages using KQL (keyword query language). " +
         "Examples: 'from:alice@example.com', 'subject:invoice', 'hasAttachments:true received>=2025-05-01'.",
       inputSchema: z.object({
         query: z.string().describe("KQL search query"),
-        user_id: z
-          .string()
-          .optional()
-          .describe("UPN or object ID to search. Defaults to the service account."),
         top: z
           .number()
           .int()
@@ -44,11 +53,11 @@ export function registerOutlookMailTools(server: McpServer, enabled: boolean): v
           ),
       }),
     },
-    async ({ query, user_id, top, select }) => {
+    async ({ query, top, select }) => {
       if (!enabled) return disabled();
+      if (!userId) return noUser();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const base = user_id ? `/users/${user_id}` : "/me";
         const params: Record<string, string | number> = {
           $search: `"${query}"`,
           $top: top,
@@ -56,7 +65,7 @@ export function registerOutlookMailTools(server: McpServer, enabled: boolean): v
             select ??
             "id,subject,from,receivedDateTime,hasAttachments,bodyPreview,importance,isRead",
         };
-        const res = await graphClient(token).get(`${base}/messages`, { params });
+        const res = await graphClient(token).get(`/users/${userId}/messages`, { params });
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -70,17 +79,16 @@ export function registerOutlookMailTools(server: McpServer, enabled: boolean): v
       description: "Get the full content of a specific email message, including body and attachments list.",
       inputSchema: z.object({
         message_id: z.string().describe("Message ID"),
-        user_id: z.string().optional().describe("UPN or object ID. Defaults to the service account."),
       }),
     },
-    async ({ message_id, user_id }) => {
+    async ({ message_id }) => {
       if (!enabled) return disabled();
+      if (!userId) return noUser();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const base = user_id ? `/users/${user_id}` : "/me";
         const [msg, attachments] = await Promise.all([
-          graphClient(token).get(`${base}/messages/${message_id}`),
-          graphClient(token).get(`${base}/messages/${message_id}/attachments?$select=id,name,contentType,size`),
+          graphClient(token).get(`/users/${userId}/messages/${message_id}`),
+          graphClient(token).get(`/users/${userId}/messages/${message_id}/attachments?$select=id,name,contentType,size`),
         ]);
         return ok({ ...msg.data, attachments: attachments.data.value });
       } catch (e) {
@@ -92,7 +100,7 @@ export function registerOutlookMailTools(server: McpServer, enabled: boolean): v
   server.registerTool(
     "mail_send",
     {
-      description: "Send an email from the service account (or a specified user's mailbox).",
+      description: "Send an email from your mailbox.",
       inputSchema: z.object({
         to: z
           .array(z.string())
@@ -108,21 +116,17 @@ export function registerOutlookMailTools(server: McpServer, enabled: boolean): v
         importance: z
           .enum(["low", "normal", "high"])
           .default("normal"),
-        user_id: z
-          .string()
-          .optional()
-          .describe("UPN or object ID to send from. Defaults to the service account."),
         save_to_sent: z
           .boolean()
           .default(true)
           .describe("Whether to save a copy to Sent Items"),
       }),
     },
-    async ({ to, subject, body, body_type, cc, bcc, importance, user_id, save_to_sent }) => {
+    async ({ to, subject, body, body_type, cc, bcc, importance, save_to_sent }) => {
       if (!enabled) return disabled();
+      if (!userId) return noUser();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const base = user_id ? `/users/${user_id}` : "/me";
         const toRecipients = to.map((addr) => ({ emailAddress: { address: addr } }));
         const payload: Record<string, unknown> = {
           message: {
@@ -135,7 +139,7 @@ export function registerOutlookMailTools(server: McpServer, enabled: boolean): v
           },
           saveToSentItems: save_to_sent,
         };
-        await graphClient(token).post(`${base}/sendMail`, payload);
+        await graphClient(token).post(`/users/${userId}/sendMail`, payload);
         return ok({ sent: true, to, subject });
       } catch (e) {
         return err(e);
@@ -146,7 +150,7 @@ export function registerOutlookMailTools(server: McpServer, enabled: boolean): v
   server.registerTool(
     "mail_draft",
     {
-      description: "Create a draft email (does not send). Returns the draft message ID.",
+      description: "Create a draft email in your mailbox (does not send). Returns the draft message ID.",
       inputSchema: z.object({
         to: z.array(z.string()).describe("Recipient email addresses"),
         subject: z.string(),
@@ -154,14 +158,13 @@ export function registerOutlookMailTools(server: McpServer, enabled: boolean): v
         body_type: z.enum(["text", "html"]).default("text"),
         cc: z.array(z.string()).optional(),
         importance: z.enum(["low", "normal", "high"]).default("normal"),
-        user_id: z.string().optional().describe("UPN or object ID. Defaults to the service account."),
       }),
     },
-    async ({ to, subject, body, body_type, cc, importance, user_id }) => {
+    async ({ to, subject, body, body_type, cc, importance }) => {
       if (!enabled) return disabled();
+      if (!userId) return noUser();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const base = user_id ? `/users/${user_id}` : "/me";
         const payload = {
           subject,
           importance,
@@ -169,7 +172,7 @@ export function registerOutlookMailTools(server: McpServer, enabled: boolean): v
           toRecipients: to.map((a) => ({ emailAddress: { address: a } })),
           ...(cc?.length ? { ccRecipients: cc.map((a) => ({ emailAddress: { address: a } })) } : {}),
         };
-        const res = await graphClient(token).post(`${base}/messages`, payload);
+        const res = await graphClient(token).post(`/users/${userId}/messages`, payload);
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -180,21 +183,20 @@ export function registerOutlookMailTools(server: McpServer, enabled: boolean): v
   server.registerTool(
     "mail_list_folders",
     {
-      description: "List mail folders (Inbox, Sent Items, custom folders, etc.).",
+      description: "List mail folders in your mailbox (Inbox, Sent Items, custom folders, etc.).",
       inputSchema: z.object({
-        user_id: z.string().optional().describe("UPN or object ID. Defaults to the service account."),
         include_child_folders: z
           .boolean()
           .default(false)
           .describe("Also return child folders"),
       }),
     },
-    async ({ user_id, include_child_folders }) => {
+    async ({ include_child_folders }) => {
       if (!enabled) return disabled();
+      if (!userId) return noUser();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const base = user_id ? `/users/${user_id}` : "/me";
-        const res = await graphClient(token).get(`${base}/mailFolders`, {
+        const res = await graphClient(token).get(`/users/${userId}/mailFolders`, {
           params: { $top: 100, includeHiddenFolders: include_child_folders },
         });
         return ok(res.data);
@@ -207,22 +209,21 @@ export function registerOutlookMailTools(server: McpServer, enabled: boolean): v
   server.registerTool(
     "mail_move_message",
     {
-      description: "Move a message to a different folder.",
+      description: "Move a message to a different folder in your mailbox.",
       inputSchema: z.object({
         message_id: z.string().describe("Message ID"),
         destination_folder_id: z
           .string()
           .describe("Target folder ID or well-known name (inbox, sentItems, deletedItems, junk, drafts, archive)"),
-        user_id: z.string().optional().describe("UPN or object ID. Defaults to the service account."),
       }),
     },
-    async ({ message_id, destination_folder_id, user_id }) => {
+    async ({ message_id, destination_folder_id }) => {
       if (!enabled) return disabled();
+      if (!userId) return noUser();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const base = user_id ? `/users/${user_id}` : "/me";
         const res = await graphClient(token).post(
-          `${base}/messages/${message_id}/move`,
+          `/users/${userId}/messages/${message_id}/move`,
           { destinationId: destination_folder_id }
         );
         return ok(res.data);

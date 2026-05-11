@@ -42,8 +42,8 @@ You ──► Claude
 
 | System | What Claude can do |
 |--------|--------------------|
-| **Outlook Mail** | Search and read messages, send, draft, organize folders |
-| **Outlook Calendar** | View and manage events, check availability, find meeting times, book rooms |
+| **Outlook Mail** | Search and read your messages, send, draft, organize folders — scoped to your mailbox only |
+| **Outlook Calendar** | View and manage your events, check availability, find meeting times, book rooms — scoped to your calendar only |
 | **Teams** | Read messages, send messages, manage channels and members |
 | **Microsoft Planner** | Manage plans, tasks, assignments, and due dates — no task deletion (complete at 100% instead) |
 | **Microsoft To Do** | Manage task lists and checklist items |
@@ -70,7 +70,7 @@ You ──► Claude
 | **Bitwarden** 🔒 | Retrieve credentials; also loads MCP server credentials at startup |
 | **Time** | Current time, timezone conversions, date arithmetic |
 
-> One app registration covers all Microsoft services except Defender and Azure — those each need their own.
+> One app registration covers all Microsoft services except Defender and Azure — those each need their own. Mail and calendar tools are locked to `GRAPH_USER_ID` — they cannot access any other mailbox.
 
 ---
 
@@ -598,7 +598,38 @@ In **Entra ID → App registrations → New registration**, add these **Applicat
 | `Directory.Read.All` | General |
 | `Reports.Read.All` | Exchange Admin message trace |
 
-**Bitwarden fields:** `GRAPH_TENANT_ID` · `GRAPH_CLIENT_ID` · `GRAPH_CLIENT_SECRET`
+**Bitwarden fields:** `GRAPH_TENANT_ID` · `GRAPH_CLIENT_ID` · `GRAPH_CLIENT_SECRET` · `GRAPH_USER_ID`
+
+#### Restricting mail access to your mailbox only (required)
+
+`Mail.ReadWrite` and `Mail.Send` are Application permissions — by default they grant access to **every mailbox in the tenant**. The code locks all mail and calendar tool calls to `GRAPH_USER_ID`, but you should also enforce this at the Exchange layer so the restriction holds even if someone uses the client secret directly.
+
+In Exchange Online PowerShell (run from Windows Terminal as your `ma_` admin account):
+
+```powershell
+# 1. Create a mail-enabled security group containing only your account
+New-DistributionGroup -Name "Claude OpsMan Mailbox Access" `
+  -Alias "claude-opsman-mailbox" -Type Security
+
+Add-DistributionGroupMember -Identity "claude-opsman-mailbox" `
+  -Member "astevens@shoestringvalley.com"
+
+# 2. Create the policy — use the client ID (GUID) from your app registration
+New-ApplicationAccessPolicy `
+  -AppId "<GRAPH_CLIENT_ID>" `
+  -PolicyScopeGroupId "claude-opsman-mailbox" `
+  -AccessRight RestrictAccess `
+  -Description "Limit Claude OpsMan mail access to astevens only"
+
+# 3. Verify — should return Granted only for your account, Denied for others
+Test-ApplicationAccessPolicy -AppId "<GRAPH_CLIENT_ID>" `
+  -Identity "astevens@shoestringvalley.com"
+
+Test-ApplicationAccessPolicy -AppId "<GRAPH_CLIENT_ID>" `
+  -Identity "bbates@shoestringvalley.com"
+```
+
+> `Calendars.ReadWrite` cannot be restricted by `ApplicationAccessPolicy` — that policy only covers mail protocols (EWS/REST). The code-level lock on `GRAPH_USER_ID` is the only available control for calendar. Keep the app registration client secret in Bitwarden and not in any shared location.
 
 ---
 
@@ -692,6 +723,7 @@ Bitwarden item: **SVH OpsMan** (custom fields match `.env` key names exactly)
 | Key | Used by |
 |-----|---------|
 | `GRAPH_TENANT_ID` / `GRAPH_CLIENT_ID` / `GRAPH_CLIENT_SECRET` | Entra, M365, Exchange |
+| `GRAPH_USER_ID` | Your UPN — mail and calendar tools are locked to this mailbox |
 | `MDE_TENANT_ID` / `MDE_CLIENT_ID` / `MDE_CLIENT_SECRET` | Azure (MDE) |
 | `AZURE_TENANT_ID` / `AZURE_CLIENT_ID` / `AZURE_CLIENT_SECRET` / `AZURE_SUBSCRIPTION_ID` | Azure (ARM) |
 | `NINJA_CLIENT_ID` / `NINJA_CLIENT_SECRET` | NinjaOne |

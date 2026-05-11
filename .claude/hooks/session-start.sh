@@ -12,14 +12,5 @@ else
   BW_STATUS="BW_SESSION active"
 fi
 
-jq -n \
-  --arg branch "$BRANCH" \
-  --arg dirty "$DIRTY" \
-  --arg ahead "$AHEAD" \
-  --arg bw "$BW_STATUS" \
-  '{
-    hookSpecificOutput: {
-      hookEventName: "SessionStart",
-      additionalContext: "Branch: \($branch) | Uncommitted files: \($dirty) | Commits ahead of remote: \($ahead) | Bitwarden: \($bw)"
-    }
-  }'
+printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"Branch: %s | Uncommitted files: %s | Commits ahead of remote: %s | Bitwarden: %s"}}\n' \
+  "$BRANCH" "$DIRTY" "$AHEAD" "$BW_STATUS"
