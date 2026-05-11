@@ -61,15 +61,15 @@ if ($needsRestart) {
 }
 
 # ── 1. Connect ────────────────────────────────────────────────────────────────
-# Connect to Graph BEFORE importing/connecting Az to avoid Azure.Identity DLL conflicts.
-Write-Step "Connecting to Microsoft Graph"
-Connect-MgGraph -Scopes "Application.ReadWrite.All", "Directory.Read.All" -NoWelcome
+# Device code flow is used throughout -- it opens microsoft.com/devicelogin in
+# your normal browser, where passkeys work. Follow the prompt in each step.
+
+Write-Step "Connecting to Microsoft Graph (device code -- sign in as your aa_ account)"
+Connect-MgGraph -Scopes "Application.ReadWrite.All", "Directory.Read.All" -UseDeviceCode -NoWelcome
 Write-Ok "Microsoft Graph connected"
 
-Write-Step "Connecting to Azure"
-if (-not (Get-AzContext)) {
-    Connect-AzAccount
-}
+Write-Step "Connecting to Azure (device code -- same aa_ account)"
+Connect-AzAccount -UseDeviceAuthentication | Out-Null
 $azContext = Get-AzContext
 Write-Ok "Azure connected as $($azContext.Account.Id) -- subscription: $($azContext.Subscription.Name)"
 
@@ -199,9 +199,9 @@ Write-Ok "ARM service principal created -- app ID: $($armSp.AppId)"
 
 # ── 5. Exchange ApplicationAccessPolicy ───────────────────────────────────────
 Write-Step "Configuring Exchange ApplicationAccessPolicy"
-Write-Warn "Connecting to Exchange Online -- sign in as your ma_ account when prompted"
+Write-Warn "Connecting to Exchange Online (device code -- sign in as your ma_ account)"
 
-Connect-ExchangeOnline -ShowProgress $false
+Connect-ExchangeOnline -Device -ShowProgress $false
 
 $groupAlias = "svh-opsman-mailbox"
 $groupName  = "SVH OpsMan Mailbox Access"
