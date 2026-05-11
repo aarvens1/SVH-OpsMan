@@ -65,16 +65,25 @@ Write-Ok "Connected -- tenant: $tenantId"
 Write-Step "Graph app registration: SVH OpsMan (Aaron Stevens)"
 
 $graphPermNames = @(
-    'Tasks.ReadWrite', 'Tasks.ReadWrite.All',
-    'Group.Read.All', 'ChannelMessage.Send', 'TeamMember.ReadWrite.All',
+    # Planner / To Do
+    'Tasks.ReadWrite.All',
+    # Teams
+    'Group.Read.All', 'ChannelMessage.ReadWrite.All', 'TeamMember.ReadWrite.All',
+    # OneDrive / SharePoint
     'Files.ReadWrite.All', 'Sites.Read.All',
+    # Mail
     'Mail.ReadWrite', 'Mail.Send',
+    # Calendar
     'Calendars.ReadWrite', 'MailboxSettings.ReadWrite', 'Place.Read.All',
-    'Policy.Read.All', 'Application.Read.All', 'RoleManagement.Read.Directory',
-    'IdentityRiskyUser.ReadWrite.All', 'UserAuthenticationMethod.Read.All', 'AuditLog.Read.All',
-    'DeviceManagementManagedDevices.Read.All', 'DeviceManagementConfiguration.Read.All',
-    'DeviceManagementApps.Read.All',
-    'ServiceHealth.Read.All', 'Organization.Read.All', 'Directory.Read.All', 'Reports.Read.All'
+    # Entra ID
+    'Application.Read.All', 'AuditLog.Read.All', 'Directory.Read.All',
+    'IdentityRiskyUser.ReadWrite.All', 'Policy.Read.All',
+    'RoleManagement.Read.Directory', 'UserAuthenticationMethod.Read.All',
+    # Intune
+    'DeviceManagementApps.Read.All', 'DeviceManagementConfiguration.Read.All',
+    'DeviceManagementManagedDevices.Read.All',
+    # MS Admin / Org
+    'Organization.Read.All', 'Reports.Read.All', 'ServiceHealth.Read.All'
 )
 
 $graphSpId = '00000003-0000-0000-c000-000000000000'
