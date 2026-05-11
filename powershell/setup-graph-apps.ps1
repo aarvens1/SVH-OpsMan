@@ -51,11 +51,13 @@ if ($needsRestart) {
 Write-Step "Connecting to Microsoft Graph (device code -- ma_ account)"
 $ProgressPreference = 'SilentlyContinue'
 Connect-MgGraph -Scopes "Application.ReadWrite.All", "Directory.Read.All" -UseDeviceCode -NoWelcome
+# Brief pause -- device code token sometimes needs a moment to fully initialize
+Start-Sleep -Seconds 3
 $tenantId = (Get-MgContext).TenantId
 Write-Ok "Connected -- tenant: $tenantId"
 
 # ── 2. Graph app registration ─────────────────────────────────────────────────
-Write-Step "Creating Graph app registration: SVH OpsMan (Aaron Stevens)"
+Write-Step "Graph app registration: SVH OpsMan (Aaron Stevens)"
 
 $graphPermNames = @(
     'Tasks.ReadWrite', 'Tasks.ReadWrite.All',
@@ -80,14 +82,25 @@ foreach ($name in $graphPermNames) {
     $resolvedPerms.Add(@{ id = $role.Id; type = 'Role' })
 }
 
-$graphApp = New-MgApplication -DisplayName "SVH OpsMan (Aaron Stevens)" `
-    -RequiredResourceAccess @{
-        resourceAppId  = $graphSpId
-        resourceAccess = $resolvedPerms.ToArray()
-    }
+# Idempotent -- reuse existing app reg if it was already created
+$graphApp = Get-MgApplication -Filter "displayName eq 'SVH OpsMan (Aaron Stevens)'" |
+    Select-Object -First 1
+if ($graphApp) {
+    Write-Ok "App already exists -- reusing (app ID: $($graphApp.AppId))"
+} else {
+    $graphApp = New-MgApplication -DisplayName "SVH OpsMan (Aaron Stevens)" `
+        -RequiredResourceAccess @{
+            resourceAppId  = $graphSpId
+            resourceAccess = $resolvedPerms.ToArray()
+        }
+    Write-Ok "App created -- app ID: $($graphApp.AppId)"
+}
 
-$graphSvc = New-MgServicePrincipal -AppId $graphApp.AppId
-Write-Ok "App created -- app ID: $($graphApp.AppId)"
+$graphSvc = Get-MgServicePrincipal -Filter "appId eq '$($graphApp.AppId)'" |
+    Select-Object -First 1
+if (-not $graphSvc) {
+    $graphSvc = New-MgServicePrincipal -AppId $graphApp.AppId
+}
 
 Write-Warn "Granting admin consent for all Graph permissions..."
 foreach ($p in $resolvedPerms) {
@@ -98,21 +111,32 @@ foreach ($p in $resolvedPerms) {
             -ResourceId         $graphSp.Id `
             -AppRoleId          $p.id | Out-Null
     } catch {
-        Write-Warn "  Could not grant $($p.id): $_"
+        # Ignore duplicate assignment errors
+        if ($_ -notmatch 'Permission being assigned already exists') {
+            Write-Warn "  Could not grant $($p.id): $_"
+        }
     }
 }
 Write-Ok "Admin consent granted"
 
-$graphSecret = New-AppSecret -AppObjectId $graphApp.Id -Label "OpsMan MCP server"
-Write-Ok "Client secret created (expires 2 years)"
+# Only create a new secret if we don't already have one stored in state
+$stateFile = Join-Path $env:TEMP "svh-opsman-state.json"
+$existingState = if (Test-Path $stateFile) { Get-Content $stateFile | ConvertFrom-Json } else { $null }
+if ($existingState -and $existingState.graphSecret) {
+    $graphSecret = $existingState.graphSecret
+    Write-Ok "Reusing existing client secret from previous run"
+} else {
+    $graphSecret = New-AppSecret -AppObjectId $graphApp.Id -Label "OpsMan MCP server"
+    Write-Ok "Client secret created (expires 2 years)"
+}
 
 # ── 3. MDE app registration ───────────────────────────────────────────────────
-Write-Step "Creating MDE app registration: SVH OpsMan MDE"
+Write-Step "MDE app registration: SVH OpsMan MDE"
 
 $mdeSp = Get-MgServicePrincipal -Filter "displayName eq 'WindowsDefenderATP'" |
     Select-Object -First 1
 
-$mdeAppId = '(skipped)'
+$mdeAppId  = '(skipped)'
 $mdeSecret = '(skipped -- WindowsDefenderATP not found)'
 
 if (-not $mdeSp) {
@@ -129,12 +153,22 @@ if (-not $mdeSp) {
         $resolvedMdePerms.Add(@{ id = $role.Id; type = 'Role' })
     }
 
-    $mdeApp = New-MgApplication -DisplayName "SVH OpsMan MDE" `
-        -RequiredResourceAccess @{
-            resourceAppId  = $mdeSp.AppId
-            resourceAccess = $resolvedMdePerms.ToArray()
-        }
-    $mdeSvc = New-MgServicePrincipal -AppId $mdeApp.AppId
+    $mdeApp = Get-MgApplication -Filter "displayName eq 'SVH OpsMan MDE'" |
+        Select-Object -First 1
+    if ($mdeApp) {
+        Write-Ok "MDE app already exists -- reusing (app ID: $($mdeApp.AppId))"
+    } else {
+        $mdeApp = New-MgApplication -DisplayName "SVH OpsMan MDE" `
+            -RequiredResourceAccess @{
+                resourceAppId  = $mdeSp.AppId
+                resourceAccess = $resolvedMdePerms.ToArray()
+            }
+        Write-Ok "MDE app created -- app ID: $($mdeApp.AppId)"
+    }
+
+    $mdeSvc = Get-MgServicePrincipal -Filter "appId eq '$($mdeApp.AppId)'" |
+        Select-Object -First 1
+    if (-not $mdeSvc) { $mdeSvc = New-MgServicePrincipal -AppId $mdeApp.AppId }
 
     foreach ($p in $resolvedMdePerms) {
         try {
@@ -144,14 +178,21 @@ if (-not $mdeSp) {
                 -ResourceId         $mdeSp.Id `
                 -AppRoleId          $p.id | Out-Null
         } catch {
-            Write-Warn "  Could not grant $($p.id): $_"
+            if ($_ -notmatch 'Permission being assigned already exists') {
+                Write-Warn "  Could not grant $($p.id): $_"
+            }
         }
     }
     Write-Ok "MDE admin consent granted"
 
-    $mdeSecret = New-AppSecret -AppObjectId $mdeApp.Id -Label "OpsMan MCP server"
-    $mdeAppId  = $mdeApp.AppId
-    Write-Ok "MDE app created -- app ID: $mdeAppId"
+    if ($existingState -and $existingState.mdeSecret -and $existingState.mdeSecret -ne '(skipped)') {
+        $mdeSecret = $existingState.mdeSecret
+        Write-Ok "Reusing existing MDE secret from previous run"
+    } else {
+        $mdeSecret = New-AppSecret -AppObjectId $mdeApp.Id -Label "OpsMan MCP server"
+        Write-Ok "MDE client secret created"
+    }
+    $mdeAppId = $mdeApp.AppId
 }
 
 # ── 4. Exchange ApplicationAccessPolicy ───────────────────────────────────────
