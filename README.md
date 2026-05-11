@@ -428,7 +428,33 @@ If you previously installed Claude via `npm install -g`, the system copy at `/us
 
 ---
 
-### 2. Claude Code project config
+### 2. WSL shell environment
+
+`dotfiles/bashrc.sh` sets up the SVH-OpsMan shell environment. Source it from `~/.bashrc` (one-time):
+
+```bash
+echo '[ -f ~/SVH-OpsMan/dotfiles/bashrc.sh ] && . ~/SVH-OpsMan/dotfiles/bashrc.sh' >> ~/.bashrc
+source ~/.bashrc
+```
+
+What this adds:
+
+| Feature | Detail |
+|---------|--------|
+| Bitwarden check | Warns `⚠ Bitwarden locked — run: bwu` on every new shell |
+| `bwu` function | Unlocks vault and exports `BW_SESSION` |
+| Start in OpsMan | New shells open in `~/SVH-OpsMan` when launched from home dir |
+| `ops` alias | Jump back to OpsMan from anywhere |
+| Git branch in prompt | Branch name shown next to working directory |
+| Expanded history | 10k lines with timestamps, shared across windows |
+| `wexp` | Open current dir in Windows Explorer |
+| `clip` | `echo foo \| clip` pipes to Windows clipboard |
+| `wpath` | Convert WSL path to Windows path |
+| Git aliases | `gs`, `gl`, `gd`, `gdc` |
+
+---
+
+### 3. Claude Code project config
 
 The `.claude/` directory is checked into this repo. It configures permissions, hooks, and skills automatically when you open the project in Claude Code — no extra setup needed.
 
@@ -489,8 +515,11 @@ claude mcp add svh-opsman -- node /path/to/SVH-OpsMan/mcp-server/dist/index.js
 claude mcp add github -e GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxx \
   -- npx -y @modelcontextprotocol/server-github
 
+# Requires the "Local REST API" community plugin enabled in Obsidian.
+# Copy the API key from: Settings → Community Plugins → Local REST API → API Key
 claude mcp add obsidian -e OBSIDIAN_API_KEY=xxx \
   -- npx -y mcp-obsidian http://127.0.0.1:27123
+# Vault path (for reference): /mnt/c/users/astevens/vaults/OpsManVault
 
 claude mcp add fathom -e FATHOM_API_KEY=xxx \
   -- npx -y fathom-mcp    # check Fathom docs for current package name
