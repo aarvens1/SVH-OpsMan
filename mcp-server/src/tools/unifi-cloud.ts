@@ -30,7 +30,7 @@ export function registerUnifiCloudTools(server: McpServer, enabled: boolean): vo
     async () => {
       if (!enabled) return disabled();
       try {
-        const res = await unifiCloudClient().get("/api/v2/sites");
+        const res = await unifiCloudClient().get("/ea/sites");
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -49,7 +49,7 @@ export function registerUnifiCloudTools(server: McpServer, enabled: boolean): vo
     async ({ site_id }) => {
       if (!enabled) return disabled();
       try {
-        const res = await unifiCloudClient().get(`/api/v2/sites/${site_id}`);
+        const res = await unifiCloudClient().get(`/ea/sites/${site_id}`);
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -69,7 +69,7 @@ export function registerUnifiCloudTools(server: McpServer, enabled: boolean): vo
     async ({ site_id }) => {
       if (!enabled) return disabled();
       try {
-        const res = await unifiCloudClient().get(`/api/v2/sites/${site_id}/devices`);
+        const res = await unifiCloudClient().get(`/ea/sites/${site_id}/devices`);
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -90,7 +90,7 @@ export function registerUnifiCloudTools(server: McpServer, enabled: boolean): vo
     async ({ site_id, device_id }) => {
       if (!enabled) return disabled();
       try {
-        const res = await unifiCloudClient().get(`/api/v2/sites/${site_id}/devices/${device_id}`);
+        const res = await unifiCloudClient().get(`/ea/sites/${site_id}/devices/${device_id}`);
         return ok(res.data);
       } catch (e) {
         return err(e);

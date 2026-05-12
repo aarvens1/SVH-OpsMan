@@ -2,7 +2,7 @@
 name: week-ender
 description: Thursday end-of-day weekly wrap-up. What shipped, what slipped, seeds for next week, and an optional summary draft for a manager or team. Trigger phrases: "week ender", "wrap up the week", "Thursday EOD", "weekly wrap".
 when_to_use: Use at the end of the work week (Thursday) to close out cleanly and set up Monday.
-allowed-tools: "mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__calendar_list_events mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__confluence_search_pages mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__calendar_list_events mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__confluence_search_pages mcp__obsidian__* mcp__time__*"
 ---
 
 # Week Ender
@@ -14,8 +14,19 @@ This week (Monday through now).
 ## Step 1 — What happened this week
 
 Run in parallel:
-- `planner_list_tasks` — tasks completed this week vs. still open.
-- `todo_list_tasks` — personal task completion.
+- `planner_get_user_tasks` (user_id: `astevens@shoestringvalley.com`, open_only: false) — Aaron's tasks including completed ones this week.
+- `planner_list_tasks` for the operational boards (completed vs. still open):
+  - IT Sysadmin Tasks: `-aZEdilGAUqLC8B8GwOLfmQAAh9M`
+  - IT Recurring Tasks: `ZTlTUrl1gUunMMwExKSDRWQABKjH`
+  - IT Management Tasks: `e0-6qZKUSkyZJUQg9nNbzmQAEjoO`
+  - IT Task Overview: `nyrAlo2ciUKVEv8GXUA78WQAG8mL`
+- `planner_list_tasks` for project boards (progress this week):
+  - Office Network Standardization: `E4PruQekE0K25KH40pWa9WQAAfAr`
+  - BDR Testing: `lJQrriNYnUuLKm5u485GX2QAE_WS`
+  - Information Security Program (ISP): `2es7HS5UakyP3K6ZkwRfd2QAF3I_`
+  - CMMC Level 1: `qxQKzAEGd0m3Q6EUysaGVmQADbmg`
+  - Copilot Audit for IT team: `wP9PL7YWCEqGbG6o4aYVT2QADaLq`
+- `todo_list_task_lists` then `todo_list_tasks` — personal task completion.
 - `calendar_list_events` — what meetings happened, which recurred.
 - `wazuh_search_alerts` / `mde_list_alerts` — notable security events this week.
 - `ninja_list_all_backups` — backup status for the week.

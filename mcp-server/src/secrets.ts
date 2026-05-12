@@ -13,6 +13,16 @@ export async function loadBitwardenSecrets(): Promise<void> {
   }
 
   try {
+    try {
+      execSync(`bw sync --session "${session}"`, {
+        encoding: "utf8",
+        stdio: ["pipe", "pipe", "pipe"],
+        timeout: 15_000,
+      });
+    } catch {
+      console.error("[svh-opsman] bw sync failed — using cached vault data");
+    }
+
     const raw = execSync(`bw get item "${VAULT_ITEM}" --session "${session}"`, {
       encoding: "utf8",
       stdio: ["pipe", "pipe", "pipe"],
@@ -24,7 +34,7 @@ export async function loadBitwardenSecrets(): Promise<void> {
 
     let loaded = 0;
     for (const field of fields) {
-      if (field.name && field.value !== undefined && !process.env[field.name]) {
+      if (field.name && field.value !== undefined) {
         process.env[field.name] = field.value;
         loaded++;
       }

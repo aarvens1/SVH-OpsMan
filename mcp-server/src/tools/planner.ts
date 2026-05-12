@@ -292,6 +292,60 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
     }
   );
 
+  // ── User task views ───────────────────────────────────────────────────────
+
+  server.registerTool(
+    "planner_get_user_tasks",
+    {
+      description:
+        "Get all Planner tasks assigned to a specific user across every plan they belong to. " +
+        "Use this to build the 'Your Tasks' section of a daily briefing — it covers personal plans " +
+        "and team plans alike without needing to enumerate plan IDs.",
+      inputSchema: z.object({
+        user_id: z.string().describe("UPN or Entra object ID of the user (e.g. astevens@shoestringvalley.com)"),
+        open_only: z
+          .boolean()
+          .optional()
+          .default(true)
+          .describe("If true (default), exclude tasks at 100% completion"),
+      }),
+    },
+    async ({ user_id, open_only }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getGraphToken(GRAPH_SCOPE);
+        const res = await graphClient(token).get(`/users/${encodeURIComponent(user_id)}/planner/tasks`);
+        const tasks = (res.data?.value ?? []) as Record<string, unknown>[];
+        const filtered = open_only ? tasks.filter((t) => (t["percentComplete"] as number) < 100) : tasks;
+        return ok({ "@odata.count": filtered.length, value: filtered });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "planner_list_user_plans",
+    {
+      description:
+        "List all Planner plans owned by or visible to a specific user, including personal (non-group) plans. " +
+        "Use this to find Aaron's personal Planner board when building a daily briefing.",
+      inputSchema: z.object({
+        user_id: z.string().describe("UPN or Entra object ID of the user"),
+      }),
+    },
+    async ({ user_id }) => {
+      if (!enabled) return disabled();
+      try {
+        const token = await getGraphToken(GRAPH_SCOPE);
+        const res = await graphClient(token).get(`/users/${encodeURIComponent(user_id)}/planner/plans`);
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
   // ── Task Details (notes + checklist) ───────────────────────────────────────
 
   server.registerTool(
