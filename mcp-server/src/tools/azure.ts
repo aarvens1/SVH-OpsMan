@@ -1,20 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getArmToken } from "../auth/azure.js";
-import { armClient, formatError } from "../utils/http.js";
-
-const DISABLED_MSG =
-  "Azure service not configured: set AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_SUBSCRIPTION_ID";
-
-function disabled() {
-  return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
-}
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
+import { armClient } from "../utils/http.js";
+import { ok, err } from "../utils/response.js";
 
 function sub(): string {
   return process.env["AZURE_SUBSCRIPTION_ID"] ?? "";
@@ -35,6 +23,8 @@ type A = Record<string, any>;
 // Read-only. Service principal needs: Reader + Cost Management Reader at subscription scope.
 
 export function registerAzureTools(server: McpServer, enabled: boolean): void {
+  if (!enabled) return;
+
   server.registerTool(
     "azure_list_resource_groups",
     {
@@ -49,7 +39,6 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ filter }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getArmToken();
         const params: Record<string, string> = { "api-version": "2021-04-01" };
@@ -85,7 +74,6 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ resource_group }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getArmToken();
         const path = resource_group
@@ -121,7 +109,6 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ resource_group, vm_name }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getArmToken();
         const res = await armClient(token).get(
@@ -164,7 +151,6 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ resource_group }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getArmToken();
         const path = resource_group
@@ -206,7 +192,6 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ resource_group }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getArmToken();
         const path = resource_group
@@ -249,7 +234,6 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ resource_group }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getArmToken();
         const path = resource_group
@@ -295,7 +279,6 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ resource_group }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getArmToken();
         const path = resource_group
@@ -354,7 +337,6 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ start_time, end_time, resource_group, caller, status, top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getArmToken();
         const filters: string[] = [`eventTimestamp ge '${start_time}'`];
@@ -409,7 +391,6 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ period, group_by }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getArmToken();
         const payload = {
@@ -453,7 +434,6 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ category }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getArmToken();
         const params: Record<string, string> = { "api-version": "2023-01-01" };

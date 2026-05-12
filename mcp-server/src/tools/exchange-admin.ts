@@ -2,19 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getGraphToken } from "../auth/graph.js";
 import { graphClient, GRAPH_SCOPE, formatError } from "../utils/http.js";
-
-const DISABLED_MSG =
-  "Graph service not configured: set GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET";
-
-function disabled() {
-  return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
-}
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
+import { ok, err } from "../utils/response.js";
 
 // NOTE: Graph covers mailbox config, distribution groups, accepted domains, and
 // message-trace reports. Mail flow rules/connectors and anti-spam/malware
@@ -22,6 +10,8 @@ function err(e: unknown) {
 // for those (Get-TransportRule, Get-HostedContentFilterPolicy, etc.).
 
 export function registerExchangeAdminTools(server: McpServer, enabled: boolean): void {
+  if (!enabled) return;
+
   server.registerTool(
     "exo_get_mailbox",
     {
@@ -33,7 +23,6 @@ export function registerExchangeAdminTools(server: McpServer, enabled: boolean):
       }),
     },
     async ({ user_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const [user, settings] = await Promise.all([
@@ -66,7 +55,6 @@ export function registerExchangeAdminTools(server: McpServer, enabled: boolean):
       }),
     },
     async ({ filter, top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const params: Record<string, string | number> = {
@@ -95,7 +83,6 @@ export function registerExchangeAdminTools(server: McpServer, enabled: boolean):
       }),
     },
     async ({ group_id, top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(
@@ -116,7 +103,6 @@ export function registerExchangeAdminTools(server: McpServer, enabled: boolean):
       inputSchema: z.object({}),
     },
     async () => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(
@@ -159,7 +145,6 @@ export function registerExchangeAdminTools(server: McpServer, enabled: boolean):
       }),
     },
     async ({ sender_address, recipient_address, start_date, end_date, status, top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const params: Record<string, string | number> = {
@@ -204,7 +189,6 @@ export function registerExchangeAdminTools(server: McpServer, enabled: boolean):
       }),
     },
     async ({ user_id, set_status, external_reply, internal_reply, schedule_start, schedule_end }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         if (set_status) {

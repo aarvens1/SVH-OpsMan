@@ -1,27 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { createControllerClient } from "../auth/unifi.js";
-import { formatError } from "../utils/http.js";
-
-const DISABLED_MSG =
-  "UniFi Network Controller not configured: set UNIFI_CONTROLLER_URL, UNIFI_USERNAME, UNIFI_PASSWORD";
-
-function disabled() {
-  return {
-    isError: true as const,
-    content: [{ type: "text" as const, text: DISABLED_MSG }],
-  };
-}
-
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
+import { ok, err } from "../utils/response.js";
 
 export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): void {
+  if (!enabled) return;
+
   server.registerTool(
     "unifi_get_site_health",
     {
@@ -32,7 +16,6 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ site_id }) => {
-      if (!enabled) return disabled();
       try {
         const res = await createControllerClient().get(`/api/v2/sites/${site_id}/health`);
         return ok(res.data);
@@ -52,7 +35,6 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ site_id }) => {
-      if (!enabled) return disabled();
       try {
         const res = await createControllerClient().get(`/api/v2/sites/${site_id}/networks`);
         return ok(res.data);
@@ -71,7 +53,6 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ site_id }) => {
-      if (!enabled) return disabled();
       try {
         const res = await createControllerClient().get(
           `/api/v2/sites/${site_id}/firewallrules`
@@ -93,7 +74,6 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ site_id }) => {
-      if (!enabled) return disabled();
       try {
         const res = await createControllerClient().get(`/api/v2/sites/${site_id}/devices`);
         return ok(res.data);
@@ -117,7 +97,6 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ site_id, active_only }) => {
-      if (!enabled) return disabled();
       try {
         const url = active_only
           ? `/api/v2/sites/${site_id}/clients?active=true`
@@ -141,7 +120,6 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ site_id }) => {
-      if (!enabled) return disabled();
       try {
         const res = await createControllerClient().get(`/api/v2/sites/${site_id}/wlans`);
         return ok(res.data);
@@ -162,7 +140,6 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ site_id }) => {
-      if (!enabled) return disabled();
       try {
         const res = await createControllerClient().get(
           `/api/v2/sites/${site_id}/portprofiles`
@@ -186,7 +163,6 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ site_id, device_mac }) => {
-      if (!enabled) return disabled();
       try {
         const res = await createControllerClient().get(
           `/api/v2/sites/${site_id}/devices/${device_mac.toLowerCase().replace(/:/g, "")}`

@@ -1,22 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getGraphToken } from "../auth/graph.js";
-import { graphClient, GRAPH_SCOPE, formatError } from "../utils/http.js";
-
-const DISABLED_MSG =
-  "Graph service not configured: set GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET";
-
-function disabled() {
-  return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
-}
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
+import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
+import { ok, err } from "../utils/response.js";
 
 export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
+  if (!enabled) return;
+
   server.registerTool(
     "todo_list_task_lists",
     {
@@ -29,7 +19,6 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ user_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const base = user_id ? `/users/${user_id}` : "/me";
@@ -59,7 +48,6 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ list_id, user_id, open_only }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const base = user_id ? `/users/${user_id}` : "/me";
@@ -87,7 +75,6 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ list_id, task_id, user_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const base = user_id ? `/users/${user_id}` : "/me";
@@ -131,7 +118,6 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ list_id, title, body, due_date, importance, reminder_date, user_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const base = user_id ? `/users/${user_id}` : "/me";
@@ -173,7 +159,6 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ list_id, task_id, title, body, status, importance, due_date, user_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const base = user_id ? `/users/${user_id}` : "/me";
@@ -207,7 +192,6 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ list_id, task_id, display_name, is_checked, user_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const base = user_id ? `/users/${user_id}` : "/me";
