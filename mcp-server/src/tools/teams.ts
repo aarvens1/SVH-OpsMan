@@ -2,9 +2,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getGraphToken } from "../auth/graph.js";
 import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
-import { ok, err } from "../utils/response.js";
+import { ok, err, cfgErr } from "../utils/response.js";
 
-export function registerTeamsTools(server: McpServer, enabled: boolean): void {
+export function registerTeamsTools(server: McpServer, enabled: boolean, graphUserId?: string): void {
   if (!enabled) return;
 
   server.registerTool(
@@ -98,7 +98,7 @@ export function registerTeamsTools(server: McpServer, enabled: boolean): void {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(
           `/teams/${team_id}/channels/${channel_id}/messages`,
-          { params: { $top: top, $orderby: "createdDateTime desc" } }
+          { params: { $top: top } }
         );
         return ok(res.data);
       } catch (e) {
@@ -127,6 +127,94 @@ export function registerTeamsTools(server: McpServer, enabled: boolean): void {
         if (description) body["description"] = description;
         const res = await graphClient(token).post(`/teams/${team_id}/channels`, body);
         return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "teams_list_my_chats",
+    {
+      description:
+        "List recent Teams direct message and group chat threads for the configured user. " +
+        "Returns participants and last message preview, ordered by most recent activity. " +
+        "Requires Chat.Read.All application permission.",
+      inputSchema: z.object({
+        top: z.number().int().min(1).max(50).default(20).describe("Number of chats to return"),
+      }),
+    },
+    async ({ top }) => {
+      if (!graphUserId)
+        return cfgErr("teams_list_my_chats — set GRAPH_USER_ID in your .env or Bitwarden vault");
+      try {
+        const token = await getGraphToken(GRAPH_SCOPE);
+        const res = await graphClient(token).get(`/users/${graphUserId}/chats`, {
+          params: { $expand: "lastMessagePreview,members", $top: top },
+        });
+        const chats = ((res.data.value ?? []) as Record<string, unknown>[]).map((chat) => {
+          const members = ((chat["members"] as Record<string, unknown>[]) ?? [])
+            .map((m) => (m["displayName"] as string) ?? (m["email"] as string))
+            .filter(Boolean)
+            .join(", ");
+          const preview = chat["lastMessagePreview"] as Record<string, unknown> | null;
+          const fromUser = preview
+            ? ((preview["from"] as Record<string, unknown>)?.["user"] as Record<string, unknown>)
+            : null;
+          return {
+            id: chat["id"],
+            chatType: chat["chatType"],
+            topic: chat["topic"] ?? null,
+            members,
+            lastMessage: preview
+              ? {
+                  from: (fromUser?.["displayName"] as string) ?? "System",
+                  body: ((preview["body"] as Record<string, unknown>)?.["content"] as string) ?? "",
+                  createdDateTime: preview["createdDateTime"],
+                }
+              : null,
+          };
+        });
+        return ok({ value: chats });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "teams_get_chat_messages",
+    {
+      description:
+        "Get recent messages from a specific Teams chat thread (DM or group chat). " +
+        "Use teams_list_my_chats to get chat IDs first. " +
+        "Requires Chat.Read.All application permission.",
+      inputSchema: z.object({
+        chat_id: z.string().describe("Chat ID (from teams_list_my_chats)"),
+        top: z.number().int().min(1).max(50).default(20).describe("Number of messages to return"),
+      }),
+    },
+    async ({ chat_id, top }) => {
+      if (!graphUserId)
+        return cfgErr("teams_get_chat_messages — set GRAPH_USER_ID in your .env or Bitwarden vault");
+      try {
+        const token = await getGraphToken(GRAPH_SCOPE);
+        const res = await graphClient(token).get(`/chats/${chat_id}/messages`, {
+          params: { $top: top },
+        });
+        const messages = ((res.data.value ?? []) as Record<string, unknown>[]).map((msg) => {
+          const fromUser = ((msg["from"] as Record<string, unknown>)?.["user"]) as
+            | Record<string, unknown>
+            | undefined;
+          return {
+            id: msg["id"],
+            createdDateTime: msg["createdDateTime"],
+            from: (fromUser?.["displayName"] as string) ?? "System",
+            body: ((msg["body"] as Record<string, unknown>)?.["content"] as string) ?? "",
+            messageType: msg["messageType"],
+          };
+        });
+        return ok({ value: messages });
       } catch (e) {
         return err(e);
       }

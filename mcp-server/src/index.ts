@@ -74,7 +74,7 @@ registerMsTodoTools(server, services.graph);
 registerEntraAdminTools(server, services.graph);
 registerOneDriveTools(server, services.graph);
 registerSharePointTools(server, services.graph);
-registerTeamsTools(server, services.graph);
+registerTeamsTools(server, services.graph, graphUserId);
 registerOutlookMailTools(server, services.graph, graphUserId);
 registerOutlookCalendarTools(server, services.graph, graphUserId);
 registerExchangeAdminTools(server, services.graph);

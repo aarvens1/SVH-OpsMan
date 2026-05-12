@@ -420,3 +420,52 @@ This is a one-line addition to the day-starter SKILL.md:
 | Medium | Automate compliance gap scan (W5) | Medium |
 | Low | Reference file auto-sync (W7) | Tiny |
 | Low | Day-starter idempotency guard (W8) | Tiny |
+
+---
+
+# Data Access Model — What Actually Flows Through Claude
+
+A note on what "Claude has access to X" means in practice for this server.
+
+## How the tools query
+
+Every tool makes a targeted API call and returns only what was asked for. No tool
+fetches broadly and filters client-side. Examples:
+
+- `teams_list_my_chats` → `GET /users/{graphUserId}/chats` — Microsoft returns
+  only chats Aaron is a member of; the server never sees any other user's threads.
+- `teams_list_messages` → `GET /teams/{teamId}/channels/{channelId}/messages` —
+  only the specific channel queried; nothing else in the tenant is touched.
+- `mail_search` → `GET /users/{graphUserId}/messages` — same scoping by user.
+
+The permission grant on the app registration determines *what the credential could
+access if misused*. The actual query determines *what data comes back in practice*.
+Those are two separate things.
+
+## What flows through Claude's context
+
+Tool responses flow into Claude's context window during the session in which they
+are called. A day-starter that calls `teams_list_my_chats` means the returned
+chat previews are visible to the model for that session. Claude does not retain
+data between sessions, and has no ability to query data outside of an active
+session where a tool is explicitly invoked.
+
+The practical implication: Claude sees exactly what a targeted API call returns —
+not a broader slice of tenant data — and only when a tool is actively called.
+
+## The gap between permission scope and query scope
+
+`ChannelMessage.Read.All` and `Chat.Read.All` are tenant-wide application
+permissions. The credential *could* be used to read any channel or chat in the
+tenant. The server *only* uses them to query IT Team channels and Aaron's own
+chats. That gap is enforced by code, not by the permission grant itself.
+
+This is the same pattern already in use for `Mail.ReadWrite` and
+`Calendars.ReadWrite` — both are application permissions that could touch any
+mailbox, but the server locks them to `GRAPH_USER_ID` via targeted queries and
+an Exchange ApplicationAccessPolicy.
+
+**If the blast-radius concern ever needs addressing for Teams specifically:**
+RSC (`ChannelMessage.Read.Group`) is the right fix — it enforces the scope at the
+permission layer, not just in code. See the RSC approach documented in the
+2026-05-12 daily briefing for the implementation path.
