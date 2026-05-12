@@ -51,14 +51,13 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
+        const classes = os_filter.split(",").map((t) => t.trim()).join(",");
+        const dfParts: string[] = [`class in (${classes})`];
+        if (org_id !== undefined) dfParts.push(`org = ${org_id}`);
         const params: Record<string, string | number> = {
           pageSize: page_size,
-          filter: os_filter
-            .split(",")
-            .map((t) => `osType:${t.trim()}`)
-            .join(","),
+          df: dfParts.join(" and "),
         };
-        if (org_id !== undefined) params["organizationId"] = org_id;
         if (after) params["after"] = after;
         const res = await ninjaClient(token).get("/devices", { params });
         return ok(res.data);
