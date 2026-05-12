@@ -41,6 +41,12 @@ Extra fields by note type:
 
 For network topology, attack paths, asset network position, change impact scope, and project WBS — produce an Excalidraw diagram rather than a prose description. Save to `Diagrams/<category>/` and embed with `![[filename.excalidraw]]`.
 
+## Daily note write mode — always append
+
+When writing to existing daily notes (`Briefings/Daily/YYYY-MM-DD.md`), always use append mode. Never rewrite.
+
+If a read of an existing daily note returns no body content, assume the file has content that the tool failed to surface — not that the file is empty. When in doubt, ask before rewriting any Obsidian note.
+
 ## Nothing leaves Obsidian without explicit user instruction
 
 Draft all Teams messages, emails, Confluence pages, and Planner updates in Obsidian or as clearly-labelled drafts. Never send or publish without the user saying so in the current session.

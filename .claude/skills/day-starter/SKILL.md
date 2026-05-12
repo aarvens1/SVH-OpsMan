@@ -2,7 +2,7 @@
 name: day-starter
 description: Morning briefing. Covers the last 24 hours of alerts, tasks, calendar, and open threads — or last 72 hours if today is Monday (picks up the full weekend). Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
 when_to_use: Use at the start of each workday to get a prioritized digest of what needs attention.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__obsidian__* mcp__time__*"
 ---
 
 # Day Starter
@@ -16,7 +16,7 @@ Call `mcp__time__*` to get the current date and day of week. If today is Monday,
 Run these in parallel:
 
 - `wazuh_search_alerts` — query last N hours, severity ≥ medium. Note rule IDs, agent names, and alert counts.
-- `ninja_list_device_alerts` — open alerts on all devices. Flag anything Critical or Warning.
+- `ninja_list_device_alerts` — open alerts on priority servers. **Important:** this tool requires a `device_id`, so query the most critical servers rather than all 40+. Priority device IDs to always check: DCs (ACCOPDXDC22-1: 2215, FGTPDX-DC01: 2327, FGTCOLODC01: 2638), HyperV hosts (ACCOPDXHYPERV1: 2214, ACCOPDXHYPERV2: 2217, FGTPDX-HYPERV01: 2340), and backup servers (ACCOCOLOBACKUP: 2599, ACCOPDXBDR01: 3011). Also check inbox for NinjaOne alert emails to catch anything not covered by the device-level queries.
 - `mde_list_alerts` — Defender alerts. Flag High/Critical severity.
 - `entra_list_risky_users` — any users currently flagged as risky.
 - `admin_list_service_incidents` — active M365 service incidents.
@@ -56,6 +56,7 @@ Run these in parallel:
   This is the source for **IT team boards** and **Projects**.
 - `todo_list_task_lists` then `todo_list_tasks` — personal To Do task lists, anything open or due today.
 - `mail_search` — unread or high-importance messages from the last N hours. Focus on external senders, anything flagged, or subjects suggesting action. Skip routine system notifications.
+- `teams_list_messages` — unread DMs and @mentions from the last N hours. Check the IT Team channels for anything requiring action. Focus on direct messages to Aaron and threads where he's mentioned; skip high-volume notification channels.
 
 ### Separating your tasks from team tasks
 
@@ -107,4 +108,15 @@ Medium-severity findings, anything that could escalate. No action required yet.
 ### 💡 Suggested next moves
 2–3 concrete recommendations (e.g., "Dismiss risky user X after reviewing sign-in logs", "Prep agenda for 2pm call").
 
-Planner update suggestions and reply drafts go at the bottom, clearly labelled as drafts. Nothing changes or sends without explicit user confirmation.
+### 📝 Draft Planner actions
+Always include this section. List proposed Planner task creations and updates based on findings in the briefing. Nothing is created or changed until Aaron explicitly confirms.
+
+Default destination for new tasks:
+- **IT Sysadmin Tasks** (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`) — operational/sysadmin follow-ups, security findings, infrastructure issues
+- **Personal To Do** — smaller personal action items not appropriate for the team board
+
+Format each entry as:
+- `CREATE` — [task title] → IT Sysadmin Tasks · due [date if applicable]
+- `UPDATE` — "[existing task title]" → [proposed change: new due date / set to in-progress / etc.]
+
+Err on the side of including more suggestions rather than fewer — Aaron will decide what to action.
