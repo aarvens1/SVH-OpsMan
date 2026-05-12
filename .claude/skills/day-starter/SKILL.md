@@ -2,7 +2,7 @@
 name: day-starter
 description: Morning briefing. Covers the last 24 hours of alerts, tasks, calendar, and open threads — or last 72 hours if today is Monday (picks up the full weekend). Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
 when_to_use: Use at the start of each workday to get a prioritized digest of what needs attention.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__confluence_search_pages mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__confluence_search_pages mcp__obsidian__* mcp__time__*"
 ---
 
 # Day Starter
@@ -16,7 +16,7 @@ Call `mcp__time__*` to get the current date and day of week. If today is Monday,
 Run these in parallel:
 
 - `wazuh_search_alerts` — query last N hours, severity ≥ medium. Note rule IDs, agent names, and alert counts.
-- `ninja_list_device_alerts` — open alerts on priority servers. **Important:** this tool requires a `device_id`, so query the most critical servers rather than all 40+. Priority device IDs to always check: DCs (ACCOPDXDC22-1: 2215, FGTPDX-DC01: 2327, FGTCOLODC01: 2638), HyperV hosts (ACCOPDXHYPERV1: 2214, ACCOPDXHYPERV2: 2217, FGTPDX-HYPERV01: 2340), and backup servers (ACCOCOLOBACKUP: 2599, ACCOPDXBDR01: 3011). Also check inbox for NinjaOne alert emails to catch anything not covered by the device-level queries.
+- `ninja_list_servers` first to enumerate all server device IDs across all organizations, then run `ninja_list_device_alerts` in parallel for every returned device ID. Do not use a hardcoded list — always discover dynamically. Also check inbox for NinjaOne alert emails to catch anything not covered by the device-level queries.
 - `mde_list_alerts` — Defender alerts. Flag High/Critical severity.
 - `entra_list_risky_users` — any users currently flagged as risky.
 - `admin_list_service_incidents` — active M365 service incidents.
@@ -95,6 +95,9 @@ Calendar events in time order. Flag any meeting that needs prep.
 ### 📨 Mail
 Unread or high-importance messages from the last N hours needing action. External senders and flagged items first. Skip routine system notifications.
 
+### 💬 Teams
+Unread DMs and @mentions from the last N hours. Check the IT Team channels for anything requiring action. Focus on direct messages to Aaron and threads where he's mentioned. Skip high-volume notification channels. If nothing actionable: state "No unread DMs or @mentions."
+
 ### 📋 Your tasks
 Tasks assigned to Aaron (by user ID or Planner label) across all plans and personal board, plus To Do items. Due today or overdue first, then upcoming.
 
@@ -109,6 +112,46 @@ Medium-severity findings, anything that could escalate. No action required yet.
 
 ### 💡 Suggested next moves
 2–3 concrete recommendations (e.g., "Dismiss risky user X after reviewing sign-in logs", "Prep agenda for 2pm call").
+
+### 🖥 Infrastructure status
+
+**Always include this section — even when everything is clean.** A clean result is still useful signal. Do not skip or merge this into other sections.
+
+**NinjaOne — All servers**
+1. Call `ninja_list_servers` to get all server device IDs across all organizations.
+2. Run `ninja_list_device_alerts` in parallel for every returned device ID.
+3. Show a table grouped by organization (org name from `ninja_list_servers`). Columns: Device name, Device ID, Status. If no active alerts: ✅ Clean. If alerts exist: list them inline. Always show every server regardless of status — a clean result is still useful signal.
+
+**UniFi — All sites**
+Show a table with one row per site. Columns: **Site name**, ISP, Wifi clients, Wired clients, Total devices, Offline, Alert.
+
+Site names: UniFi Cloud returns all sites as `name: "default"` and `desc: "Default"` — this is a Cloud limitation. Cross-reference by gateway MAC and ISP using the known site name table below. If a site MAC is not in the table, label it as "Unknown (MAC: xx:xx:xx:xx:xx:xx)" so it can be identified and added.
+
+**Known site name table — cross-reference by `wans.WAN.externalIp`:**
+| WAN IP | Gateway MAC | Site name |
+|--------|-------------|-----------|
+| 96.18.48.186 | ac:8b:a9:6c:2b:d5 | BOI-Main Office |
+| 24.119.221.58 | d8:b3:70:4f:66:cf | BOI-Warehouse |
+| 216.115.11.190 | d8:b3:70:59:f1:d0 | EUG-Main Office |
+| 69.9.133.37 | 0c:ea:14:6e:9c:e9 | EUG-Warehouse |
+| 50.109.229.58 | d8:b3:70:36:c6:31 | FGT-Main Office 2 |
+| 50.155.66.230 | 8c:30:66:b2:36:09 | KP trailer |
+| 73.67.183.144 | 70:a7:41:ac:65:cf | PDX-Kaiser Warehouse |
+| 50.227.115.162 | e4:38:83:83:a0:89 | PDX-MAIN Office |
+| 50.222.10.170 | e4:38:83:83:9f:c9 | SEA-Main Office |
+| 173.160.252.90 | d0:21:f9:d9:7e:7f | SEA-WAREHOUSE |
+| 50.145.204.110 | 0c:ea:14:d6:b1:b5 | SVH-Main Office |
+| 50.188.182.109 | d8:b3:70:99:f5:df | SYL-Main Office |
+| 67.169.216.157 | 6c:63:f8:a2:79:69 | Unknown — needs ID |
+
+Notes:
+- PDX Kaiser Suite 230 (10.1.10.179) and NVR appliances (PDX-MAINOFFICE-NVR, SEA-MAIN OFFICE-NVR, SEA-WAREHOUSE-NVR) have internal IPs and will not appear in `unifi_list_sites` results.
+- Use `wans.WAN.externalIp` (not gateway MAC) as the primary lookup key — it's easier to match visually.
+
+Flag any row where offlineDevice > 0, criticalNotification > 0, or wanDowntime: true on the primary WAN. Note: WAN2 showing `wanDowntime` with count=288 is a persistent pattern for offline secondary/failover links — do not flag it as an active incident; note it once at the bottom of the table.
+
+**Confluence — Recent changes**
+List any pages in INF, PROC, POL, SITE modified in the last N hours that look like incident docs, outage notes, policy changes, or runbook updates. If nothing matches: state "No pages modified in the last N hours in INF/PROC/POL/SITE."
 
 ### 📝 Draft Planner actions
 

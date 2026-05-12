@@ -44,9 +44,7 @@ export function registerTeamsTools(server: McpServer, enabled: boolean): void {
     async ({ team_id }) => {
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const res = await graphClient(token).get(`/teams/${team_id}/channels`, {
-          params: { $orderby: "displayName" },
-        });
+        const res = await graphClient(token).get(`/teams/${team_id}/channels`);
         return ok(res.data);
       } catch (e) {
         return err(e);

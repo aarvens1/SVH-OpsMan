@@ -75,9 +75,17 @@ export function confluenceClient(): AxiosInstance {
 export function formatError(err: unknown): string {
   if (isAxiosError(err)) {
     const data = err.response?.data as Record<string, unknown> | undefined;
+    // Graph API wraps errors as { error: { code, message } } — unwrap if present
+    const errorObj = data?.["error"];
+    const nestedMsg =
+      typeof errorObj === "object" && errorObj !== null
+        ? ((errorObj as Record<string, unknown>)["message"] as string | undefined)
+        : typeof errorObj === "string"
+        ? errorObj
+        : undefined;
     const msg =
       (data?.["message"] as string | undefined) ??
-      (data?.["error"] as string | undefined) ??
+      nestedMsg ??
       (data?.["errors"] as string | undefined) ??
       err.response?.statusText ??
       err.message;
