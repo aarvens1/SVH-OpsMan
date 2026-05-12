@@ -1,25 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { unifiCloudClient, formatError } from "../utils/http.js";
-
-const DISABLED_MSG = "UniFi Cloud service not configured: set UNIFI_API_KEY";
-
-function disabled() {
-  return {
-    isError: true as const,
-    content: [{ type: "text" as const, text: DISABLED_MSG }],
-  };
-}
-
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
+import { unifiCloudClient } from "../utils/http.js";
+import { ok, err } from "../utils/response.js";
 
 export function registerUnifiCloudTools(server: McpServer, enabled: boolean): void {
+  if (!enabled) return;
+
   server.registerTool(
     "unifi_list_sites",
     {
@@ -28,7 +14,6 @@ export function registerUnifiCloudTools(server: McpServer, enabled: boolean): vo
       inputSchema: z.object({}),
     },
     async () => {
-      if (!enabled) return disabled();
       try {
         const res = await unifiCloudClient().get("/ea/sites");
         return ok(res.data);
@@ -47,7 +32,6 @@ export function registerUnifiCloudTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ site_id }) => {
-      if (!enabled) return disabled();
       try {
         const res = await unifiCloudClient().get(`/ea/sites/${site_id}`);
         return ok(res.data);
@@ -67,7 +51,6 @@ export function registerUnifiCloudTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ site_id }) => {
-      if (!enabled) return disabled();
       try {
         const res = await unifiCloudClient().get(`/ea/sites/${site_id}/devices`);
         return ok(res.data);
@@ -88,7 +71,6 @@ export function registerUnifiCloudTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ site_id, device_id }) => {
-      if (!enabled) return disabled();
       try {
         const res = await unifiCloudClient().get(`/ea/sites/${site_id}/devices/${device_id}`);
         return ok(res.data);

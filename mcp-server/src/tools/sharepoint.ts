@@ -1,25 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getGraphToken } from "../auth/graph.js";
-import { graphClient, GRAPH_SCOPE, formatError } from "../utils/http.js";
-
-const DISABLED_MSG =
-  "Graph service not configured: set GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET";
-
-function disabled() {
-  return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
-}
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
+import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
+import { ok, err } from "../utils/response.js";
 
 // Read-only — views sites, lists, pages, permissions, content types.
 // File operations (browse, search, download) live in onedrive.ts (Graph drives).
 
 export function registerSharePointTools(server: McpServer, enabled: boolean): void {
+  if (!enabled) return;
+
   server.registerTool(
     "sp_search_sites",
     {
@@ -31,7 +21,6 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ query, top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(
@@ -58,7 +47,6 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ site_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const path = site_id.includes("sharepoint.com") ? `/sites/${site_id}` : `/sites/${site_id}`;
@@ -81,7 +69,6 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ site_id, include_hidden }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const params: Record<string, string | number> = {
@@ -111,7 +98,6 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ site_id, list_id, top, filter }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const params: Record<string, string | number> = {
@@ -140,7 +126,6 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ site_id, top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(
@@ -163,7 +148,6 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ site_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/sites/${site_id}/permissions`);
@@ -183,7 +167,6 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ site_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(

@@ -1,27 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getNinjaToken } from "../auth/ninja.js";
-import { ninjaClient, formatError } from "../utils/http.js";
-
-const DISABLED_MSG =
-  "NinjaOne service not configured: set NINJA_CLIENT_ID and NINJA_CLIENT_SECRET";
-
-function disabled() {
-  return {
-    isError: true as const,
-    content: [{ type: "text" as const, text: DISABLED_MSG }],
-  };
-}
-
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
+import { ninjaClient } from "../utils/http.js";
+import { ok, err } from "../utils/response.js";
 
 export function registerNinjaOneTools(server: McpServer, enabled: boolean): void {
+  if (!enabled) return;
+
   // ── Device discovery ───────────────────────────────────────────────────────
 
   server.registerTool(
@@ -48,7 +33,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ os_filter, org_id, page_size, after }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const classes = os_filter.split(",").map((t) => t.trim()).join(",");
@@ -77,7 +61,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ device_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/device/${device_id}`);
@@ -104,7 +87,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ device_id, filter }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const params = filter ? { filter: `name:${filter}` } : {};
@@ -133,7 +115,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ device_id, filter }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const params = filter ? { filter: `name:${filter}` } : {};
@@ -158,7 +139,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ device_id, result_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(
@@ -187,7 +167,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ device_id, severity }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const params: Record<string, string> = { status: "PENDING" };
@@ -210,7 +189,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ device_id, page_size }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/device/${device_id}/patches`, {
@@ -235,7 +213,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ device_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/device/${device_id}/volumes`);
@@ -270,7 +247,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ device_id, log_name, level, source, event_id, page_size }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const filters: string[] = [];
@@ -304,7 +280,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ device_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/device/${device_id}/alerts`);
@@ -327,7 +302,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ device_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/device/${device_id}/backup`);
@@ -358,7 +332,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ org_id, page_size, after }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const params: Record<string, string | number> = { pageSize: page_size };
@@ -392,7 +365,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ page_size, after, lang }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const params: Record<string, string | number> = { pageSize: page_size };
@@ -415,7 +387,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ script_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/scripting/script/${script_id}`);
@@ -438,7 +409,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ device_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/device/${device_id}/custom-fields`);
@@ -459,7 +429,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ org_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/organization/${org_id}/custom-fields`);
@@ -487,7 +456,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ page_size, after }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const params: Record<string, number> = { pageSize: page_size };
@@ -509,7 +477,6 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ org_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/organization/${org_id}`);

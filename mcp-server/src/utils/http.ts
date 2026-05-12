@@ -7,38 +7,29 @@ export const GRAPH_SCOPE = "https://graph.microsoft.com/.default";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
-export function graphClient(token: string): AxiosInstance {
+function makeBearer(baseURL: string, token: string, extra?: object): AxiosInstance {
   return axios.create({
-    baseURL: "https://graph.microsoft.com/v1.0",
+    baseURL,
     timeout: DEFAULT_TIMEOUT_MS,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    ...extra,
   });
 }
 
-export function mdeClient(token: string): AxiosInstance {
-  return axios.create({
-    baseURL: "https://api.securitycenter.microsoft.com/api",
-    timeout: DEFAULT_TIMEOUT_MS,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-}
+export const graphClient = (token: string) =>
+  makeBearer("https://graph.microsoft.com/v1.0", token);
 
-export function ninjaClient(token: string): AxiosInstance {
-  return axios.create({
-    baseURL: "https://app.ninjarmm.com/api/v2",
-    timeout: DEFAULT_TIMEOUT_MS,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-}
+export const mdeClient = (token: string) =>
+  makeBearer("https://api.securitycenter.microsoft.com/api", token);
+
+export const ninjaClient = (token: string) =>
+  makeBearer("https://app.ninjarmm.com/api/v2", token);
+
+export const armClient = (token: string) =>
+  makeBearer("https://management.azure.com", token);
+
+export const wazuhClient = (jwt: string) =>
+  makeBearer(process.env["WAZUH_URL"] ?? "https://localhost:55000", jwt, { httpsAgent: WAZUH_AGENT });
 
 export function unifiCloudClient(): AxiosInstance {
   return axios.create({
@@ -48,26 +39,6 @@ export function unifiCloudClient(): AxiosInstance {
       "X-API-KEY": process.env["UNIFI_API_KEY"] ?? "",
       "Content-Type": "application/json",
     },
-  });
-}
-
-export function armClient(token: string): AxiosInstance {
-  return axios.create({
-    baseURL: "https://management.azure.com",
-    timeout: DEFAULT_TIMEOUT_MS,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-}
-
-export function wazuhClient(jwt: string): AxiosInstance {
-  return axios.create({
-    baseURL: process.env["WAZUH_URL"] ?? "https://localhost:55000",
-    timeout: DEFAULT_TIMEOUT_MS,
-    headers: { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
-    httpsAgent: WAZUH_AGENT,
   });
 }
 

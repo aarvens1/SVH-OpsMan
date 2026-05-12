@@ -1,24 +1,14 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { printerlogicClient, formatError } from "../utils/http.js";
-
-const DISABLED_MSG =
-  "PrinterLogic service not configured: set PRINTERLOGIC_URL, PRINTERLOGIC_API_TOKEN";
-
-function disabled() {
-  return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
-}
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
+import { printerlogicClient } from "../utils/http.js";
+import { ok, err } from "../utils/response.js";
 
 // Custom build wrapping the Vasion (formerly PrinterLogic) REST API.
 // Read-only: browse, deployment status, audit logs, quotas.
 
 export function registerPrinterLogicTools(server: McpServer, enabled: boolean): void {
+  if (!enabled) return;
+
   server.registerTool(
     "pl_list_printers",
     {
@@ -36,7 +26,6 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ search, folder_id, limit, offset }) => {
-      if (!enabled) return disabled();
       try {
         const client = printerlogicClient();
         const params: Record<string, string | number> = { limit, offset };
@@ -59,7 +48,6 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ printer_id }) => {
-      if (!enabled) return disabled();
       try {
         const client = printerlogicClient();
         const [details, deployments] = await Promise.all([
@@ -87,7 +75,6 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ search, os_filter, limit }) => {
-      if (!enabled) return disabled();
       try {
         const client = printerlogicClient();
         const params: Record<string, string | number> = { limit };
@@ -111,7 +98,6 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ limit }) => {
-      if (!enabled) return disabled();
       try {
         const client = printerlogicClient();
         const res = await client.get("/api/v1/profiles", { params: { limit } });
@@ -132,7 +118,6 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ printer_id }) => {
-      if (!enabled) return disabled();
       try {
         const client = printerlogicClient();
         const res = await client.get(
@@ -168,7 +153,6 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ start_date, end_date, event_type, user, limit }) => {
-      if (!enabled) return disabled();
       try {
         const client = printerlogicClient();
         const params: Record<string, string | number> = { limit };
@@ -194,7 +178,6 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ user_or_group }) => {
-      if (!enabled) return disabled();
       try {
         const client = printerlogicClient();
         const res = await client.get(`/api/v1/quotas/${encodeURIComponent(user_or_group)}`);
@@ -220,7 +203,6 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
       }),
     },
     async ({ report_type, start_date, end_date, limit }) => {
-      if (!enabled) return disabled();
       try {
         const client = printerlogicClient();
         const params: Record<string, string | number> = { limit, type: report_type };

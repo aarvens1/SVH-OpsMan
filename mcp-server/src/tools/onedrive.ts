@@ -1,22 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getGraphToken } from "../auth/graph.js";
-import { graphClient, GRAPH_SCOPE, formatError } from "../utils/http.js";
-
-const DISABLED_MSG =
-  "Graph service not configured: set GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET";
-
-function disabled() {
-  return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
-}
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
+import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
+import { ok, err } from "../utils/response.js";
 
 export function registerOneDriveTools(server: McpServer, enabled: boolean): void {
+  if (!enabled) return;
+
   server.registerTool(
     "onedrive_get_user_drive",
     {
@@ -27,7 +17,6 @@ export function registerOneDriveTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ user_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/users/${user_id}/drive`);
@@ -54,7 +43,6 @@ export function registerOneDriveTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ drive_id, item_id, top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(
@@ -84,7 +72,6 @@ export function registerOneDriveTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ drive_id, item_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/drives/${drive_id}/items/${item_id}`);
@@ -107,7 +94,6 @@ export function registerOneDriveTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ drive_id, query, top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(
@@ -135,7 +121,6 @@ export function registerOneDriveTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ drive_id, parent_item_id, folder_name }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).post(
@@ -177,7 +162,6 @@ export function registerOneDriveTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ drive_id, item_id, link_type, scope, expiry_datetime }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const body: Record<string, unknown> = { type: link_type, scope };

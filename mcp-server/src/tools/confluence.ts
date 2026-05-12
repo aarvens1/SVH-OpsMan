@@ -1,21 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { confluenceClient, formatError } from "../utils/http.js";
-
-const DISABLED_MSG =
-  "Confluence not configured: set CONFLUENCE_DOMAIN, CONFLUENCE_EMAIL, CONFLUENCE_API_TOKEN";
-
-function disabled() {
-  return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
-}
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
+import { confluenceClient } from "../utils/http.js";
+import { ok, err } from "../utils/response.js";
 
 export function registerConfluenceTools(server: McpServer, enabled: boolean): void {
+  if (!enabled) return;
+
   server.registerTool(
     "confluence_list_spaces",
     {
@@ -27,7 +17,6 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ limit, cursor }) => {
-      if (!enabled) return disabled();
       try {
         const params: Record<string, string | number> = { limit };
         if (cursor) params["cursor"] = cursor;
@@ -53,7 +42,6 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ cql, limit, cursor }) => {
-      if (!enabled) return disabled();
       try {
         const params: Record<string, string | number> = { cql, limit };
         if (cursor) params["cursor"] = cursor;
@@ -81,7 +69,6 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ page_id, body_format }) => {
-      if (!enabled) return disabled();
       try {
         const res = await confluenceClient().get(`/pages/${page_id}`, {
           params: { "body-format": body_format },
@@ -104,7 +91,6 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ page_id, limit, cursor }) => {
-      if (!enabled) return disabled();
       try {
         const params: Record<string, string | number> = { limit };
         if (cursor) params["cursor"] = cursor;
@@ -139,7 +125,6 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ space_id, title, body, parent_id, status }) => {
-      if (!enabled) return disabled();
       try {
         const payload: Record<string, unknown> = {
           spaceId: space_id,
@@ -178,7 +163,6 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ page_id, version_number, title, body, status }) => {
-      if (!enabled) return disabled();
       try {
         const payload: Record<string, unknown> = {
           id: page_id,
@@ -206,7 +190,6 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ page_id, limit, cursor }) => {
-      if (!enabled) return disabled();
       try {
         const params: Record<string, string | number> = { limit, sort: "-created-date" };
         if (cursor) params["cursor"] = cursor;
@@ -230,7 +213,6 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ page_id, body }) => {
-      if (!enabled) return disabled();
       try {
         const res = await confluenceClient().post(`/pages/${page_id}/footer-comments`, {
           body: { representation: "storage", value: body },
