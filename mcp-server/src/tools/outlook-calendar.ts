@@ -1,25 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getGraphToken } from "../auth/graph.js";
-import { graphClient, GRAPH_SCOPE, formatError } from "../utils/http.js";
+import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
+import { ok, err, cfgErr } from "../utils/response.js";
 
-const DISABLED_MSG =
-  "Graph service not configured: set GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET";
 const NO_USER_MSG =
   "Calendar tools are not configured: set GRAPH_USER_ID to your UPN (e.g. you@company.com)";
-
-function disabled() {
-  return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
-}
-function noUser() {
-  return { isError: true as const, content: [{ type: "text" as const, text: NO_USER_MSG }] };
-}
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
 
 // Calendar tools are scoped to a single mailbox (GRAPH_USER_ID).
 // See outlook-mail.ts for the rationale.
@@ -28,6 +14,7 @@ export function registerOutlookCalendarTools(
   enabled: boolean,
   userId: string | undefined
 ): void {
+  if (!enabled) return;
   server.registerTool(
     "calendar_list_events",
     {
@@ -44,8 +31,7 @@ export function registerOutlookCalendarTools(
       }),
     },
     async ({ start, end, top }) => {
-      if (!enabled) return disabled();
-      if (!userId) return noUser();
+      if (!userId) return cfgErr(NO_USER_MSG);
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/users/${userId}/calendarView`, {
@@ -74,8 +60,7 @@ export function registerOutlookCalendarTools(
       }),
     },
     async ({ event_id }) => {
-      if (!enabled) return disabled();
-      if (!userId) return noUser();
+      if (!userId) return cfgErr(NO_USER_MSG);
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/users/${userId}/events/${event_id}`);
@@ -109,8 +94,7 @@ export function registerOutlookCalendarTools(
       }),
     },
     async ({ subject, start, end, timezone, body, body_type, attendees, location, is_online }) => {
-      if (!enabled) return disabled();
-      if (!userId) return noUser();
+      if (!userId) return cfgErr(NO_USER_MSG);
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const payload: Record<string, unknown> = {
@@ -153,8 +137,7 @@ export function registerOutlookCalendarTools(
       }),
     },
     async ({ event_id, subject, start, end, timezone, body, body_type, location }) => {
-      if (!enabled) return disabled();
-      if (!userId) return noUser();
+      if (!userId) return cfgErr(NO_USER_MSG);
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const tz = timezone ?? "America/Los_Angeles";
@@ -181,8 +164,7 @@ export function registerOutlookCalendarTools(
       }),
     },
     async ({ event_id }) => {
-      if (!enabled) return disabled();
-      if (!userId) return noUser();
+      if (!userId) return cfgErr(NO_USER_MSG);
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         await graphClient(token).delete(`/users/${userId}/events/${event_id}`);
@@ -212,8 +194,7 @@ export function registerOutlookCalendarTools(
       }),
     },
     async ({ attendees, duration_minutes, start, end, timezone }) => {
-      if (!enabled) return disabled();
-      if (!userId) return noUser();
+      if (!userId) return cfgErr(NO_USER_MSG);
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const payload = {
@@ -243,8 +224,7 @@ export function registerOutlookCalendarTools(
       }),
     },
     async ({ top }) => {
-      if (!enabled) return disabled();
-      if (!userId) return noUser();
+      if (!userId) return cfgErr(NO_USER_MSG);
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get("/places/microsoft.graph.room", {

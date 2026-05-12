@@ -1,23 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getMdeToken } from "../auth/mde.js";
-import { mdeClient, formatError } from "../utils/http.js";
-
-const DISABLED_MSG =
-  "Defender for Endpoint not configured: set MDE_TENANT_ID, MDE_CLIENT_ID, MDE_CLIENT_SECRET. " +
-  "This requires a SEPARATE app registration with WindowsDefenderATP application permissions.";
-
-function disabled() {
-  return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
-}
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
+import { mdeClient } from "../utils/http.js";
+import { ok, err } from "../utils/response.js";
 
 export function registerDefenderMdeTools(server: McpServer, enabled: boolean): void {
+  if (!enabled) return;
+
   server.registerTool(
     "mde_list_devices",
     {
@@ -37,7 +26,6 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
       }),
     },
     async ({ health_status, risk_score, top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getMdeToken();
         const filters: string[] = [];
@@ -64,7 +52,6 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
       }),
     },
     async ({ machine_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getMdeToken();
         const res = await mdeClient(token).get(`/machines/${machine_id}`);
@@ -91,7 +78,6 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
       }),
     },
     async ({ machine_id, severity, top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getMdeToken();
         const params: Record<string, string | number> = { $top: top };
@@ -123,7 +109,6 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
       }),
     },
     async ({ severity, status, top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getMdeToken();
         const filters: string[] = [];
@@ -156,7 +141,6 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
       }),
     },
     async ({ indicator_type, action, top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getMdeToken();
         const filters: string[] = [];
@@ -183,7 +167,6 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
       }),
     },
     async ({ top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getMdeToken();
         const res = await mdeClient(token).get("/recommendations", {

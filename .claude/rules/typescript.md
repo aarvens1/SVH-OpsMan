@@ -7,7 +7,9 @@ paths:
 
 ## Tool registration pattern
 
-Every tool module exports a single `register<Service>Tools(server, enabled)` function. When `enabled` is false, register stub tools that return a clear "not configured" error rather than crashing or silently failing.
+Every tool module exports a single `register<Service>Tools(server, enabled)` function. When `enabled` is false, return early from the register function — do not register any tools. This keeps disabled-service schemas out of the tool list Claude receives on every API call.
+
+Response helpers (`ok`, `err`, `cfgErr`) live in `utils/response.ts`. Import them; do not redefine locally. For user-facing config errors (e.g. missing `GRAPH_USER_ID`), use `cfgErr(MESSAGE)` inside the handler.
 
 ## Response shaping
 

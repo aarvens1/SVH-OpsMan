@@ -1,24 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getGraphToken } from "../auth/graph.js";
-import { graphClient, GRAPH_SCOPE, formatError } from "../utils/http.js";
-
-const DISABLED_MSG =
-  "MS Intune not configured: set GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET. " +
-  "App registration requires: DeviceManagementManagedDevices.Read.All, " +
-  "DeviceManagementConfiguration.Read.All, DeviceManagementApps.Read.All";
-
-function disabled() {
-  return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
-}
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
+import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
+import { ok, err } from "../utils/response.js";
 
 export function registerIntuneTools(server: McpServer, enabled: boolean): void {
+  if (!enabled) return;
+
   // ── Managed Devices ────────────────────────────────────────────────────────
 
   server.registerTool(
@@ -39,7 +27,6 @@ export function registerIntuneTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ os_type, compliance_state, top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const filters: string[] = [];
@@ -65,7 +52,6 @@ export function registerIntuneTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ device_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/deviceManagement/managedDevices/${device_id}`);
@@ -86,7 +72,6 @@ export function registerIntuneTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ device_id }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(
@@ -109,7 +94,6 @@ export function registerIntuneTools(server: McpServer, enabled: boolean): void {
       inputSchema: z.object({}),
     },
     async () => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get("/deviceManagement/deviceCompliancePolicies");
@@ -130,7 +114,6 @@ export function registerIntuneTools(server: McpServer, enabled: boolean): void {
       inputSchema: z.object({}),
     },
     async () => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get("/deviceManagement/deviceConfigurations");
@@ -153,7 +136,6 @@ export function registerIntuneTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ top }) => {
-      if (!enabled) return disabled();
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get("/deviceAppManagement/mobileApps", {

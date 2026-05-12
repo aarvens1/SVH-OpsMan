@@ -2,20 +2,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import axios from "axios";
 import https from "https";
-import { wazuhClient, formatError } from "../utils/http.js";
-
-const DISABLED_MSG =
-  "Wazuh service not configured: set WAZUH_URL, WAZUH_USERNAME, WAZUH_PASSWORD";
-
-function disabled() {
-  return { isError: true as const, content: [{ type: "text" as const, text: DISABLED_MSG }] };
-}
-function ok(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
-}
-function err(e: unknown) {
-  return { isError: true as const, content: [{ type: "text" as const, text: formatError(e) }] };
-}
+import { wazuhClient } from "../utils/http.js";
+import { ok, err } from "../utils/response.js";
 
 // Shared TLS agent for the auth POST (same cert-skip as wazuhClient)
 const tlsAgent = new https.Agent({ rejectUnauthorized: false });
@@ -42,6 +30,8 @@ async function getJwt(): Promise<string> {
 }
 
 export function registerWazuhTools(server: McpServer, enabled: boolean): void {
+  if (!enabled) return;
+
   server.registerTool(
     "wazuh_list_agents",
     {
@@ -66,7 +56,6 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ status, os_platform, search, limit, offset }) => {
-      if (!enabled) return disabled();
       try {
         const jwt = await getJwt();
         const params: Record<string, string | number> = { limit, offset };
@@ -116,7 +105,6 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ agent_id, min_level, time_from, time_to, rule_group, query, limit }) => {
-      if (!enabled) return disabled();
       try {
         const jwt = await getJwt();
         const params: Record<string, string | number> = {
@@ -152,7 +140,6 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ agent_id, severity, limit }) => {
-      if (!enabled) return disabled();
       try {
         const jwt = await getJwt();
         const params: Record<string, string | number> = { limit };
@@ -187,7 +174,6 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ agent_id, time_from, time_to, path, event_type, limit }) => {
-      if (!enabled) return disabled();
       try {
         const jwt = await getJwt();
         const params: Record<string, string | number> = { limit };
@@ -219,7 +205,6 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ agent_id, status, limit }) => {
-      if (!enabled) return disabled();
       try {
         const jwt = await getJwt();
         const params: Record<string, string | number> = { limit };
@@ -247,7 +232,6 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ search, group, min_level, rule_id, limit }) => {
-      if (!enabled) return disabled();
       try {
         const jwt = await getJwt();
         const params: Record<string, string | number> = { limit };
@@ -274,7 +258,6 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
       }),
     },
     async ({ search, limit }) => {
-      if (!enabled) return disabled();
       try {
         const jwt = await getJwt();
         const params: Record<string, string | number> = { limit };
