@@ -7,6 +7,13 @@ import { graphClient, GRAPH_SCOPE, formatError } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 import { randomUUID } from "crypto";
 
+const CATEGORY_KEYS = [
+  "category1","category2","category3","category4","category5","category6","category7",
+  "category8","category9","category10","category11","category12","category13","category14",
+  "category15","category16","category17","category18","category19","category20","category21",
+  "category22","category23","category24","category25",
+] as const;
+
 export function registerPlannerTools(server: McpServer, enabled: boolean): void {
   if (!enabled) return;
 
@@ -181,9 +188,13 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
           .array(z.object({ title: z.string() }))
           .optional()
           .describe("Initial checklist items to add to the task"),
+        labels: z
+          .array(z.enum(CATEGORY_KEYS))
+          .optional()
+          .describe("Category labels to apply (e.g. ['category1']). Label names are set per-plan via planner_set_plan_label. Default convention: category1 = 'Aaron'."),
       }),
     },
-    async ({ plan_id, bucket_id, title, assigned_to, due_date, checklist_items }) => {
+    async ({ plan_id, bucket_id, title, assigned_to, due_date, checklist_items, labels }) => {
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const client = graphClient(token);
@@ -191,6 +202,11 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
         const body: Record<string, unknown> = { planId: plan_id, bucketId: bucket_id, title };
         if (due_date) body["dueDateTime"] = due_date;
         if (assigned_to) body["assignments"] = { [assigned_to]: { "@odata.type": "#microsoft.graph.plannerAssignment", orderHint: " !" } };
+        if (labels && labels.length > 0) {
+          const appliedCategories: Record<string, boolean> = {};
+          for (const key of labels) appliedCategories[key] = true;
+          body["appliedCategories"] = appliedCategories;
+        }
 
         const taskRes = await client.post("/planner/tasks", body);
         const task = taskRes.data as Record<string, unknown>;
@@ -247,9 +263,13 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
           .describe("Completion percentage (0, 50, or 100)"),
         due_date: z.string().optional().describe("New due date in ISO 8601 format"),
         bucket_id: z.string().optional().describe("Move task to this bucket ID"),
+        labels: z
+          .array(z.enum(CATEGORY_KEYS))
+          .optional()
+          .describe("Replace the task's category labels. Pass an empty array to clear all labels. Default convention: category1 = 'Aaron'."),
       }),
     },
-    async ({ task_id, etag, title, percent_complete, due_date, bucket_id }) => {
+    async ({ task_id, etag, title, percent_complete, due_date, bucket_id, labels }) => {
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const body: Record<string, unknown> = {};
@@ -257,6 +277,12 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
         if (percent_complete !== undefined) body["percentComplete"] = percent_complete;
         if (due_date !== undefined) body["dueDateTime"] = due_date;
         if (bucket_id !== undefined) body["bucketId"] = bucket_id;
+        if (labels !== undefined) {
+          const appliedCategories: Record<string, boolean> = {};
+          for (const key of CATEGORY_KEYS) appliedCategories[key] = false;
+          for (const key of labels) appliedCategories[key] = true;
+          body["appliedCategories"] = appliedCategories;
+        }
 
         const res = await graphClient(token).patch(`/planner/tasks/${task_id}`, body, {
           headers: { "If-Match": etag },
@@ -420,6 +446,63 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
           { headers: { "If-Match": etag } }
         );
         return ok(res.data ?? { success: true, item_id: id });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  // ── Plan labels (categoryDescriptions) ────────────────────────────────────
+
+  server.registerTool(
+    "planner_get_plan_details",
+    {
+      description:
+        "Get a Planner plan's category label definitions (categoryDescriptions). " +
+        "Use this to see which category slot (category1–25) maps to which display name " +
+        "(e.g. 'Aaron', 'Sam'). The @odata.etag in the response is required for planner_set_plan_label.",
+      inputSchema: z.object({
+        plan_id: z.string().describe("The Planner plan ID"),
+      }),
+    },
+    async ({ plan_id }) => {
+      try {
+        const token = await getGraphToken(GRAPH_SCOPE);
+        const res = await graphClient(token).get(`/planner/plans/${plan_id}/details`);
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "planner_set_plan_label",
+    {
+      description:
+        "Set or rename a category label on a Planner plan. " +
+        "For example, set category1 to 'Aaron'. Fetches the current plan details etag automatically. " +
+        "Pass an empty string for name to clear a label.",
+      inputSchema: z.object({
+        plan_id: z.string().describe("The Planner plan ID"),
+        category: z.enum(CATEGORY_KEYS).describe("The category slot to name (e.g. 'category1')"),
+        name: z.string().describe("Display name for this label (e.g. 'Aaron'). Pass empty string to clear."),
+      }),
+    },
+    async ({ plan_id, category, name }) => {
+      try {
+        const token = await getGraphToken(GRAPH_SCOPE);
+        const client = graphClient(token);
+        const detailsRes = await client.get(`/planner/plans/${plan_id}/details`);
+        const etag =
+          (detailsRes.headers as Record<string, string>)["etag"] ??
+          (detailsRes.data["@odata.etag"] as string);
+        const res = await client.patch(
+          `/planner/plans/${plan_id}/details`,
+          { categoryDescriptions: { [category]: name } },
+          { headers: { "If-Match": etag } }
+        );
+        return ok(res.data ?? { success: true, plan_id, category, name });
       } catch (e) {
         return err(e);
       }

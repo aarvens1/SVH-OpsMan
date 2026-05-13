@@ -1,8 +1,8 @@
 ---
 name: meeting-prep
-description: Meeting preparation and post-call notes. Before a meeting: pulls calendar event, Fathom history with same attendees, Confluence context, open Planner tasks, and produces a prep brief. After a recorded call: fetches Fathom transcript, extracts decisions and action items, and structures into an Obsidian note with suggested tasks. Trigger phrases: "prep me for [meeting/time]", "meeting prep for X", "pull notes from my [meeting] call".
-when_to_use: Use before any meeting to prepare, or after a recorded call to structure notes and extract action items.
-allowed-tools: "mcp__svh-opsman__calendar_list_events mcp__svh-opsman__calendar_get_event mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_create_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_create_task mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__confluence_get_page mcp__obsidian__* mcp__fathom__* mcp__time__*"
+description: Meeting preparation and post-call notes. Before a meeting: pulls calendar event, Fathom history with same attendees, Confluence context, open Planner tasks, and produces a prep brief. After a recorded call: exports Fathom AI notes verbatim into an Obsidian meeting note and appends a line to the daily briefing. Trigger phrases: "prep me for [meeting/time]", "meeting prep for X", "pull notes from my [meeting] call".
+when_to_use: Use before any meeting to prepare, or after a recorded call to file Fathom notes and suggest tasks.
+allowed-tools: "mcp__svh-opsman__calendar_list_events mcp__svh-opsman__calendar_get_event mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_create_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_create_task mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__confluence_get_page mcp__obsidian__* mcp__claude_ai_Fathom__* mcp__time__*"
 ---
 
 # Meeting Prep
@@ -43,21 +43,38 @@ Sections:
 
 ## Route: After a recorded call
 
-### Step 1 — Fetch the transcript
-Use Fathom to get the transcript and summary for the call. Identify: meeting name, attendees, date.
+### Step 1 — Resolve the recording
+Use `get_recording_by_url` or `get_recording_by_call_id` if the user provides a URL or ID. Otherwise `list_meetings` / `search_meetings` to find the right recording. Note the `recording_id`.
 
-### Step 2 — Extract and structure
+### Step 2 — Fetch Fathom's output
+Call `get_meeting_summary` with the `recording_id`. This returns Fathom's own AI-generated summary, action items, and notes — use this output **as-is**. Do not re-interpret, re-summarize, or re-extract. Embed the content verbatim.
 
-From the transcript, pull:
-- **Decisions made** — what was agreed
-- **Action items** — who owns what, by when
-- **Key information** — facts, numbers, context worth keeping
-- **Open questions** — things that came up but weren't resolved
+### Step 3 — Write the note
 
-### Step 3 — Write and suggest tasks
+Update (or create) `Meetings/YYYY-MM-DD-[meeting-name].md` with a post-call section:
 
-Update (or create) `Meetings/YYYY-MM-DD-[meeting-name].md` with a post-call section.
+```markdown
+## Post-call notes
+<!-- Fathom AI output — exported verbatim -->
+[paste Fathom summary/notes here]
+```
 
-Suggest action items as `planner_create_task` or `todo_create_task` entries — presented as drafts for review. Nothing creates without confirmation.
+Then append a block to today's daily note (`Briefings/Daily/YYYY-MM-DD.md`) in **append mode**:
+
+```markdown
+## 📋 [Meeting Name] — [HH:MM]
+[1–2 sentence summary from Fathom's output — key topic and outcome only]
+
+Action items:
+- [each action item Fathom flagged, one bullet per item — or "None" if Fathom found none]
+
+Full notes → [[Meetings/YYYY-MM-DD-meeting-name]]
+```
+
+If multiple calls are filed in one session, append a block per meeting. Never rewrite the daily note — always append.
+
+### Step 4 — Suggest tasks (drafts only)
+
+If Fathom's summary includes action items, present them as draft `planner_create_task` or `todo_create_task` calls for review. Nothing creates without confirmation.
 
 If the user asks for a follow-up email or Teams message to attendees, draft it in Aaron's voice following the `aaron-voice` rules. For a post-call recap to attendees, Template E (long-story-short narrative) is usually the right shape. Run the self-check before presenting. Nothing gets sent without explicit instruction.

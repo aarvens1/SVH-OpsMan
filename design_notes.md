@@ -408,6 +408,73 @@ This is a one-line addition to the day-starter SKILL.md:
 
 ---
 
+## W9. Daily note token bloat — carry-forward pattern
+
+**Symptom:** Daily notes grow substantially throughout the day — morning brief
+(~150 lines) + meeting note links + work-log appends + EOD section. By end of
+day a note can exceed 400–500 lines. Any skill that reads the daily note for
+context (day-ender, next-day's day-starter, meeting-prep) pulls the whole file,
+most of which is irrelevant to the current task.
+
+This was confirmed in practice: the session-start system reminder surfaced
+"contents are too large to include" for `2026-05-12.md` mid-session.
+
+**Fix: carry-forward pattern (skill changes only, no code changes)**
+
+Three changes, all in skill SKILL.md files:
+
+**1. Day-ender: append a compact `## 📌 Carry Forward` section**
+
+At the end of Step 3, after the EOD section, day-ender appends a tightly-scoped
+summary of only what the next day's day-starter needs:
+
+```markdown
+## 📌 Carry Forward
+
+**Open (must action):**
+- Item 1 — suggested first move
+- Item 2
+
+**Context to hold:**
+- Brief fact worth knowing tomorrow
+
+**Watching:**
+- Item that doesn't need action but should stay on radar
+```
+
+Hard limit: 25–30 lines. No lists of every open Planner task — only items that
+aren't already captured in Planner and that Claude would otherwise lose between
+sessions.
+
+**2. Day-starter: read only carry-forward from yesterday, not the full note**
+
+Instead of reading all of yesterday's `YYYY-MM-DD.md`, use the `offset: -50`
+(last 50 lines) parameter when calling the read tool. This reliably captures the
+carry-forward section written by day-ender without loading the morning brief,
+meeting appends, or infrastructure status table from yesterday.
+
+**3. Day-ender: read only the morning brief section of today's note**
+
+Day-ender reads today's note to understand "what was flagged this morning." It
+does not need the accumulated meeting links, work log appends, or infrastructure
+table that may have been added since morning. Use `length: 150` to read only the
+first 150 lines — the morning brief is always written first and stays at the top.
+
+**Token impact:**
+
+| Current | After fix |
+|---------|-----------|
+| Day-ender reads full note (~400–500 lines, ~3,000–4,000 tokens) | Day-ender reads first 150 lines (~1,200 tokens) |
+| Day-starter reads full yesterday note (~400 lines, ~3,200 tokens) | Day-starter reads last 50 lines (~400 tokens) |
+| Net per day | Save ~5,000–6,000 tokens/day on daily note reads alone |
+
+**Implementation:** Two SKILL.md edits (day-starter, day-ender). No vault
+structure changes. No MCP server changes. The full daily note remains intact for
+human review and any skill that explicitly needs the whole thing can still read
+it by path.
+
+---
+
 ## Workflow priority order
 
 | Impact | Item | Effort |
@@ -415,6 +482,7 @@ This is a one-line addition to the day-starter SKILL.md:
 | High | Pre-aggregation script for morning briefing (W1) | Medium |
 | High | Centralize config / remove hardcoded IDs (W2) | Small |
 | High | BW unlock wrapper alias (W3) | Tiny |
+| High | Daily note carry-forward pattern (W9) | Tiny |
 | Medium | Session-start hook improvements (W6) | Small |
 | Medium | Day-ender append fragility fix (W4) | Small |
 | Medium | Automate compliance gap scan (W5) | Medium |

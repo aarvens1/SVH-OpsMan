@@ -32,8 +32,7 @@ import { registerConfluenceTools } from "./tools/confluence.js";
 // Specialised
 import { registerPrinterLogicTools } from "./tools/printerlogic.js";
 
-// Load credentials from Bitwarden before checking env vars.
-// Falls back silently to env vars / .env file if BW_SESSION is not set.
+// Load credentials from Bitwarden. Throws if BW_SESSION is not set or vault fetch fails.
 await loadBitwardenSecrets();
 
 function checkEnv(...vars: string[]): boolean {

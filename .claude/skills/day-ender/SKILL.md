@@ -1,32 +1,41 @@
 ---
 name: day-ender
-description: End-of-day wrap-up. Covers the last 12 hours — what got done, what's still open, anything that needs a handoff note or follow-up before tomorrow. Trigger phrases: "day ender", "wrap up today", "end of day", "EOD".
+description: End-of-day wrap-up. Covers the period since the last day-starter or day-ender ran, with a 24-hour cap. Falls back to 12h if no state exists. Override with "last N hours" or "reset" to use defaults. Trigger phrases: "day ender", "wrap up today", "end of day", "EOD".
 when_to_use: Use at the end of each workday to close out the day cleanly.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__calendar_list_events mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__obsidian__* mcp__time__*"
 ---
 
 # Day Ender
 
 ## Time window
 
-Last 12 hours.
+### Step 0 — Compute the lookback window
 
-## Step 1 — What's still open
+1. Call `mcp__time__get_current_time` to get the current timestamp.
+2. Check whether the user specified an explicit override in their invocation:
+   - **"reset"** or **"default"**: skip the state file. Use 12h. Write current timestamp to state after the run.
+   - **"last N hours"** / any explicit time range: use that window. Write current timestamp to state after the run.
+3. If no override, read `System/briefing-state.md` from the Obsidian vault:
+   - If the file doesn't exist or can't be parsed: treat as no state.
+   - Prefer `last_day_ender` as the reference point. If absent, fall back to `last_day_starter`.
+   - If the chosen timestamp is present and **≤ 24 hours ago**: set the window to `now − that timestamp`.
+   - If missing or **> 24 hours ago**: fall back to 12h. Log "No recent state found — using default window" in the note.
+4. Note the computed window — use it as **N hours** in all data queries below.
+
+## Step 1 — Gather close-out data
+
+The day-starter already established the morning baseline. This step gathers only what you need to close out the day — what moved, what's still live, what came in.
 
 Run in parallel:
-- `planner_get_user_tasks` (user_id: `astevens@shoestringvalley.com`, open_only: true) — tasks still assigned to Aaron across all boards.
-- `planner_list_tasks` for the operational boards — anything In Progress or not started, still open:
-  - IT Sysadmin Tasks: `-aZEdilGAUqLC8B8GwOLfmQAAh9M`
-  - IT Recurring Tasks: `ZTlTUrl1gUunMMwExKSDRWQABKjH`
-  - IT Management Tasks: `e0-6qZKUSkyZJUQg9nNbzmQAEjoO`
-  - IT Task Overview: `nyrAlo2ciUKVEv8GXUA78WQAG8mL`
-- `todo_list_task_lists` then `todo_list_tasks` — unchecked personal To Do items.
-- `wazuh_search_alerts` / `mde_list_alerts` — any unresolved alerts from the day.
+- `planner_get_user_tasks` (user_id: `astevens@shoestringvalley.com`, open_only: true) — Aaron's tasks across all boards. Cross-reference against the morning briefing to identify what closed and what's still open.
+- `todo_list_task_lists` then `todo_list_tasks` — unchecked personal To Do items. (If HTTP 400, skip and note "To Do unavailable.")
+- `mde_list_alerts` + `wazuh_search_alerts` — security alerts still active. Compare against morning briefing — note only what's new or still unresolved. (If Wazuh unavailable, skip and note it.)
 - `entra_list_risky_users` — any still-open risky users.
-- `ninja_list_servers` first to enumerate all server device IDs, then `ninja_list_device_alerts` in parallel for every returned device ID. Do not use a hardcoded list.
-- `unifi_list_sites` — end-of-day site health snapshot.
-- `confluence_search_pages` — pages modified today in INF, PROC, POL, SITE. CQL: `space.key IN ("INF","PROC","POL","SITE") AND lastModified >= "-1d" ORDER BY lastModified DESC`.
-- `teams_list_messages` — any unread DMs or @mentions from today that haven't been addressed.
+- `ninja_list_servers` → `ninja_list_device_alerts` in parallel for all devices — compare against morning alerts. Note only alerts that are new since morning or still active from morning.
+- `unifi_list_sites` — check for active issues only: offlineDevice > 0, criticalNotification > 0, or primary WAN downtime. Compare against morning snapshot.
+- `mail_search` — search for emails received since `last_day_starter` timestamp (from the state file). Focus on external senders, flagged items, and anything needing a reply. This is the explicit EOD mail check — do not skip it.
+- For DMs: `teams_list_my_chats` → `teams_get_chat_messages` (top: 10, as a **number not a string**) for threads with activity since `last_day_starter`. IT Team channels: `teams_list_teams` → `teams_list_channels` → `teams_list_messages` on General, Changes, Infrastructure, Alerts. Filter to messages after `last_day_starter`.
+- `confluence_search_pages` — pages modified today in INF, PROC, POL, SITE.
 
 ## Step 2 — Read today's note
 
@@ -38,36 +47,73 @@ Read `Briefings/Daily/YYYY-MM-DD.md` from Obsidian to understand what was flagge
 
 **CRITICAL: Always use `mode: append` when writing to the daily note. Never use `mode: rewrite`. The day starter content must be preserved.**
 
-Append an **End of Day** section to `Briefings/Daily/YYYY-MM-DD.md`:
+The daily note already contains a `# 🌆 Day Ender` placeholder section created by day-starter. Append the end-of-day content to `Briefings/Daily/YYYY-MM-DD.md` — it will naturally land in that section.
+
+The day-ender's job is close-out, not repetition. The morning starter already has the full infra snapshot and team board. Do not re-run those tables. Write only what changed, what's still live, and what needs to move to tomorrow.
 
 ```markdown
----
-## End of Day — HH:MM
+## ✅ Closed today
+- [What actually got done — cross-reference against this morning's open items and tasks]
 
-### ✅ Closed today
-- Item 1
-- Item 2
+## 🔄 Still open — yours
+- [Aaron's tasks only. One line each: task + one-line next action. Not the team board.]
 
-### 🔄 Still open
-- Item + suggested next action
+## 🔴 Active issues at EOD
+- [Only alerts or infra problems that are still live right now, or that are new since the morning briefing. If a morning alert cleared: note "NinjaOne: morning alerts cleared" as a one-liner. If nothing is active: "✅ No active issues at EOD."]
 
-### 📨 Before tomorrow
-- Anything needing a handoff note, follow-up message, or Planner update
+## 📨 Communications close-out
+- [Emails that arrived during the day needing a response — from the mail search. External senders and flagged items first. DMs or @mentions that are still unresolved. If an email from someone important arrived late in the day, call it out explicitly here rather than burying it in a list.]
 
-### 🌅 First move tomorrow
-- Single highest-priority item to tackle first thing
+## 🌅 First move tomorrow
+- [Single item — most time-sensitive or highest-impact.]
 ```
 
-Suggested follow-up messages and Planner updates go at the bottom as clearly-labelled drafts. Nothing sends without the user saying so.
+### 📝 Draft Planner updates
 
-### 🖥 Infrastructure status (end of day)
+Always include this section. Nothing is created or changed until Aaron explicitly confirms. Format each task as an editable named subsection — Aaron can change any field in place, then say "push these to Planner."
 
-**Always include this section even when everything is clean.**
+Focus at EOD on:
+- **UPDATE** tasks that were completed today (set percentComplete to 100)
+- **UPDATE** tasks that are overdue and need a new due date
+- **CREATE** any new tasks surfaced by EOD findings (security alerts, infra issues, follow-ups from Teams/mail)
 
-**NinjaOne:** Table of all servers (discovered via `ninja_list_servers`), grouped by org. Status per device. ✅ Clean or alert details.
+Default destination for new tasks:
+- **IT Sysadmin Tasks** (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`) — operational/sysadmin follow-ups, security findings, infrastructure issues
+- **Personal To Do** — smaller personal action items not appropriate for the team board
 
-**UniFi:** Table of all sites — Site name (cross-reference gateway MAC with known site table), ISP, wifi/wired clients, total devices, offline count, alerts. Flag offlineDevice > 0, criticalNotification > 0, or primary WAN downtime.
+**UPDATE format** (one subsection per task):
 
-**Confluence:** Any pages modified today in INF, PROC, POL, SITE. If none: "No changes today."
+```
+#### UPDATE — "[existing task title]"
+- **Plan:** [plan name]
+- **Change:** [what to update: set percentComplete to 100 / new due date YYYY-MM-DD / new assignee / etc.]
+- **Notes:** [optional — reason for the update]
+```
 
-**Teams:** Any unread DMs or @mentions still outstanding at end of day. If none: "No open threads."
+**CREATE format** (one subsection per task):
+
+```
+#### CREATE — [task title]
+- **Plan:** [plan name] (`plan_id`)
+- **Bucket:** [bucket name or leave blank]
+- **Due:** YYYY-MM-DD
+- **Start:** [YYYY-MM-DD or leave blank]
+- **Priority:** [Urgent / Important / Medium / Low — or leave blank]
+- **Assigned:** Aaron Stevens
+- **Labels:** [label names or leave blank]
+- **Attachments:** [filepath or URL — or leave blank]
+- **Notes:** [1–2 sentences of context. Include process suggestions or approach notes here — not in the checklist.]
+- **Checklist:**
+  - [ ] [what needs to happen — outcome, not steps]
+  - [ ] [what needs to happen]
+  - [ ] [what needs to happen]
+```
+
+Checklist items are **what** needs to happen, not **how**. Each should be a short outcome phrase (5–10 words). Keep 3–5 items max. Put process guidance, suggestions, and approach notes in the Notes field.
+
+## Step 4 — Update state file
+
+After the Obsidian note is appended, update `System/briefing-state.md` in the Obsidian vault:
+- Set `last_day_ender` to the current ISO timestamp (with timezone offset, e.g. `2026-05-12T17:00:00-07:00`).
+- Preserve the existing `last_day_starter` value if present; omit the field if it was never set.
+- Use `mode: rewrite` since this is a state file, not a daily note.

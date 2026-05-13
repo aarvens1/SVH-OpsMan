@@ -41,9 +41,17 @@ Extra fields by note type:
 
 For network topology, attack paths, asset network position, change impact scope, and project WBS — produce an Excalidraw diagram rather than a prose description. Save to `Diagrams/<category>/` and embed with `![[filename.excalidraw]]`.
 
-## Daily note write mode — always append
+## Daily note write mode
 
-When writing to existing daily notes (`Briefings/Daily/YYYY-MM-DD.md`), always use append mode. Never rewrite.
+Daily notes have three fixed top-level sections: `# 🌅 Day Starter`, `# 📝 Notes`, `# 🌆 Day Ender`. The Day Ender is always the last section.
+
+**Day Starter** — written once at the start of day. Use `mode: rewrite` (new file).
+
+**Day Ender** — appended at end of day. Use `mode: append` — it naturally lands in the Day Ender section since that section is at the bottom.
+
+**Notes section (mid-day additions)** — do NOT use `mode: append`. Appending goes to the end of the file, which is after `# 🌆 Day Ender`. Instead, use `edit_block` to insert content before the Day Ender header:
+- `old_string`: `\n---\n\n# 🌆 Day Ender`
+- `new_string`: `\n[new content]\n\n---\n\n# 🌆 Day Ender`
 
 If a read of an existing daily note returns no body content, assume the file has content that the tool failed to surface — not that the file is empty. When in doubt, ask before rewriting any Obsidian note.
 
