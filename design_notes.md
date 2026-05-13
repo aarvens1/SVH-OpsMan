@@ -3,41 +3,87 @@
 Observations on architectural decisions that affect how many tokens Claude consumes
 per session, with recommendations for each. Ordered roughly by impact.
 
+**Last audited:** 2026-05-13. `/context` breakdown from a full ops session:
+- Messages: 124.3k tokens (62%) ← dominant cost
+- Read results: 32.7k tokens (16%) ← explicitly flagged by /context
+- System prompt: 6.4k (3.2%)
+- System tools: 6.9k (3.5%)
+- Memory files: 5k (2.5%) — aaron-voice.md is 2.8k of this
+- MCP tools: 994 tokens (0.5%) — only 2 tools loaded; deferred loading is working
+- Skills: 2.9k (1.5%)
+
 ---
 
-## 1. All 140 tool schemas sent on every session — **fixed in this branch**
+## 0. Message bloat is the dominant cost — 62% of context
+
+This section didn't exist in earlier versions of these notes because we assumed
+tool schema tokens were the main lever. They're not. With deferred tool loading
+live (see item 2), schemas only count when loaded. The real cost is accumulated
+tool results and dialogue in the message history.
+
+**What drives message bloat:**
+- Long-running skills (day-starter: 15+ tool calls) add every response to context
+- Large unshapen API responses (item 4) inflate each result
+- Re-calling the same tool twice in a session doubles the result tokens
+- Reading large files (daily notes, device lists) when only a section is needed
+
+**Fix strategies — in order of impact:**
+
+1. **Response shaping (item 4)** — the biggest lever. A well-shaped response is
+   60–80% smaller. Every token saved in a tool result is saved for the rest of the
+   session.
+
+2. **Minified JSON (item 3)** — small effort, ~25% reduction per tool result.
+
+3. **Pre-aggregation (W1)** — eliminate 10–15 tool calls per morning by fetching
+   raw data before Claude opens. No tool results in context at all.
+
+4. **Use offset/limit on file reads** — the /context command explicitly flagged
+   read results at 32.7k tokens (16%). See W9 and the broader principle below.
+
+5. **Proactive /compact at task boundaries** — Claude Code's autocompact fires at
+   the buffer limit (33k free). Manual /compact before starting a new investigation
+   keeps the session clean and preserves more useful context.
+
+6. **Session-level deduplication** — if a skill calls `ninja_list_servers` and the
+   user later asks a follow-up about a server, do NOT re-call the list. Refer to
+   prior results. Server-side TTL caching (item 7) makes this automatic.
+
+---
+
+## 1. All 140 tool schemas sent on every session — **resolved**
 
 **Was:** Every `registerXxxTools()` call ran unconditionally. Even when a service had
 no credentials, its tool schemas were sent to Claude on every API call.
 
-**Fix applied:** Each register function now returns early when `!enabled`, so disabled
-services contribute zero schema tokens.
+**Fix applied:** Each register function returns early when `!enabled`, so disabled
+services contribute zero schema tokens. Additionally, Claude Code's deferred tool
+loading means available-but-unloaded tools don't count toward context at all.
 
-**Remaining exposure:** All 140 tools are still registered when all services are
-configured. Claude receives the full schema list on every turn, even turns where
-only one system is relevant (e.g., a mail-only query still loads Wazuh, UniFi,
-Azure, etc.). See item 2 for the architectural fix.
+**Current state (verified 2026-05-13):** MCP tools consumed 994 tokens in a full
+ops session (only 2 tools were loaded; the other ~140 were deferred). The earlier
+estimate of "17,000 tokens per session" was wrong under the deferred loading model.
+
+**No further action needed here.** Focus shifted to tool *results* (item 4) and
+message history (item 0).
 
 ---
 
-## 2. Single monolithic MCP server (biggest scaling bottleneck)
+## 2. Single monolithic MCP server — **lower priority than previously assessed**
 
-All tools live in one MCP server process. Claude Code / the MCP client has no way
-to load a subset — it's all or nothing.
+All tools live in one MCP server process. This was originally flagged as the
+biggest scaling bottleneck, estimated at 17k tokens per session.
 
-**Token cost:** ~140 tools × ~120 tokens/tool ≈ 17,000 tokens sent to Claude on
-every single API call, regardless of what the user actually needs.
+**Reality check (2026-05-13):** With deferred tool loading, tools appear as
+"Available" in /context and their schemas don't load until a ToolSearch fetch.
+A full ops session spent only 994 tokens on MCP tools. Splitting into service-
+specific MCP servers would save a negligible amount on top of this.
 
-**Fix options (pick one):**
-- **Split into service-specific MCP servers** (Graph, Infrastructure, Security,
-  Productivity). Register only the relevant servers for each skill. A Wazuh alert
-  investigation doesn't need Planner tool schemas.
-- **Tool filtering at registration** — pass a `toolFilter` set to each register
-  function and only register the tools a given skill will use. Requires the MCP
-  client to support re-initializing tools per conversation.
+**Remaining value of splitting:** Organizational clarity, not token savings. If
+the server grows to 200+ tools and the deferred-loading list itself becomes
+unwieldy, revisiting makes sense. Not a near-term priority.
 
-The split-server approach is the cleanest and maps directly to Claude Code's
-`claude mcp add` model: add only the servers a session needs.
+**Deprioritized.** The tool result size (item 4) is the actual lever now.
 
 ---
 
@@ -165,15 +211,15 @@ level variables in each auth file), but not across sessions.
 
 ## Priority order for next work
 
-| Impact | Item | Effort |
-|--------|------|--------|
-| High | Split into service-specific MCP servers | Large |
-| High | Shape responses on top-10 most-called tools | Medium |
-| Medium | Minify JSON responses (`JSON.stringify(data)`) | Tiny |
-| Medium | Strip inline examples from tool descriptions | Small |
-| Medium | TTL cache for high-read list tools | Small |
-| Low | Deduplicate Zod descriptions for common fields | Small |
-| Low | Slim down skill SKILL.md files | Small |
+| Impact | Item | Effort | Notes |
+|--------|------|--------|-------|
+| High | Shape responses on top-10 most-called tools (item 4) | Medium | Biggest per-result saving; compounds across session |
+| High | Minify JSON responses (item 3) | Tiny | ~25% per result; 1-line change in `ok()` |
+| High | TTL cache for high-read list tools (item 7) | Small | Prevents double-result bloat mid-session |
+| Medium | Strip inline examples from tool descriptions (item 5) | Small | Small per-tool; ~500–800 tokens total |
+| Medium | Deduplicate Zod descriptions (item 6) | Small | Consistency + global shortening |
+| Low | Slim down skill SKILL.md files (item 8) | Small | Move boilerplate to CLAUDE.md |
+| Low | Split into service-specific MCP servers (item 2) | Large | Mostly solved by deferred loading; deprioritized |
 
 ---
 
@@ -265,23 +311,13 @@ propagates everywhere.
 
 ---
 
-## W3. Bitwarden unlock wrapper — remove the daily friction
+## W3. Bitwarden unlock wrapper — **resolved**
 
-Every session starts with `BW_SESSION not set — credentials fall back to .env`.
-That means every session, the MCP server uses static .env credentials instead of
-the fresher vault copy. If a credential rotates in Bitwarden but not in .env,
-Claude gets stale credentials silently.
+**Was:** Every session started with `BW_SESSION not set` and fell back to `.env`.
 
-**Fix:** A shell alias (or small wrapper script) that unlocks Bitwarden and sets
-`BW_SESSION` before launching Claude:
-
-```bash
-# ~/.bashrc or ~/.zshrc
-alias claude-work='export BW_SESSION=$(bw unlock --raw) && claude'
-```
-
-One word to start Claude with a live vault session. The session-start hook then
-reports `BW_SESSION active` instead of the fallback warning.
+**Current state (verified 2026-05-13):** Session-start hook reports
+`BW_SESSION active`. The alias or wrapper is already in place. No further action
+needed unless the unlock setup changes.
 
 ---
 
@@ -408,32 +444,45 @@ This is a one-line addition to the day-starter SKILL.md:
 
 ---
 
-## W9. Daily note token bloat — carry-forward pattern
+## W9. Daily note token bloat — carry-forward pattern — **partially implemented**
 
 **Symptom:** Daily notes grow substantially throughout the day — morning brief
 (~150 lines) + meeting note links + work-log appends + EOD section. By end of
-day a note can exceed 400–500 lines. Any skill that reads the daily note for
-context (day-ender, next-day's day-starter, meeting-prep) pulls the whole file,
-most of which is irrelevant to the current task.
+day a note can exceed 400–500 lines. The /context output from 2026-05-13 flagged
+read results at 32.7k tokens (16%) with a suggestion to use offset/limit.
 
-This was confirmed in practice: the session-start system reminder surfaced
-"contents are too large to include" for `2026-05-12.md` mid-session.
+**What's already done:**
+- Day-starter has Step 2b "Carry forward open items from yesterday" — it reads
+  the previous day's note and surfaces open threads/draft tasks.
 
-**Fix: carry-forward pattern (skill changes only, no code changes)**
+**What's missing (two SKILL.md edits, no code changes):**
 
-Three changes, all in skill SKILL.md files:
+**1. Day-starter: use offset to read only the tail of yesterday's note**
 
-**1. Day-ender: append a compact `## 📌 Carry Forward` section**
+Step 2b currently reads the full `Briefings/Daily/YYYY-MM-DD.md`. Since the
+carry-forward section is always at the end (written by day-ender), reading the
+last 50–60 lines is sufficient. Add to Step 2b:
 
-At the end of Step 3, after the EOD section, day-ender appends a tightly-scoped
-summary of only what the next day's day-starter needs:
+> Read yesterday's note using `offset: <line_count - 60>` or equivalent tail
+> parameter, not the full file.
+
+Saving: ~2,800 tokens per morning (full ~3,200 → tail ~400).
+
+**2. Day-ender: append a compact `## 📌 Carry Forward` section AND read only
+the first 150 lines of today's note**
+
+Day-ender currently reads today's full note to understand "what was flagged
+this morning." Add two instructions to day-ender SKILL.md:
+
+a. Read today's note with `limit: 150` — the morning brief is always at the top.
+
+b. At the end of Step 3, append a tightly-scoped carry-forward section:
 
 ```markdown
 ## 📌 Carry Forward
 
 **Open (must action):**
 - Item 1 — suggested first move
-- Item 2
 
 **Context to hold:**
 - Brief fact worth knowing tomorrow
@@ -442,52 +491,74 @@ summary of only what the next day's day-starter needs:
 - Item that doesn't need action but should stay on radar
 ```
 
-Hard limit: 25–30 lines. No lists of every open Planner task — only items that
-aren't already captured in Planner and that Claude would otherwise lose between
-sessions.
-
-**2. Day-starter: read only carry-forward from yesterday, not the full note**
-
-Instead of reading all of yesterday's `YYYY-MM-DD.md`, use the `offset: -50`
-(last 50 lines) parameter when calling the read tool. This reliably captures the
-carry-forward section written by day-ender without loading the morning brief,
-meeting appends, or infrastructure status table from yesterday.
-
-**3. Day-ender: read only the morning brief section of today's note**
-
-Day-ender reads today's note to understand "what was flagged this morning." It
-does not need the accumulated meeting links, work log appends, or infrastructure
-table that may have been added since morning. Use `length: 150` to read only the
-first 150 lines — the morning brief is always written first and stays at the top.
+Hard limit: 25–30 lines. No full Planner task list — only items Claude would
+otherwise lose between sessions (context that isn't captured in Planner).
 
 **Token impact:**
 
 | Current | After fix |
 |---------|-----------|
-| Day-ender reads full note (~400–500 lines, ~3,000–4,000 tokens) | Day-ender reads first 150 lines (~1,200 tokens) |
-| Day-starter reads full yesterday note (~400 lines, ~3,200 tokens) | Day-starter reads last 50 lines (~400 tokens) |
-| Net per day | Save ~5,000–6,000 tokens/day on daily note reads alone |
+| Day-ender reads full note (~400–500 lines, ~3,200–4,000 tokens) | Reads first 150 lines (~1,200 tokens) |
+| Day-starter reads full yesterday note (~3,200 tokens) | Reads last 60 lines (~480 tokens) |
+| Net per day | Save ~4,700–5,500 tokens on daily note reads alone |
 
-**Implementation:** Two SKILL.md edits (day-starter, day-ender). No vault
-structure changes. No MCP server changes. The full daily note remains intact for
-human review and any skill that explicitly needs the whole thing can still read
-it by path.
+**W9b. Broader principle: offset/limit on all large file reads**
+
+The same principle applies to any skill that reads a large Obsidian note: use
+the minimum window needed. Posture-check reading a device list, asset-
+investigation reading a multi-section asset note, and meeting-prep reading a
+past meeting note all benefit from targeted reads. Default to reading the full
+file only when the entire content is genuinely needed for the task.
+
+---
+
+## W10. aaron-voice.md loads every session — 2.8k tokens wasted on non-drafting sessions
+
+`aaron-voice.md` (9.5KB, ~2.8k tokens) lives in `.claude/rules/` and loads into
+every session's system context, including debugging sessions, investigations,
+posture checks, and any session where no external communication is drafted.
+
+The vast majority of sessions don't draft emails or Teams messages. Loading the
+full voice guide for those sessions is pure overhead.
+
+**Fix:** Move `aaron-voice.md` out of `.claude/rules/` and into the `draft`
+skill's SKILL.md (or as an `@include` reference). Remove it from global rules.
+
+The voice guide then loads only when the `draft` skill is invoked — either by
+`/draft` or by a trigger phrase ("write an email", "draft a message", etc.).
+
+**Risk:** If the user says "write a quick reply to this" without triggering the
+skill, the voice rules won't apply. In practice the skill trigger phrases cover
+this, and a brief reminder in CLAUDE.md ("use /draft for external messages") is
+sufficient.
+
+**Saving:** ~2.8k tokens on every non-drafting session. On a typical day with
+one drafting session and four non-drafting sessions, saves ~11k tokens/day.
+
+**W10b. obsidian-output.md is a smaller but similar case**
+
+`obsidian-output.md` (2.7k bytes, ~670 tokens) loads every session. Its content
+is only relevant when writing a note. Since every skill writes notes, this one is
+actually worth keeping global — but audit its content for any verbosity that
+could be trimmed (the daily note mode section and lifecycle table together account
+for most of the length).
 
 ---
 
 ## Workflow priority order
 
-| Impact | Item | Effort |
-|--------|------|--------|
-| High | Pre-aggregation script for morning briefing (W1) | Medium |
-| High | Centralize config / remove hardcoded IDs (W2) | Small |
-| High | BW unlock wrapper alias (W3) | Tiny |
-| High | Daily note carry-forward pattern (W9) | Tiny |
-| Medium | Session-start hook improvements (W6) | Small |
-| Medium | Day-ender append fragility fix (W4) | Small |
-| Medium | Automate compliance gap scan (W5) | Medium |
-| Low | Reference file auto-sync (W7) | Tiny |
-| Low | Day-starter idempotency guard (W8) | Tiny |
+| Impact | Item | Effort | Status |
+|--------|------|--------|--------|
+| High | Move aaron-voice.md out of global rules (W10) | Tiny | TODO |
+| High | Daily note carry-forward: offset/limit reads (W9) | Tiny | Partial |
+| High | Pre-aggregation script for morning briefing (W1) | Medium | TODO |
+| High | Centralize config / remove hardcoded IDs (W2) | Small | TODO |
+| Medium | Session-start hook improvements (W6) | Small | TODO |
+| Medium | Day-ender append fragility fix (W4) | Small | TODO |
+| Medium | Automate compliance gap scan (W5) | Medium | TODO |
+| Low | Reference file auto-sync (W7) | Tiny | TODO |
+| Low | Day-starter idempotency guard (W8) | Tiny | TODO |
+| Done | BW unlock wrapper alias (W3) | — | ✓ Active |
 
 ---
 

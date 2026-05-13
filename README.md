@@ -149,6 +149,9 @@ Exchange Admin message trace → Defender (attachment/URL flagging) → Entra (w
 ---
 
 #### IR Triage
+
+> **Currently disabled.** `SKILL.md` renamed to `SKILL.md.disabled` — re-enable by renaming it back. Disabled because it is the only skill that can send non-draft Teams messages; keeping it off until explicitly needed.
+
 **Invoke:** `/ir-triage` · alert investigation, IOC enrichment, "is this suspicious," suspected compromise
 
 Runs a triage gate first to classify the situation:
@@ -162,8 +165,6 @@ Runs a triage gate first to classify the situation:
 Enrichment: IOC → Defender → Entra sign-in/audit logs → NinjaOne endpoint state → incident brief. For Burning Building and Active Investigation lanes, also produces an Excalidraw attack-path diagram (initial access → lateral movement → impact) embedded in the incident note.
 
 **Output:** `Incidents/Active/YYYY-MM-DD-name.md` + lane-appropriate drafts + `Diagrams/Incidents/INC-YYYY-NNN.excalidraw` (Active and Burning Building lanes).
-
-> This is the only skill that can send non-draft Teams messages. Build it last for that reason.
 
 ---
 
@@ -460,8 +461,8 @@ The `.claude/` directory is checked into this repo. It configures permissions, h
 
 - **Permissions** — common git and npm operations are pre-approved so Claude doesn't prompt for them.
 - **SessionStart hook** — injects branch name, uncommitted file count, and Bitwarden status at the start of every session.
-- **Skills** — all 21 skills in `.claude/skills/` load on demand when invoked by name or trigger phrase. No context cost until you use them.
-- **Rules** — `.claude/rules/typescript.md` (TypeScript conventions, path-scoped to `mcp-server/src/**`) and `.claude/rules/obsidian-output.md` (Obsidian writing conventions, always loaded).
+- **Skills** — 20 active skills in `.claude/skills/` load on demand when invoked by name or trigger phrase. No context cost until you use them. IR Triage is present but disabled (`SKILL.md.disabled`).
+- **Rules** — `.claude/rules/typescript.md` (TypeScript conventions, path-scoped to `mcp-server/src/**`) and `.claude/rules/obsidian-output.md` (Obsidian writing conventions, always loaded). Voice/communication rules live in the `draft` skill and only load when drafting.
 
 `.claude/settings.local.json` is gitignored — use it for personal overrides.
 
@@ -781,4 +782,4 @@ Start read-only, validate each integration, then add write-side skills one at a 
 | 7 | Meeting Prep & Notes | Needs Fathom MCP connected |
 | 8 | Access Review | Needs Entra read permissions confirmed |
 | 9 | Mailflow Investigation | Needs Exchange Admin credentials |
-| 10 | IR Triage | **Last** — only skill that sends non-draft Teams messages |
+| 10 | IR Triage | **Last** — only skill that sends non-draft Teams messages. Currently disabled (`SKILL.md.disabled`). |

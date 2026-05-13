@@ -98,7 +98,7 @@ Include To Do items alongside Planner tasks. Show due-today and overdue first, t
 
 ## Step 2b — Carry forward open items from yesterday
 
-Read the previous business day's briefing note from Obsidian (yesterday's `Briefings/Daily/YYYY-MM-DD.md`). Look for:
+Read only the `# 🌆 Day Ender` section of the previous business day's briefing note (`Briefings/Daily/YYYY-MM-DD.md`). The Day Ender is always the last top-level section — use `offset` to read from that point rather than loading the full note. Look for:
 
 1. **"🔄 Still open"** items in the EOD section — explicitly unresolved items from the day-ender
 2. **"📝 Draft Planner actions"** that were written as CREATE or UPDATE but not yet confirmed/pushed — surface them again so Aaron can act on them or discard

@@ -4,7 +4,7 @@ type McpContent = { type: "text"; text: string };
 export type McpResult = { isError?: true; content: McpContent[] };
 
 export function ok(data: unknown): McpResult {
-  return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+  return { content: [{ type: "text", text: JSON.stringify(data) }] };
 }
 
 export function err(e: unknown): McpResult {
