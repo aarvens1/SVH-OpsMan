@@ -85,6 +85,10 @@ In SVH OpsMan (custom fields): GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SE
 
 Not yet found in BW: WAZUH_*, CONFLUENCE_*, UNIFI_*, PRINTERLOGIC_*. Search BW notes when looking for these.
 
+### NinjaOne alerting rules
+- **Skip devices in maintenance mode.** Do not surface offline alerts, monitor alerts, or status warnings for any NinjaOne device that is in maintenance mode. Maintenance mode means the offline/alert state is intentional — treat these as non-events in briefings and investigations.
+- ACCOPDXARCHIVE is intentionally offline and in maintenance mode — never flag it.
+
 ### Known issues
 - Claude Code account switching: work↔personal swap breaks OpsMan on token expiry. No solution yet — tracked in personal To Do.
 
