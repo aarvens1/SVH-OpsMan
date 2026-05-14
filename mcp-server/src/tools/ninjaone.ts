@@ -44,7 +44,16 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         };
         if (after) params["after"] = after;
         const res = await ninjaClient(token).get("/devices", { params });
-        return ok(res.data);
+        return ok((res.data as Record<string, unknown>[]).map((d) => ({
+          id: d["id"],
+          displayName: d["displayName"] ?? d["systemName"],
+          dnsName: d["dnsName"],
+          ipAddresses: d["ipAddresses"],
+          nodeClass: d["nodeClass"],
+          offline: d["offline"],
+          lastContact: d["lastContact"],
+          osName: d["osName"],
+        })));
       } catch (e) {
         return err(e);
       }
@@ -64,7 +73,24 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/device/${device_id}`);
-        return ok(res.data);
+        const d = res.data as Record<string, unknown>;
+        return ok({
+          id: d["id"],
+          displayName: d["displayName"] ?? d["systemName"],
+          systemName: d["systemName"],
+          dnsName: d["dnsName"],
+          ipAddresses: d["ipAddresses"],
+          publicIP: d["publicIP"],
+          nodeClass: d["nodeClass"],
+          offline: d["offline"],
+          lastContact: d["lastContact"],
+          osName: d["osName"],
+          osVersion: d["osVersion"],
+          processorType: d["processorType"],
+          totalPhysicalMemory: d["totalPhysicalMemory"],
+          lastLoggedInUser: d["lastLoggedInUser"],
+          agentVersion: d["agentVersion"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -93,7 +119,12 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         const res = await ninjaClient(token).get(`/device/${device_id}/windows/services`, {
           params,
         });
-        return ok(res.data);
+        return ok((res.data as Record<string, unknown>[]).map((s) => ({
+          name: s["name"],
+          displayName: s["displayName"],
+          state: s["state"],
+          startType: s["startType"],
+        })));
       } catch (e) {
         return err(e);
       }
@@ -119,7 +150,13 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         const token = await getNinjaToken();
         const params = filter ? { filter: `name:${filter}` } : {};
         const res = await ninjaClient(token).get(`/device/${device_id}/processes`, { params });
-        return ok(res.data);
+        return ok((res.data as Record<string, unknown>[]).map((p) => ({
+          pid: p["pid"],
+          name: p["name"],
+          cpuUsage: p["cpuUsage"],
+          memUsage: p["memUsage"],
+          userName: p["userName"],
+        })));
       } catch (e) {
         return err(e);
       }
@@ -261,7 +298,14 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         const res = await ninjaClient(token).get(`/device/${device_id}/windows/eventlogs`, {
           params,
         });
-        return ok(res.data);
+        return ok((res.data as Record<string, unknown>[]).map((e) => ({
+          eventId: e["eventId"],
+          level: e["level"],
+          source: e["source"],
+          message: e["message"],
+          created: e["created"],
+          computer: e["computer"],
+        })));
       } catch (e) {
         return err(e);
       }
@@ -338,7 +382,15 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         if (org_id !== undefined) params["organizationId"] = org_id;
         if (after) params["after"] = after;
         const res = await ninjaClient(token).get("/devices/backup", { params });
-        return ok(res.data);
+        return ok((res.data as Record<string, unknown>[]).map((b) => ({
+          deviceId: b["deviceId"],
+          deviceName: b["deviceName"],
+          planName: b["planName"],
+          jobName: b["jobName"],
+          status: b["status"],
+          lastRun: b["lastRun"],
+          nextRun: b["nextRun"],
+        })));
       } catch (e) {
         return err(e);
       }

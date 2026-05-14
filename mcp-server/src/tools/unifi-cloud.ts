@@ -15,7 +15,7 @@ export function registerUnifiCloudTools(server: McpServer, enabled: boolean): vo
     },
     async () => {
       try {
-        const res = await unifiCloudClient().get("/ea/sites");
+        const res = await unifiCloudClient().get("/v1/sites");
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -24,35 +24,15 @@ export function registerUnifiCloudTools(server: McpServer, enabled: boolean): vo
   );
 
   server.registerTool(
-    "unifi_get_site",
-    {
-      description: "Get details of a specific UniFi site including location, type, and device counts.",
-      inputSchema: z.object({
-        site_id: z.string().describe("The UniFi site ID"),
-      }),
-    },
-    async ({ site_id }) => {
-      try {
-        const res = await unifiCloudClient().get(`/ea/sites/${site_id}`);
-        return ok(res.data);
-      } catch (e) {
-        return err(e);
-      }
-    }
-  );
-
-  server.registerTool(
-    "unifi_list_site_devices",
+    "unifi_list_hosts",
     {
       description:
-        "List all devices at a UniFi site (access points, switches, gateways, Fabric devices) with their model, MAC, and status.",
-      inputSchema: z.object({
-        site_id: z.string().describe("The UniFi site ID"),
-      }),
+        "List all UniFi hosts (consoles/controllers) associated with this account. Each host runs the UniFi Network application and may manage one or more sites.",
+      inputSchema: z.object({}),
     },
-    async ({ site_id }) => {
+    async () => {
       try {
-        const res = await unifiCloudClient().get(`/ea/sites/${site_id}/devices`);
+        const res = await unifiCloudClient().get("/v1/hosts");
         return ok(res.data);
       } catch (e) {
         return err(e);
@@ -61,18 +41,41 @@ export function registerUnifiCloudTools(server: McpServer, enabled: boolean): vo
   );
 
   server.registerTool(
-    "unifi_get_site_device",
+    "unifi_list_devices",
+    {
+      description:
+        "List all UniFi devices (access points, switches, gateways) across all managed sites. Optionally filter by host ID or site ID.",
+      inputSchema: z.object({
+        host_id: z.string().optional().describe("Filter to devices on this host/console"),
+        site_id: z.string().optional().describe("Filter to devices at this site"),
+      }),
+    },
+    async ({ host_id, site_id }) => {
+      try {
+        const params = new URLSearchParams();
+        if (host_id) params.set("hostId", host_id);
+        if (site_id) params.set("siteId", site_id);
+        const query = params.toString() ? `?${params}` : "";
+        const res = await unifiCloudClient().get(`/v1/devices${query}`);
+        return ok(res.data);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "unifi_get_device",
     {
       description:
         "Get detailed information about a specific UniFi device: model, firmware version, uptime, IP address, and connection status.",
       inputSchema: z.object({
-        site_id: z.string().describe("The UniFi site ID"),
         device_id: z.string().describe("The device ID"),
       }),
     },
-    async ({ site_id, device_id }) => {
+    async ({ device_id }) => {
       try {
-        const res = await unifiCloudClient().get(`/ea/sites/${site_id}/devices/${device_id}`);
+        const res = await unifiCloudClient().get(`/v1/devices/${device_id}`);
         return ok(res.data);
       } catch (e) {
         return err(e);
