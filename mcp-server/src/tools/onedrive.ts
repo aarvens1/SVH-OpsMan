@@ -139,6 +139,62 @@ export function registerOneDriveTools(server: McpServer, enabled: boolean): void
   );
 
   server.registerTool(
+    "onedrive_move_item",
+    {
+      description:
+        "Move a file or folder to a different parent folder in OneDrive. " +
+        "Optionally rename it at the same time. Returns the updated item metadata.",
+      inputSchema: z.object({
+        drive_id: z.string().describe("OneDrive drive ID"),
+        item_id: z.string().describe("Item ID of the file or folder to move"),
+        new_parent_id: z.string().describe("Item ID of the destination folder (or 'root')"),
+        new_name: z
+          .string()
+          .optional()
+          .describe("Optional new name for the item after moving"),
+      }),
+    },
+    async ({ drive_id, item_id, new_parent_id, new_name }) => {
+      try {
+        const token = await getGraphToken(GRAPH_SCOPE);
+        const body: Record<string, unknown> = {
+          parentReference: { id: new_parent_id },
+        };
+        if (new_name) body["name"] = new_name;
+        const res = await graphClient(token).patch(
+          `/drives/${drive_id}/items/${item_id}`,
+          body
+        );
+        return ok({ id: res.data.id, name: res.data.name, webUrl: res.data.webUrl });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "onedrive_delete_item",
+    {
+      description:
+        "Permanently delete a file or folder from OneDrive. " +
+        "Folders must be empty or the entire subtree is deleted. Use with caution.",
+      inputSchema: z.object({
+        drive_id: z.string().describe("OneDrive drive ID"),
+        item_id: z.string().describe("Item ID of the file or folder to delete"),
+      }),
+    },
+    async ({ drive_id, item_id }) => {
+      try {
+        const token = await getGraphToken(GRAPH_SCOPE);
+        await graphClient(token).delete(`/drives/${drive_id}/items/${item_id}`);
+        return ok({ deleted: true, item_id });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
     "onedrive_create_sharing_link",
     {
       description:
