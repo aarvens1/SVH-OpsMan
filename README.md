@@ -148,6 +148,15 @@ Exchange Admin message trace → Defender (attachment/URL flagging) → Entra (w
 
 ---
 
+#### Tenant Forensics
+**Invoke:** `/tenant-forensics` · "Who touched it" · "What changed before X broke" · "What happened in Azure around [time]" · "Forensic audit"
+
+Merges Azure Activity Logs + Entra Audit Logs + NinjaOne event logs (if a host is named) into a single chronological timeline, grouped by actor. Highlights: RBAC changes, MFA resets, app consent grants, NSG edits, policy changes, patch installs. If the same actor appears in both audit logs and risky sign-ins, that's called out explicitly. NinjaOne covers System, Application, and Security channels (up to 500 events); for deeper channels (PowerShell Operational, Task Scheduler) escalate to `/event-log-triage`.
+
+**Output:** `Investigations/YYYY-MM-DD-tenant-forensics-HHmm.md`
+
+---
+
 #### IR Triage
 
 > **Currently disabled.** `SKILL.md` renamed to `SKILL.md.disabled` — re-enable by renaming it back. Disabled because it is the only skill that can send non-draft Teams messages; keeping it off until explicitly needed.
@@ -214,6 +223,15 @@ Routes by asset type:
 For a user: roles, groups, owned app registrations, recent sign-ins, MFA status, applicable CA policies. For a group or role: all members, activity, associated policies. Flags inactive privileged accounts, missing MFA in sensitive roles, stale memberships.
 
 **Output:** Obsidian access report + optional Confluence audit page draft.
+
+---
+
+#### License Audit
+**Invoke:** `/license-audit` · "License audit" · "Orphaned licenses" · "Who has licenses but no device" · "License waste"
+
+Cross-joins M365 license assignments (admin_get_user_licenses) + Intune enrollment (intune_list_devices) + MFA registration (entra_get_user_mfa_methods) to surface: 🔴 Exposed (licensed + no device + no MFA), 🟠 Ghost (licensed + inactive 30+ days), 🟡 Gaps (missing one piece). Produces a license cost summary with estimated monthly waste. Recommended actions staged as draft Planner tasks.
+
+**Output:** `Reviews/Access/license-audit-YYYY-MM-DD.md`
 
 ---
 

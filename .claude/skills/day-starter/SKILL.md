@@ -2,7 +2,7 @@
 name: day-starter
 description: Morning briefing. Covers the period since the last briefing ran, with a 72-hour cap. Falls back to 24h (72h on Monday) if no state exists. Override with "last N days/hours" or "reset" to use defaults. Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
 when_to_use: Use at the start of each workday to get a prioritized digest of what needs attention.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__*"
 ---
 
 # Day Starter
@@ -40,8 +40,11 @@ Run these in parallel:
 
 - `wazuh_search_alerts` — query last N hours, severity ≥ medium. Note rule IDs, agent names, and alert counts. (If the tool is not in the deferred tool list this session, skip it and note "Wazuh unavailable this session" — do not let this block the run.)
 - `ninja_list_servers` first to enumerate all server device IDs across all organizations, then run `ninja_list_device_alerts` in parallel for every returned device ID. Do not use a hardcoded list — always discover dynamically. Also check inbox for NinjaOne alert emails to catch anything not covered by the device-level queries.
+- For each device with at least one active NinjaOne alert, run `mde_get_device` and `intune_get_device_compliance` in parallel (match by hostname). Record per device: NinjaOne alert text + MDE risk level + Intune compliance state. A device where all three sources flag a problem ("triple-confirmed") gets elevated to 🔴 regardless of individual severity. If MDE or Intune has no record of the device, note "not enrolled in [system]" — that is itself a finding worth surfacing.
 - `mde_list_alerts` — Defender alerts. Flag High/Critical severity.
 - `entra_list_risky_users` — any users currently flagged as risky.
+- `entra_get_audit_logs` — last N hours. Flag: admin role assignments, MFA method changes, app consent grants, user creation/deletion, bulk operations, and password resets by non-owners. These are the "did someone mess with the tenant?" signals.
+- `entra_get_sign_in_logs` — last N hours, filter to failed and risky events. Flag: any user with >5 failures in the window, any successful login from a new country, any event marked risky by Identity Protection. If a user appears in both audit logs AND risky sign-ins, that is a priority finding regardless of individual severity.
 - `admin_list_service_incidents` — active M365 service incidents.
 - `unifi_list_sites` — check all sites for offline devices, critical notifications, and WAN issues. Flag any site where `offlineDevice > 0`, `criticalNotification > 0`, or `wanDowntime: true`. Note the ISP name and client counts to help identify the location, since site names come back as "Default" — cross-reference by gateway MAC or IP if needed.
 
@@ -179,6 +182,9 @@ Open tasks from IT plans that Aaron isn't assigned to or tagged on. Group by pla
 ### 🟡 Worth watching
 Medium-severity findings, anything that could escalate. No action required yet.
 
+### 🔍 Overnight tenant activity
+Sourced from `entra_get_audit_logs` and `entra_get_sign_in_logs` pulled in Step 1. Present as a compact timeline grouped by actor — not a raw dump. Surface: role assignments, MFA resets, app consent grants, policy changes, bulk operations, suspicious sign-in patterns. If an actor appears in both admin audit logs AND risky sign-ins, call it out explicitly (e.g., "⚠️ jsmith made 2 admin changes AND had a risky sign-in at 02:14 from Romania"). If nothing of note: one line — "No admin actions or risky sign-ins in the last N hours." Keep this section tight — it's a trip-wire, not a log dump.
+
 ### 💡 Suggested next moves
 2–3 concrete recommendations (e.g., "Dismiss risky user X after reviewing sign-in logs", "Prep agenda for 2pm call").
 
@@ -189,7 +195,7 @@ Medium-severity findings, anything that could escalate. No action required yet.
 **NinjaOne — All servers**
 1. Call `ninja_list_servers` to get all server device IDs across all organizations.
 2. Run `ninja_list_device_alerts` in parallel for every returned device ID.
-3. Show a table grouped by organization (org name from `ninja_list_servers`). Columns: Device name, Device ID, Status. If no active alerts: ✅ Clean. If alerts exist: list them inline. Always show every server regardless of status — a clean result is still useful signal.
+3. Show a table grouped by organization (org name from `ninja_list_servers`). Columns: Device name, NinjaOne status, MDE risk, Intune compliance. If no active alerts: ✅ Clean for that device. For devices with alerts, populate MDE risk and Intune compliance from the cross-reference done in Step 1. If a device is not enrolled in MDE or Intune, show "—". Always show every server regardless of status — a clean result is still useful signal.
 
 **UniFi — All sites**
 Show a table with one row per site. Columns: **Site name**, ISP, Wifi clients, Wired clients, Total devices, Offline, Alert.
