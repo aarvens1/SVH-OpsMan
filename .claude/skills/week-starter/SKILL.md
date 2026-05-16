@@ -68,6 +68,7 @@ date: YYYY-MM-DD
 skill: Week Starter
 status: draft
 tags: [briefing, weekly]
+week: YYYY-WW
 ---
 ```
 

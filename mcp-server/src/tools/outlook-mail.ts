@@ -4,6 +4,8 @@ import { getGraphToken } from "../auth/graph.js";
 import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
 import { ok, err, cfgErr } from "../utils/response.js";
 
+type A = Record<string, unknown>;
+
 const NO_USER_MSG =
   "Mail tools are not configured: set GRAPH_USER_ID to your UPN (e.g. you@company.com)";
 
@@ -52,7 +54,17 @@ export function registerOutlookMailTools(
             "id,subject,from,receivedDateTime,hasAttachments,bodyPreview,importance,isRead",
         };
         const res = await graphClient(token).get(`/users/${userId}/messages`, { params });
-        return ok(res.data);
+        const msgs = ((res.data as A)["value"] as A[] ?? []).map((m: A) => ({
+          id: m["id"],
+          subject: m["subject"],
+          from: (m["from"] as A | undefined)?.["emailAddress"],
+          receivedDateTime: m["receivedDateTime"],
+          isRead: m["isRead"],
+          hasAttachments: m["hasAttachments"],
+          importance: m["importance"],
+          bodyPreview: typeof m["bodyPreview"] === "string" ? m["bodyPreview"].slice(0, 200) : undefined,
+        }));
+        return ok({ count: msgs.length, messages: msgs });
       } catch (e) {
         return err(e);
       }
@@ -156,7 +168,8 @@ export function registerOutlookMailTools(
           ...(cc?.length ? { ccRecipients: cc.map((a) => ({ emailAddress: { address: a } })) } : {}),
         };
         const res = await graphClient(token).post(`/users/${userId}/messages`, payload);
-        return ok(res.data);
+        const d = res.data as A;
+        return ok({ id: d["id"], subject: d["subject"], created: true });
       } catch (e) {
         return err(e);
       }
@@ -181,7 +194,14 @@ export function registerOutlookMailTools(
         const res = await graphClient(token).get(`/users/${userId}/mailFolders`, {
           params: { $top: 100, includeHiddenFolders: include_child_folders },
         });
-        return ok(res.data);
+        const folders = ((res.data as A)["value"] as A[] ?? []).map((f: A) => ({
+          id: f["id"],
+          displayName: f["displayName"],
+          totalItemCount: f["totalItemCount"],
+          unreadItemCount: f["unreadItemCount"],
+          parentFolderId: f["parentFolderId"],
+        }));
+        return ok({ count: folders.length, folders });
       } catch (e) {
         return err(e);
       }
@@ -207,7 +227,8 @@ export function registerOutlookMailTools(
           `/users/${userId}/messages/${message_id}/move`,
           { destinationId: destination_folder_id }
         );
-        return ok(res.data);
+        const m = res.data as A;
+        return ok({ id: m["id"], moved: true, destination: destination_folder_id });
       } catch (e) {
         return err(e);
       }

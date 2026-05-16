@@ -532,6 +532,6 @@ Skills print their output note path as an `obsidian://` URI. WezTerm detects it 
 
 ---
 
-## Design notes
+## Roadmap & design notes
 
-`design_notes.md` tracks architectural decisions, token-cost analysis, and workflow friction points — things worth knowing before making changes to the server or skills. Review it before adding new tools or refactoring high-frequency paths.
+`roadmap.md` tracks the evolution plan, open design issues, architectural decisions, and known runtime quirks. Review it before adding new tools or refactoring high-frequency paths.

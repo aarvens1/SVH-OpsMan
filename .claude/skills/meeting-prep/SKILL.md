@@ -29,6 +29,7 @@ date: YYYY-MM-DD
 skill: Meeting Prep
 status: draft
 tags: [meeting, prep]
+attendees: []
 ---
 ```
 

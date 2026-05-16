@@ -61,6 +61,7 @@ tags: [change]
 change_id: CHG-YYYY-NNN
 risk: low|medium|high
 window: YYYY-MM-DD HH:MM – HH:MM
+change_date: YYYY-MM-DD
 ---
 ```
 

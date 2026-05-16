@@ -127,6 +127,7 @@ date: YYYY-MM-DD
 skill: Day Starter
 status: draft
 tags: [briefing, daily]
+has_pending_tasks: false
 ---
 
 # 🌅 Day Starter — HH:MM
@@ -294,3 +295,5 @@ After the Obsidian briefing note is written, update `System/briefing-state.md` i
 - Set `last_day_starter` to the current ISO timestamp (with timezone offset, e.g. `2026-05-12T08:30:00-07:00`).
 - Preserve the existing `last_day_ender` value if present; omit the field if it was never set.
 - Use `mode: rewrite` since this is a state file, not a daily note.
+
+If any Draft Planner action blocks remain in the daily note at the end of the session (i.e. Aaron did not confirm them), update `has_pending_tasks` to `true` in the daily note's frontmatter using `edit_block`.
