@@ -31,7 +31,6 @@ graph LR
 
     subgraph External["External MCPs"]
         OBS["Obsidian"]
-        EXCAL["Excalidraw"]
         GH["GitHub"]
         FATHOM["Fathom"]
         BW["Bitwarden"]
@@ -77,7 +76,6 @@ graph LR
 | **PrinterLogic** 🔒 | Printers, drivers, deployment profiles, audit logs, print quotas |
 | **Confluence** | Search, read, edit pages, manage comments |
 | **Obsidian** | Read and write notes — home base for all output |
-| **Excalidraw** | Network maps, attack paths, asset diagrams, WBS charts, change impact scope |
 | **Fathom** | Meeting transcripts and summaries |
 | **GitHub** | Repos, issues, PRs, Actions workflows |
 | **Firecrawl** | Web search, fetch URLs as Markdown |
@@ -111,10 +109,10 @@ Trigger by slash command or by saying any of the listed phrases. Skills load on 
 | **Troubleshoot** | `/troubleshoot` · "X is broken" · "Troubleshoot Y" | Systematic isolation — expected vs. actual, one user or many, ranked hypotheses, cheapest-first. References SVH failure patterns for Hyper-V, MABS, CMiC, UniFi, WSUS. |
 | **Event Log Triage** | `/event-log-triage` · "Check event logs on X" · "What happened on Z around [time]" | Wazuh first for correlation, NinjaOne for gaps, Desktop Commander for PowerShell deep-dives. |
 | **Event Log Analyzer** | `/event-log-analyzer` · "Analyze this event log" · "Look at the log export from X" | For exported log files (`.xml`, `.csv`, `.txt`, `.log`) rather than live queries. |
-| **Network Troubleshooter** | `/network-troubleshooter` · "Network issue at [site]" · "Why can't [users] reach [resource]" | UniFi Cloud → UniFi Network (VLANs, firewall, switch ports) → Wazuh (IDS events) → NinjaOne → Desktop Commander. Produces an Excalidraw topology diagram of the affected path. Output: `Diagrams/Network/[site]-YYYY-MM-DD.excalidraw` |
+| **Network Troubleshooter** | `/network-troubleshooter` · "Network issue at [site]" · "Why can't [users] reach [resource]" | UniFi Cloud → UniFi Network (VLANs, firewall, switch ports) → Wazuh (IDS events) → NinjaOne → Desktop Commander. |
 | **Mailflow Investigation** | `/mailflow-investigation` · "Did this email deliver" · "Why didn't X get my message" | Exchange message trace → Defender (attachment/URL flags) → Entra → diagnostic timeline with root cause. |
 | **Tenant Forensics** | `/tenant-forensics` · "Who touched it" · "What changed before X broke" · "Forensic audit" | Azure Activity Logs + Entra Audit Logs + NinjaOne event logs merged into a single actor-grouped timeline. Flags RBAC changes, MFA resets, app consent grants, NSG edits, policy changes. Output: `Investigations/YYYY-MM-DD-tenant-forensics-HHmm.md` |
-| **IR Triage** | `/ir-triage` · alert investigation · "Is this suspicious" | **Currently disabled** (`SKILL.md.disabled`). The only skill that can send non-draft Teams messages — kept off until needed. Runs a triage gate (Burning Building / Active Investigation / Background), enriches IOCs, and for serious lanes produces an Excalidraw attack-path diagram. |
+| **IR Triage** | `/ir-triage` · alert investigation · "Is this suspicious" | **Currently disabled** (`SKILL.md.disabled`). The only skill that can send non-draft Teams messages — kept off until needed. Runs a triage gate (Burning Building / Active Investigation / Background) and enriches IOCs. |
 
 ---
 
@@ -124,7 +122,7 @@ Trigger by slash command or by saying any of the listed phrases. Skills load on 
 |-------|--------|-------------|--------|
 | **Security Posture** | `/posture-check` · "Posture check" · "State of the land" | Green/Yellow/Red across Identity, Endpoints, Patching, Infrastructure, SIEM, and Cloud. | Obsidian snapshot |
 | **Vuln Triage** | `/vuln-triage` · CVE ID · Defender TVM finding | CVE → exposed devices → patch state → timeline: Emergency / This Week / Next Cycle / Accept. | Obsidian note + Confluence draft + Planner tickets |
-| **Asset Investigation** | `/asset-investigation` · "Tell me everything about [server/user]" | Servers/workstations: NinjaOne + Wazuh + Defender + Azure → Excalidraw network position diagram. Users: Entra sign-in history, MFA, roles, groups, CA policies. | `Assets/[name].md` (persistent, updated each run) |
+| **Asset Investigation** | `/asset-investigation` · "Tell me everything about [server/user]" | Servers/workstations: NinjaOne + Wazuh + Defender + Azure. Users: Entra sign-in history, MFA, roles, groups, CA policies. | `Assets/[name].md` (persistent, updated each run) |
 | **Access Review** | `/access-review` · "Access review for [user/group/role]" | Roles, groups, app registrations, sign-ins, MFA, CA policies. Flags inactive privileged accounts, missing MFA, stale memberships. | Obsidian report + optional Confluence draft |
 | **License Audit** | `/license-audit` · "License audit" · "License waste" | M365 licenses × Intune enrollment × MFA registration → Exposed (no device, no MFA), Ghost (inactive 30d+), Gaps. Monthly waste estimate. | `Reviews/Access/license-audit-YYYY-MM-DD.md` |
 
@@ -135,8 +133,8 @@ Trigger by slash command or by saying any of the listed phrases. Skills load on 
 | Skill | Invoke | What it does | Output |
 |-------|--------|-------------|--------|
 | **Patch Campaign** | `/patch-campaign` · "What needs patching" · "Plan patching" | NinjaOne pending patches → Defender TVM priority → tiers (Emergency / This Week / Next Cycle / Accept) → Planner board. | Obsidian note + Planner board |
-| **Change Record** | `/change-record` · "Document this rollout" · "Change record for X" | Scope, risk, test plan, rollback, comms, schedule. Excalidraw impact-scope diagram: what's changing, what depends on it. Everything staged for review. | `Changes/` + `Diagrams/Changes/CHG-YYYY-NNN.excalidraw` + Confluence draft + Planner card |
-| **Project Creator** | `/project-creator` · "Turn this into a project" | Scope, deliverables, WBS, dependencies, effort estimate. Small (≤8 items): single Planner card. Large: full Planner plan + Confluence page + Excalidraw WBS diagram. | `Projects/` |
+| **Change Record** | `/change-record` · "Document this rollout" · "Change record for X" | Scope, risk, test plan, rollback, comms, schedule. Everything staged for review. | `Changes/` + Confluence draft + Planner card |
+| **Project Creator** | `/project-creator` · "Turn this into a project" | Scope, deliverables, WBS, dependencies, effort estimate. Small (≤8 items): single Planner card. Large: full Planner plan + Confluence page. | `Projects/` |
 | **Meeting Prep** | `/meeting-prep` · "Prep me for [meeting]" · "Pull notes from my [call]" | Before: calendar event + Fathom history + Confluence/Obsidian context + open tasks → brief + agenda template. After: Fathom transcript → structured note with decisions and suggested action items. | `Meetings/YYYY-MM-DD-name.md` |
 
 ---
@@ -176,13 +174,6 @@ graph TD
     REV --> PAT["Patches/"]
 
     ROOT --> VULN["Vulnerabilities/"]
-
-    ROOT --> DIAG["Diagrams/  ← .excalidraw files"]
-    DIAG --> DA["Assets/"]
-    DIAG --> DC["Changes/"]
-    DIAG --> DI["Incidents/"]
-    DIAG --> DN["Network/"]
-    DIAG --> DP["Projects/"]
 
     ROOT --> REF["References/  ← synced from repo"]
 ```
@@ -312,8 +303,6 @@ claude mcp add bitwarden \
 claude mcp add time \
   -- npx -y @modelcontextprotocol/server-time
 
-claude mcp add excalidraw \
-  -- npx -y mcp-excalidraw
 ```
 
 ---
@@ -449,11 +438,13 @@ Use `Get-SVHTierUsername -Tier server` to retrieve the correct account name for 
 | File | Used by |
 |------|---------|
 | `triage-gate.md` | IR Triage — lane classification and escalation path |
-| `common-failure-modes.md` | Troubleshooting — SVH-specific failure patterns (Hyper-V, MABS, CMiC, UniFi, WSUS) |
+| `common-failure-modes.md` | Troubleshooting — SVH-specific failure patterns (Hyper-V, MABS, CMiC, UniFi, WSUS, PrinterLogic) |
 | `hypothesis-patterns.md` | Troubleshooting — isolation moves by problem class |
 | `common-event-clusters.md` | Event Log Triage — Wazuh/Windows event signatures by scenario |
 | `ps-remoting-snippets.md` | Event Log Triage — Get-WinEvent recipes for common scenarios |
 | `setup-winrm.md` | Event Log Triage — one-time WinRM trust setup from WSL to Windows targets |
+| `credentials.md` | Credential reference — what's in Bitwarden vs. still missing |
+| `users.md` | Team directory — Entra object IDs and UPNs for IT staff |
 
 ---
 

@@ -59,7 +59,7 @@ In WSL, create or update `~/.config/powershell/Microsoft.PowerShell_profile.ps1`
 
 ```powershell
 # Trust all hosts in the management subnet
-$PSDefaultParameterValues['*:TrustedHosts'] = '192.168.10.*'
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value "192.168.10.*" -Force
 ```
 
 Or set per-session in `pwsh`:

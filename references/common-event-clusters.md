@@ -107,6 +107,24 @@ Requires UniFi syslog forwarding to Wazuh. Configure in UniFi Network Controller
 
 ---
 
+## PrinterLogic / Print Spooler
+
+**Windows Event Log: Application / System**
+
+| Provider | Event ID | Signal |
+|----------|----------|--------|
+| Microsoft-Windows-PrintService | 372 | Print job failed to render |
+| Microsoft-Windows-PrintService | 375 | Print job sent to printer |
+| Microsoft-Windows-PrintService | 6161 | Print spooler failed to load plug-in — usually a driver issue |
+| Microsoft-Windows-PrintService | 808 | Printer driver version mismatch |
+| Service Control Manager | 7036 | Spooler service state change |
+
+**PrinterLogic agent errors** appear in the Application log under Source `PrinterLogic` or `PrinterLogicClient`. Look for error-level entries following a failed deployment event.
+
+**Diagnosis pattern:** Spooler Event 6161 or 808 → driver mismatch or corrupt INF. Restart spooler, then check PrinterLogic admin console Deployment Logs for the affected machine to confirm the correct driver is staged.
+
+---
+
 ## Wazuh Alert Level Reference
 
 | Level | Meaning |
