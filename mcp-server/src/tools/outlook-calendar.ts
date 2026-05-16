@@ -44,7 +44,27 @@ export function registerOutlookCalendarTools(
               "id,subject,organizer,attendees,start,end,location,isOnlineMeeting,onlineMeetingUrl,bodyPreview,showAs,isCancelled",
           },
         });
-        return ok(res.data);
+        type E = Record<string, unknown>;
+        const events = ((res.data as E)["value"] as E[] ?? []).map((e: E) => ({
+          id: e["id"],
+          subject: e["subject"],
+          start: e["start"],
+          end: e["end"],
+          location: (e["location"] as E | undefined)?.["displayName"],
+          organizer: (e["organizer"] as E | undefined)?.["emailAddress"],
+          attendees: (e["attendees"] as E[] | undefined)?.map((a: E) => ({
+            name: (a["emailAddress"] as E | undefined)?.["name"],
+            address: (a["emailAddress"] as E | undefined)?.["address"],
+            type: a["type"],
+            status: (a["status"] as E | undefined)?.["response"],
+          })),
+          isOnlineMeeting: e["isOnlineMeeting"],
+          onlineMeetingUrl: e["onlineMeetingUrl"],
+          bodyPreview: e["bodyPreview"],
+          showAs: e["showAs"],
+          isCancelled: e["isCancelled"],
+        }));
+        return ok({ count: events.length, events });
       } catch (e) {
         return err(e);
       }
@@ -64,7 +84,32 @@ export function registerOutlookCalendarTools(
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/users/${userId}/events/${event_id}`);
-        return ok(res.data);
+        type E = Record<string, unknown>;
+        const e = res.data as E;
+        return ok({
+          id: e["id"],
+          subject: e["subject"],
+          start: e["start"],
+          end: e["end"],
+          location: (e["location"] as E | undefined)?.["displayName"],
+          organizer: (e["organizer"] as E | undefined)?.["emailAddress"],
+          attendees: (e["attendees"] as E[] | undefined)?.map((a: E) => ({
+            name: (a["emailAddress"] as E | undefined)?.["name"],
+            address: (a["emailAddress"] as E | undefined)?.["address"],
+            type: a["type"],
+            status: (a["status"] as E | undefined)?.["response"],
+          })),
+          isOnlineMeeting: e["isOnlineMeeting"],
+          onlineMeetingUrl: e["onlineMeetingUrl"],
+          bodyPreview: e["bodyPreview"],
+          body: (e["body"] as E | undefined)?.["content"],
+          showAs: e["showAs"],
+          isCancelled: e["isCancelled"],
+          isAllDay: e["isAllDay"],
+          recurrence: e["recurrence"],
+          sensitivity: e["sensitivity"],
+          categories: e["categories"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -114,7 +159,17 @@ export function registerOutlookCalendarTools(
             : {}),
         };
         const res = await graphClient(token).post(`/users/${userId}/events`, payload);
-        return ok(res.data);
+        type E = Record<string, unknown>;
+        const e = res.data as E;
+        return ok({
+          id: e["id"],
+          subject: e["subject"],
+          start: e["start"],
+          end: e["end"],
+          isOnlineMeeting: e["isOnlineMeeting"],
+          onlineMeetingUrl: e["onlineMeetingUrl"],
+          webLink: e["webLink"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -148,7 +203,16 @@ export function registerOutlookCalendarTools(
         if (body) payload.body = { contentType: body_type, content: body };
         if (location) payload.location = { displayName: location };
         const res = await graphClient(token).patch(`/users/${userId}/events/${event_id}`, payload);
-        return ok(res.data);
+        type E = Record<string, unknown>;
+        const e = res.data as E;
+        return ok({
+          id: e["id"],
+          subject: e["subject"],
+          start: e["start"],
+          end: e["end"],
+          location: (e["location"] as E | undefined)?.["displayName"],
+          webLink: e["webLink"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -208,7 +272,22 @@ export function registerOutlookCalendarTools(
           minimumAttendeePercentage: 100,
         };
         const res = await graphClient(token).post(`/users/${userId}/findMeetingTimes`, payload);
-        return ok(res.data);
+        type S = Record<string, unknown>;
+        const data = res.data as S;
+        const suggestions = ((data["meetingTimeSuggestions"] as S[] | undefined) ?? []).map((s: S) => ({
+          confidence: s["confidence"],
+          organizerAvailability: s["organizerAvailability"],
+          suggestionReason: s["suggestionReason"],
+          meetingTimeSlot: s["meetingTimeSlot"],
+          attendeeAvailability: (s["attendeeAvailability"] as S[] | undefined)?.map((a: S) => ({
+            attendee: (a["attendee"] as S | undefined)?.["emailAddress"],
+            availability: a["availability"],
+          })),
+        }));
+        return ok({
+          emptySuggestionsReason: data["emptySuggestionsReason"],
+          meetingTimeSuggestions: suggestions,
+        });
       } catch (e) {
         return err(e);
       }

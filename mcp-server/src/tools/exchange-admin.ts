@@ -4,6 +4,8 @@ import { getGraphToken } from "../auth/graph.js";
 import { graphClient, GRAPH_SCOPE, formatError } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 
+type A = Record<string, unknown>;
+
 // NOTE: Graph covers mailbox config, distribution groups, accepted domains, and
 // message-trace reports. Mail flow rules/connectors and anti-spam/malware
 // policies still require Exchange Online PowerShell — use Desktop Commander
@@ -31,7 +33,22 @@ export function registerExchangeAdminTools(server: McpServer, enabled: boolean):
           ),
           graphClient(token).get(`/users/${user_id}/mailboxSettings`),
         ]);
-        return ok({ user: user.data, mailboxSettings: settings.data });
+        const u = user.data as A;
+        const s = settings.data as A;
+        return ok({
+          id: u["id"],
+          displayName: u["displayName"],
+          mail: u["mail"],
+          accountEnabled: u["accountEnabled"],
+          assignedLicenses: u["assignedLicenses"],
+          mailboxSettings: {
+            automaticRepliesSetting: s["automaticRepliesSetting"],
+            language: s["language"],
+            timeZone: s["timeZone"],
+            workingHours: s["workingHours"],
+            delegateMeetingMessageDeliveryOptions: s["delegateMeetingMessageDeliveryOptions"],
+          },
+        });
       } catch (e) {
         return err(e);
       }
@@ -66,7 +83,16 @@ export function registerExchangeAdminTools(server: McpServer, enabled: boolean):
             "id,displayName,mail,groupTypes,membershipRule,description,createdDateTime",
         };
         const res = await graphClient(token).get("/groups", { params });
-        return ok(res.data);
+        const groups = ((res.data as A)["value"] as A[] ?? []).map((g: A) => ({
+          id: g["id"],
+          displayName: g["displayName"],
+          mail: g["mail"],
+          description: g["description"],
+          groupTypes: g["groupTypes"],
+          membershipRule: g["membershipRule"],
+          createdDateTime: g["createdDateTime"],
+        }));
+        return ok({ count: groups.length, groups });
       } catch (e) {
         return err(e);
       }
@@ -88,7 +114,13 @@ export function registerExchangeAdminTools(server: McpServer, enabled: boolean):
         const res = await graphClient(token).get(
           `/groups/${group_id}/members?$top=${top}&$select=id,displayName,mail,userPrincipalName`
         );
-        return ok(res.data);
+        const members = ((res.data as A)["value"] as A[] ?? []).map((m: A) => ({
+          id: m["id"],
+          displayName: m["displayName"],
+          mail: m["mail"],
+          userPrincipalName: m["userPrincipalName"],
+        }));
+        return ok({ count: members.length, members });
       } catch (e) {
         return err(e);
       }
@@ -108,7 +140,14 @@ export function registerExchangeAdminTools(server: McpServer, enabled: boolean):
         const res = await graphClient(token).get(
           "/domains?$select=id,authenticationType,isDefault,isVerified,supportedServices"
         );
-        return ok(res.data);
+        const domains = ((res.data as A)["value"] as A[] ?? []).map((d: A) => ({
+          id: d["id"],
+          authenticationType: d["authenticationType"],
+          isDefault: d["isDefault"],
+          isVerified: d["isVerified"],
+          supportedServices: d["supportedServices"],
+        }));
+        return ok({ count: domains.length, domains });
       } catch (e) {
         return err(e);
       }
@@ -161,7 +200,17 @@ export function registerExchangeAdminTools(server: McpServer, enabled: boolean):
           "/reports/getEmailActivityUserDetail(period='D7')",
           { params }
         );
-        return ok(res.data);
+        const data = res.data as A;
+        const items = ((data["value"] as A[]) ?? []).map((m: A) => ({
+          receivedDateTime: m["receivedDateTime"] ?? m["lastActivityDate"],
+          senderAddress: m["senderAddress"] ?? m["userPrincipalName"],
+          recipientAddress: m["recipientAddress"],
+          subject: m["subject"],
+          status: m["status"] ?? m["deliveryStatus"],
+          messageSize: m["messageSize"] ?? m["messageSentCount"],
+          messageId: m["messageId"],
+        }));
+        return ok({ count: items.length, messages: items });
       } catch (e) {
         // Fallback: note that full message trace requires Exchange Admin permissions
         return err(
@@ -206,10 +255,19 @@ export function registerExchangeAdminTools(server: McpServer, enabled: boolean):
             };
           }
           const res = await graphClient(token).patch(`/users/${user_id}/mailboxSettings`, payload);
-          return ok(res.data);
+          const s = res.data as A;
+          return ok({
+            automaticRepliesSetting: s["automaticRepliesSetting"],
+            timeZone: s["timeZone"],
+          });
         } else {
           const res = await graphClient(token).get(`/users/${user_id}/mailboxSettings`);
-          return ok(res.data);
+          const s = res.data as A;
+          return ok({
+            automaticRepliesSetting: s["automaticRepliesSetting"],
+            timeZone: s["timeZone"],
+            language: s["language"],
+          });
         }
       } catch (e) {
         return err(e);

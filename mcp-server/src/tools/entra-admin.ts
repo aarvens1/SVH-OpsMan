@@ -4,6 +4,8 @@ import { getGraphToken } from "../auth/graph.js";
 import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 
+type A = Record<string, unknown>;
+
 export function registerEntraAdminTools(server: McpServer, enabled: boolean): void {
   if (!enabled) return;
   server.registerTool(
@@ -22,7 +24,16 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
         const res = await graphClient(token).get(
           `/users/${user_id}/authentication/methods`
         );
-        return ok(res.data);
+        const methods = ((res.data as A)["value"] as A[] ?? []).map((m: A) => ({
+          id: m["id"],
+          methodType: m["@odata.type"],
+          displayName: m["displayName"],
+          phoneNumber: m["phoneNumber"],
+          phoneType: m["phoneType"],
+          isDefault: m["isDefault"],
+          createdDateTime: m["createdDateTime"],
+        }));
+        return ok({ count: methods.length, methods });
       } catch (e) {
         return err(e);
       }
@@ -51,7 +62,17 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
           "/identity/conditionalAccess/policies",
           { params }
         );
-        return ok(res.data);
+        const policies = ((res.data as A)["value"] as A[] ?? []).map((p: A) => ({
+          id: p["id"],
+          displayName: p["displayName"],
+          state: p["state"],
+          conditions: p["conditions"],
+          grantControls: p["grantControls"],
+          sessionControls: p["sessionControls"],
+          createdDateTime: p["createdDateTime"],
+          modifiedDateTime: p["modifiedDateTime"],
+        }));
+        return ok({ count: policies.length, policies });
       } catch (e) {
         return err(e);
       }
@@ -82,7 +103,27 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
         };
         if (filter) params["$filter"] = filter;
         const res = await graphClient(token).get("/applications", { params });
-        return ok(res.data);
+        const apps = ((res.data as A)["value"] as A[] ?? []).map((a: A) => ({
+          id: a["id"],
+          displayName: a["displayName"],
+          appId: a["appId"],
+          signInAudience: a["signInAudience"],
+          createdDateTime: a["createdDateTime"],
+          passwordCredentials: (a["passwordCredentials"] as A[] | undefined)?.map((c: A) => ({
+            displayName: c["displayName"],
+            hint: c["hint"],
+            startDateTime: c["startDateTime"],
+            endDateTime: c["endDateTime"],
+          })),
+          keyCredentials: (a["keyCredentials"] as A[] | undefined)?.map((c: A) => ({
+            displayName: c["displayName"],
+            type: c["type"],
+            usage: c["usage"],
+            startDateTime: c["startDateTime"],
+            endDateTime: c["endDateTime"],
+          })),
+        }));
+        return ok({ count: apps.length, applications: apps });
       } catch (e) {
         return err(e);
       }
@@ -172,7 +213,13 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
         const res = await graphClient(token).get("/directoryRoles", {
           params: { $select: "id,displayName,description,roleTemplateId" },
         });
-        return ok(res.data);
+        const roles = ((res.data as A)["value"] as A[] ?? []).map((r: A) => ({
+          id: r["id"],
+          displayName: r["displayName"],
+          description: r["description"],
+          roleTemplateId: r["roleTemplateId"],
+        }));
+        return ok({ count: roles.length, roles });
       } catch (e) {
         return err(e);
       }
@@ -195,7 +242,14 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
         const res = await graphClient(token).get(`/directoryRoles/${role_id}/members`, {
           params: { $select: "id,displayName,userPrincipalName,mail,@odata.type" },
         });
-        return ok(res.data);
+        const members = ((res.data as A)["value"] as A[] ?? []).map((m: A) => ({
+          id: m["id"],
+          displayName: m["displayName"],
+          userPrincipalName: m["userPrincipalName"],
+          mail: m["mail"],
+          type: m["@odata.type"],
+        }));
+        return ok({ count: members.length, members });
       } catch (e) {
         return err(e);
       }
@@ -225,7 +279,16 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
         };
         if (risk_level !== "all") params["$filter"] = `riskLevel eq '${risk_level}'`;
         const res = await graphClient(token).get("/identityProtection/riskyUsers", { params });
-        return ok(res.data);
+        const users = ((res.data as A)["value"] as A[] ?? []).map((u: A) => ({
+          id: u["id"],
+          userDisplayName: u["userDisplayName"],
+          userPrincipalName: u["userPrincipalName"],
+          riskLevel: u["riskLevel"],
+          riskState: u["riskState"],
+          riskDetail: u["riskDetail"],
+          riskLastUpdatedDateTime: u["riskLastUpdatedDateTime"],
+        }));
+        return ok({ count: users.length, riskyUsers: users });
       } catch (e) {
         return err(e);
       }
@@ -307,7 +370,22 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
               "id,createdDateTime,userDisplayName,userPrincipalName,appDisplayName,ipAddress,location,status,conditionalAccessStatus,mfaDetail,deviceDetail,clientAppUsed,riskLevelDuringSignIn",
           },
         });
-        return ok(res.data);
+        const signIns = ((res.data as A)["value"] as A[] ?? []).map((s: A) => ({
+          id: s["id"],
+          createdDateTime: s["createdDateTime"],
+          userDisplayName: s["userDisplayName"],
+          userPrincipalName: s["userPrincipalName"],
+          appDisplayName: s["appDisplayName"],
+          ipAddress: s["ipAddress"],
+          location: s["location"],
+          status: s["status"],
+          conditionalAccessStatus: s["conditionalAccessStatus"],
+          mfaDetail: s["mfaDetail"],
+          deviceDetail: s["deviceDetail"],
+          clientAppUsed: s["clientAppUsed"],
+          riskLevelDuringSignIn: s["riskLevelDuringSignIn"],
+        }));
+        return ok({ count: signIns.length, signIns });
       } catch (e) {
         return err(e);
       }
@@ -355,7 +433,17 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
               "id,activityDateTime,activityDisplayName,category,result,resultReason,initiatedBy,targetResources",
           },
         });
-        return ok(res.data);
+        const logs = ((res.data as A)["value"] as A[] ?? []).map((l: A) => ({
+          id: l["id"],
+          activityDateTime: l["activityDateTime"],
+          activityDisplayName: l["activityDisplayName"],
+          category: l["category"],
+          result: l["result"],
+          resultReason: l["resultReason"],
+          initiatedBy: l["initiatedBy"],
+          targetResources: l["targetResources"],
+        }));
+        return ok({ count: logs.length, auditLogs: logs });
       } catch (e) {
         return err(e);
       }

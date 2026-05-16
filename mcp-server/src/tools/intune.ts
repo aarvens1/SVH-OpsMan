@@ -4,6 +4,8 @@ import { getGraphToken } from "../auth/graph.js";
 import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 
+type A = Record<string, unknown>;
+
 export function registerIntuneTools(server: McpServer, enabled: boolean): void {
   if (!enabled) return;
 
@@ -35,7 +37,27 @@ export function registerIntuneTools(server: McpServer, enabled: boolean): void {
         const params: Record<string, string | number> = { $top: top };
         if (filters.length) params["$filter"] = filters.join(" and ");
         const res = await graphClient(token).get("/deviceManagement/managedDevices", { params });
-        return ok(res.data);
+        const devices = ((res.data as A)["value"] as A[] ?? []).map((d: A) => ({
+          id: d["id"],
+          deviceName: d["deviceName"],
+          operatingSystem: d["operatingSystem"],
+          osVersion: d["osVersion"],
+          complianceState: d["complianceState"],
+          managementState: d["managementState"],
+          enrollmentType: d["enrollmentType"],
+          lastSyncDateTime: d["lastSyncDateTime"],
+          enrolledDateTime: d["enrolledDateTime"],
+          userPrincipalName: d["userPrincipalName"],
+          userDisplayName: d["userDisplayName"],
+          serialNumber: d["serialNumber"],
+          model: d["model"],
+          manufacturer: d["manufacturer"],
+          isEncrypted: d["isEncrypted"],
+          managedDeviceOwnerType: d["managedDeviceOwnerType"],
+          aadRegistered: d["aadRegistered"],
+          azureADRegistered: d["azureADRegistered"],
+        }));
+        return ok({ count: devices.length, devices });
       } catch (e) {
         return err(e);
       }
@@ -55,7 +77,39 @@ export function registerIntuneTools(server: McpServer, enabled: boolean): void {
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/deviceManagement/managedDevices/${device_id}`);
-        return ok(res.data);
+        const d = res.data as A;
+        return ok({
+          id: d["id"],
+          deviceName: d["deviceName"],
+          operatingSystem: d["operatingSystem"],
+          osVersion: d["osVersion"],
+          complianceState: d["complianceState"],
+          managementState: d["managementState"],
+          enrollmentType: d["enrollmentType"],
+          lastSyncDateTime: d["lastSyncDateTime"],
+          enrolledDateTime: d["enrolledDateTime"],
+          userPrincipalName: d["userPrincipalName"],
+          userDisplayName: d["userDisplayName"],
+          serialNumber: d["serialNumber"],
+          model: d["model"],
+          manufacturer: d["manufacturer"],
+          isEncrypted: d["isEncrypted"],
+          totalStorageSpaceInBytes: d["totalStorageSpaceInBytes"],
+          freeStorageSpaceInBytes: d["freeStorageSpaceInBytes"],
+          physicalMemoryInBytes: d["physicalMemoryInBytes"],
+          processorArchitecture: d["processorArchitecture"],
+          imei: d["imei"],
+          meid: d["meid"],
+          wiFiMacAddress: d["wiFiMacAddress"],
+          ethernetMacAddress: d["ethernetMacAddress"],
+          managedDeviceOwnerType: d["managedDeviceOwnerType"],
+          aadRegistered: d["aadRegistered"],
+          azureADDeviceId: d["azureADDeviceId"],
+          deviceEnrollmentType: d["deviceEnrollmentType"],
+          activationLockBypassCode: d["activationLockBypassCode"],
+          emailAddress: d["emailAddress"],
+          azureActiveDirectoryDeviceId: d["azureActiveDirectoryDeviceId"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -77,7 +131,16 @@ export function registerIntuneTools(server: McpServer, enabled: boolean): void {
         const res = await graphClient(token).get(
           `/deviceManagement/managedDevices/${device_id}/deviceCompliancePolicyStates`
         );
-        return ok(res.data);
+        const states = ((res.data as A)["value"] as A[] ?? []).map((s: A) => ({
+          id: s["id"],
+          displayName: s["displayName"],
+          state: s["state"],
+          version: s["version"],
+          settingCount: s["settingCount"],
+          settingStates: s["settingStates"],
+          platformType: s["platformType"],
+        }));
+        return ok({ count: states.length, policyStates: states });
       } catch (e) {
         return err(e);
       }
@@ -97,7 +160,16 @@ export function registerIntuneTools(server: McpServer, enabled: boolean): void {
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get("/deviceManagement/deviceCompliancePolicies");
-        return ok(res.data);
+        const policies = ((res.data as A)["value"] as A[] ?? []).map((p: A) => ({
+          id: p["id"],
+          displayName: p["displayName"],
+          description: p["description"],
+          version: p["version"],
+          createdDateTime: p["createdDateTime"],
+          lastModifiedDateTime: p["lastModifiedDateTime"],
+          scheduledActionsForRule: p["scheduledActionsForRule"],
+        }));
+        return ok({ count: policies.length, policies });
       } catch (e) {
         return err(e);
       }
@@ -117,7 +189,15 @@ export function registerIntuneTools(server: McpServer, enabled: boolean): void {
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get("/deviceManagement/deviceConfigurations");
-        return ok(res.data);
+        const configs = ((res.data as A)["value"] as A[] ?? []).map((c: A) => ({
+          id: c["id"],
+          displayName: c["displayName"],
+          description: c["description"],
+          version: c["version"],
+          createdDateTime: c["createdDateTime"],
+          lastModifiedDateTime: c["lastModifiedDateTime"],
+        }));
+        return ok({ count: configs.length, configurations: configs });
       } catch (e) {
         return err(e);
       }
@@ -141,7 +221,20 @@ export function registerIntuneTools(server: McpServer, enabled: boolean): void {
         const res = await graphClient(token).get("/deviceAppManagement/mobileApps", {
           params: { $top: top },
         });
-        return ok(res.data);
+        const apps = ((res.data as A)["value"] as A[] ?? []).map((a: A) => ({
+          id: a["id"],
+          displayName: a["displayName"],
+          description: a["description"],
+          publisher: a["publisher"],
+          appVersion: a["appVersion"],
+          publishingState: a["publishingState"],
+          createdDateTime: a["createdDateTime"],
+          lastModifiedDateTime: a["lastModifiedDateTime"],
+          isFeatured: a["isFeatured"],
+          privacyInformationUrl: a["privacyInformationUrl"],
+          informationUrl: a["informationUrl"],
+        }));
+        return ok({ count: apps.length, apps });
       } catch (e) {
         return err(e);
       }

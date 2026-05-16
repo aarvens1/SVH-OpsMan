@@ -4,6 +4,8 @@ import { getGraphToken } from "../auth/graph.js";
 import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 
+type A = Record<string, unknown>;
+
 export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
   if (!enabled) return;
 
@@ -23,7 +25,14 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
         const token = await getGraphToken(GRAPH_SCOPE);
         const base = user_id ? `/users/${user_id}` : "/me";
         const res = await graphClient(token).get(`${base}/todo/lists`);
-        return ok(res.data);
+        const lists = ((res.data as A)["value"] as A[] ?? []).map((l: A) => ({
+          id: l["id"],
+          displayName: l["displayName"],
+          isOwner: l["isOwner"],
+          isShared: l["isShared"],
+          wellknownListName: l["wellknownListName"],
+        }));
+        return ok({ count: lists.length, lists });
       } catch (e) {
         return err(e);
       }
@@ -57,7 +66,19 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
           `${base}/todo/lists/${list_id}/tasks`,
           { params }
         );
-        return ok(res.data);
+        const tasks = ((res.data as A)["value"] as A[] ?? []).map((t: A) => ({
+          id: t["id"],
+          title: t["title"],
+          status: t["status"],
+          importance: t["importance"],
+          dueDateTime: t["dueDateTime"],
+          reminderDateTime: t["reminderDateTime"],
+          isReminderOn: t["isReminderOn"],
+          createdDateTime: t["createdDateTime"],
+          lastModifiedDateTime: t["lastModifiedDateTime"],
+          body: (t["body"] as A | undefined)?.["content"],
+        }));
+        return ok({ count: tasks.length, tasks });
       } catch (e) {
         return err(e);
       }
@@ -84,7 +105,26 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
             `${base}/todo/lists/${list_id}/tasks/${task_id}/checklistItems`
           ),
         ]);
-        return ok({ ...task.data, checklistItems: checklist.data.value });
+        const t = task.data as A;
+        const checkItems = ((checklist.data as A)["value"] as A[] ?? []).map((c: A) => ({
+          id: c["id"],
+          displayName: c["displayName"],
+          isChecked: c["isChecked"],
+          createdDateTime: c["createdDateTime"],
+        }));
+        return ok({
+          id: t["id"],
+          title: t["title"],
+          status: t["status"],
+          importance: t["importance"],
+          dueDateTime: t["dueDateTime"],
+          reminderDateTime: t["reminderDateTime"],
+          isReminderOn: t["isReminderOn"],
+          createdDateTime: t["createdDateTime"],
+          lastModifiedDateTime: t["lastModifiedDateTime"],
+          body: (t["body"] as A | undefined)?.["content"],
+          checklistItems: checkItems,
+        });
       } catch (e) {
         return err(e);
       }
@@ -132,7 +172,15 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
           `${base}/todo/lists/${list_id}/tasks`,
           payload
         );
-        return ok(res.data);
+        const t = res.data as A;
+        return ok({
+          id: t["id"],
+          title: t["title"],
+          status: t["status"],
+          importance: t["importance"],
+          dueDateTime: t["dueDateTime"],
+          createdDateTime: t["createdDateTime"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -172,7 +220,15 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
           `${base}/todo/lists/${list_id}/tasks/${task_id}`,
           payload
         );
-        return ok(res.data);
+        const t = res.data as A;
+        return ok({
+          id: t["id"],
+          title: t["title"],
+          status: t["status"],
+          importance: t["importance"],
+          dueDateTime: t["dueDateTime"],
+          lastModifiedDateTime: t["lastModifiedDateTime"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -199,7 +255,13 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
           `${base}/todo/lists/${list_id}/tasks/${task_id}/checklistItems`,
           { displayName: display_name, isChecked: is_checked }
         );
-        return ok(res.data);
+        const c = res.data as A;
+        return ok({
+          id: c["id"],
+          displayName: c["displayName"],
+          isChecked: c["isChecked"],
+          createdDateTime: c["createdDateTime"],
+        });
       } catch (e) {
         return err(e);
       }

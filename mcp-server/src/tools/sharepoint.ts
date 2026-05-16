@@ -4,6 +4,8 @@ import { getGraphToken } from "../auth/graph.js";
 import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 
+type A = Record<string, unknown>;
+
 // Read-only — views sites, lists, pages, permissions, content types.
 // File operations (browse, search, download) live in onedrive.ts (Graph drives).
 
@@ -26,7 +28,14 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
         const res = await graphClient(token).get(
           `/sites?search=${encodeURIComponent(query)}&$top=${top}&$select=id,displayName,webUrl,description,createdDateTime`
         );
-        return ok(res.data);
+        const sites = ((res.data as A)["value"] as A[] ?? []).map((s: A) => ({
+          id: s["id"],
+          displayName: s["displayName"],
+          webUrl: s["webUrl"],
+          description: s["description"],
+          createdDateTime: s["createdDateTime"],
+        }));
+        return ok({ count: sites.length, sites });
       } catch (e) {
         return err(e);
       }
@@ -51,7 +60,17 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
         const token = await getGraphToken(GRAPH_SCOPE);
         const path = site_id.includes("sharepoint.com") ? `/sites/${site_id}` : `/sites/${site_id}`;
         const res = await graphClient(token).get(path);
-        return ok(res.data);
+        const s = res.data as A;
+        return ok({
+          id: s["id"],
+          displayName: s["displayName"],
+          name: s["name"],
+          webUrl: s["webUrl"],
+          description: s["description"],
+          createdDateTime: s["createdDateTime"],
+          lastModifiedDateTime: s["lastModifiedDateTime"],
+          siteCollection: s["siteCollection"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -76,7 +95,17 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
         };
         if (!include_hidden) params["$filter"] = "list/hidden eq false";
         const res = await graphClient(token).get(`/sites/${site_id}/lists`, { params });
-        return ok(res.data);
+        const lists = ((res.data as A)["value"] as A[] ?? []).map((l: A) => ({
+          id: l["id"],
+          displayName: l["displayName"],
+          description: l["description"],
+          webUrl: l["webUrl"],
+          createdDateTime: l["createdDateTime"],
+          lastModifiedDateTime: l["lastModifiedDateTime"],
+          template: (l["list"] as A | undefined)?.["template"],
+          isHidden: (l["list"] as A | undefined)?.["hidden"],
+        }));
+        return ok({ count: lists.length, lists });
       } catch (e) {
         return err(e);
       }
@@ -109,7 +138,13 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
           `/sites/${site_id}/lists/${list_id}/items`,
           { params }
         );
-        return ok(res.data);
+        const items = ((res.data as A)["value"] as A[] ?? []).map((item: A) => ({
+          id: item["id"],
+          createdDateTime: item["createdDateTime"],
+          lastModifiedDateTime: item["lastModifiedDateTime"],
+          fields: item["fields"],
+        }));
+        return ok({ count: items.length, items });
       } catch (e) {
         return err(e);
       }
@@ -131,7 +166,16 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
         const res = await graphClient(token).get(
           `/sites/${site_id}/pages?$top=${top}&$select=id,name,title,webUrl,publishingState,lastModifiedDateTime,lastModifiedBy`
         );
-        return ok(res.data);
+        const pages = ((res.data as A)["value"] as A[] ?? []).map((p: A) => ({
+          id: p["id"],
+          name: p["name"],
+          title: p["title"],
+          webUrl: p["webUrl"],
+          publishingState: (p["publishingState"] as A | undefined)?.["level"],
+          lastModifiedDateTime: p["lastModifiedDateTime"],
+          lastModifiedBy: (p["lastModifiedBy"] as A | undefined)?.["user"],
+        }));
+        return ok({ count: pages.length, pages });
       } catch (e) {
         return err(e);
       }
@@ -151,7 +195,13 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/sites/${site_id}/permissions`);
-        return ok(res.data);
+        const perms = ((res.data as A)["value"] as A[] ?? []).map((p: A) => ({
+          id: p["id"],
+          roles: p["roles"],
+          grantedTo: p["grantedTo"],
+          grantedToIdentities: p["grantedToIdentities"],
+        }));
+        return ok({ count: perms.length, permissions: perms });
       } catch (e) {
         return err(e);
       }
@@ -172,7 +222,14 @@ export function registerSharePointTools(server: McpServer, enabled: boolean): vo
         const res = await graphClient(token).get(
           `/sites/${site_id}/contentTypes?$select=id,name,description,group,isBuiltIn`
         );
-        return ok(res.data);
+        const types = ((res.data as A)["value"] as A[] ?? []).map((ct: A) => ({
+          id: ct["id"],
+          name: ct["name"],
+          description: ct["description"],
+          group: ct["group"],
+          isBuiltIn: ct["isBuiltIn"],
+        }));
+        return ok({ count: types.length, contentTypes: types });
       } catch (e) {
         return err(e);
       }

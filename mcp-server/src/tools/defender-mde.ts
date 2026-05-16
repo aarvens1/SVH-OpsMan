@@ -4,6 +4,19 @@ import { getMdeToken } from "../auth/mde.js";
 import { mdeClient } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 
+type A = Record<string, unknown>;
+
+// TTL cache for mde_list_devices
+const responseCache = new Map<string, { data: unknown; expires_at: number }>();
+function getCached(key: string): unknown | null {
+  const entry = responseCache.get(key);
+  if (entry && Date.now() < entry.expires_at) return entry.data;
+  return null;
+}
+function setCached(key: string, data: unknown, ttlMs = 60_000): void {
+  responseCache.set(key, { data, expires_at: Date.now() + ttlMs });
+}
+
 export function registerDefenderMdeTools(server: McpServer, enabled: boolean): void {
   if (!enabled) return;
 
@@ -27,6 +40,10 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
     },
     async ({ health_status, risk_score, top }) => {
       try {
+        const cacheKey = `mde_list_devices:${health_status}:${risk_score}:${top}`;
+        const cached = getCached(cacheKey);
+        if (cached) return ok(cached);
+
         const token = await getMdeToken();
         const filters: string[] = [];
         if (health_status !== "all") filters.push(`healthStatus eq '${health_status}'`);
@@ -34,7 +51,30 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
         const params: Record<string, string | number> = { $top: top };
         if (filters.length) params["$filter"] = filters.join(" and ");
         const res = await mdeClient(token).get("/machines", { params });
-        return ok(res.data);
+        const devices = ((res.data as A)["value"] as A[] ?? []).map((d: A) => ({
+          id: d["id"],
+          computerDnsName: d["computerDnsName"],
+          osPlatform: d["osPlatform"],
+          osVersion: d["osVersion"],
+          healthStatus: d["healthStatus"],
+          riskScore: d["riskScore"],
+          exposureLevel: d["exposureLevel"],
+          lastSeen: d["lastSeen"],
+          firstSeen: d["firstSeen"],
+          ipAddresses: (d["ipAddresses"] as A[] | undefined)?.map((ip: A) => ({
+            ipAddress: ip["ipAddress"],
+            macAddress: ip["macAddress"],
+            type: ip["type"],
+          })),
+          onboardingStatus: d["onboardingStatus"],
+          aadDeviceId: d["aadDeviceId"],
+          defenderAvStatus: d["defenderAvStatus"],
+          groupName: d["rbacGroupName"],
+          tags: d["machineTags"],
+        }));
+        const shaped = { count: devices.length, devices };
+        setCached(cacheKey, shaped);
+        return ok(shaped);
       } catch (e) {
         return err(e);
       }
@@ -55,7 +95,26 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
       try {
         const token = await getMdeToken();
         const res = await mdeClient(token).get(`/machines/${machine_id}`);
-        return ok(res.data);
+        const d = res.data as A;
+        return ok({
+          id: d["id"],
+          computerDnsName: d["computerDnsName"],
+          osPlatform: d["osPlatform"],
+          osVersion: d["osVersion"],
+          osProcessor: d["osProcessor"],
+          healthStatus: d["healthStatus"],
+          riskScore: d["riskScore"],
+          exposureLevel: d["exposureLevel"],
+          lastSeen: d["lastSeen"],
+          firstSeen: d["firstSeen"],
+          ipAddresses: d["ipAddresses"],
+          onboardingStatus: d["onboardingStatus"],
+          aadDeviceId: d["aadDeviceId"],
+          defenderAvStatus: d["defenderAvStatus"],
+          groupName: d["rbacGroupName"],
+          tags: d["machineTags"],
+          agentVersion: d["agentVersion"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -86,7 +145,21 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
           `/machines/${machine_id}/vulnerabilities`,
           { params }
         );
-        return ok(res.data);
+        const vulns = ((res.data as A)["value"] as A[] ?? []).map((v: A) => ({
+          id: v["id"],
+          name: v["name"],
+          description: v["description"],
+          severity: v["severity"],
+          cvssV3: v["cvssV3"],
+          exposedMachines: v["exposedMachines"],
+          publishedOn: v["publishedOn"],
+          updatedOn: v["updatedOn"],
+          publicExploit: v["publicExploit"],
+          exploitInKit: v["exploitInKit"],
+          exploitTypes: v["exploitTypes"],
+          exploitUris: v["exploitUris"],
+        }));
+        return ok({ count: vulns.length, vulnerabilities: vulns });
       } catch (e) {
         return err(e);
       }
@@ -117,7 +190,26 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
         const params: Record<string, string | number> = { $top: top };
         if (filters.length) params["$filter"] = filters.join(" and ");
         const res = await mdeClient(token).get("/alerts", { params });
-        return ok(res.data);
+        const alerts = ((res.data as A)["value"] as A[] ?? []).map((a: A) => ({
+          id: a["id"],
+          title: a["title"],
+          description: a["description"],
+          severity: a["severity"],
+          status: a["status"],
+          category: a["category"],
+          detectionSource: a["detectionSource"],
+          threatName: a["threatName"],
+          threatFamilyName: a["threatFamilyName"],
+          alertCreationTime: a["alertCreationTime"],
+          lastEventTime: a["lastEventTime"],
+          machineId: a["machineId"],
+          computerDnsName: a["computerDnsName"],
+          assignedTo: a["assignedTo"],
+          determination: a["determination"],
+          investigationState: a["investigationState"],
+          mitreTechniques: a["mitreTechniques"],
+        }));
+        return ok({ count: alerts.length, alerts });
       } catch (e) {
         return err(e);
       }
@@ -149,7 +241,20 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
         const params: Record<string, string | number> = { $top: top };
         if (filters.length) params["$filter"] = filters.join(" and ");
         const res = await mdeClient(token).get("/indicators", { params });
-        return ok(res.data);
+        const indicators = ((res.data as A)["value"] as A[] ?? []).map((i: A) => ({
+          id: i["id"],
+          indicatorValue: i["indicatorValue"],
+          indicatorType: i["indicatorType"],
+          action: i["action"],
+          title: i["title"],
+          description: i["description"],
+          severity: i["severity"],
+          createdBy: i["createdBy"],
+          creationTimeDateTimeUtc: i["creationTimeDateTimeUtc"],
+          expirationTime: i["expirationTime"],
+          application: i["application"],
+        }));
+        return ok({ count: indicators.length, indicators });
       } catch (e) {
         return err(e);
       }
@@ -172,7 +277,27 @@ export function registerDefenderMdeTools(server: McpServer, enabled: boolean): v
         const res = await mdeClient(token).get("/recommendations", {
           params: { $top: top, $orderby: "exposureLevel desc" },
         });
-        return ok(res.data);
+        const recs = ((res.data as A)["value"] as A[] ?? []).map((r: A) => ({
+          id: r["id"],
+          productName: r["productName"],
+          recommendationName: r["recommendationName"],
+          weaknesses: r["weaknesses"],
+          vendor: r["vendor"],
+          recommendedProgram: r["recommendedProgram"],
+          recommendedVersion: r["recommendedVersion"],
+          recommendedVendor: r["recommendedVendor"],
+          status: r["status"],
+          severity: r["severity"],
+          exposureLevel: r["exposureLevel"],
+          configScoreImpact: r["configScoreImpact"],
+          exposureImpact: r["exposureImpact"],
+          remediationType: r["remediationType"],
+          publicExploit: r["publicExploit"],
+          activeAlert: r["activeAlert"],
+          associatedThreats: r["associatedThreats"],
+          exposedMachinesCount: r["exposedMachinesCount"],
+        }));
+        return ok({ count: recs.length, recommendations: recs });
       } catch (e) {
         return err(e);
       }

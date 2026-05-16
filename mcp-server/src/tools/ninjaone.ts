@@ -4,6 +4,17 @@ import { getNinjaToken } from "../auth/ninja.js";
 import { ninjaClient } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 
+// TTL cache for ninja_list_servers
+const responseCache = new Map<string, { data: unknown; expires_at: number }>();
+function getCached(key: string): unknown | null {
+  const entry = responseCache.get(key);
+  if (entry && Date.now() < entry.expires_at) return entry.data;
+  return null;
+}
+function setCached(key: string, data: unknown, ttlMs = 60_000): void {
+  responseCache.set(key, { data, expires_at: Date.now() + ttlMs });
+}
+
 export function registerNinjaOneTools(server: McpServer, enabled: boolean): void {
   if (!enabled) return;
 
@@ -34,6 +45,10 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
     },
     async ({ os_filter, org_id, page_size, after }) => {
       try {
+        const cacheKey = `ninja_list_servers:${os_filter}:${org_id ?? ""}:${page_size}:${after ?? ""}`;
+        const cached = getCached(cacheKey);
+        if (cached) return ok(cached);
+
         const token = await getNinjaToken();
         const classes = os_filter.split(",").map((t) => t.trim()).join(",");
         const dfParts: string[] = [`class in (${classes})`];
@@ -44,7 +59,7 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         };
         if (after) params["after"] = after;
         const res = await ninjaClient(token).get("/devices", { params });
-        return ok((res.data as Record<string, unknown>[]).map((d) => ({
+        const shaped = (res.data as Record<string, unknown>[]).map((d) => ({
           id: d["id"],
           displayName: d["displayName"] ?? d["systemName"],
           dnsName: d["dnsName"],
@@ -53,7 +68,9 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
           offline: d["offline"],
           lastContact: d["lastContact"],
           osName: d["osName"],
-        })));
+        }));
+        setCached(cacheKey, shaped);
+        return ok(shaped);
       } catch (e) {
         return err(e);
       }
@@ -181,7 +198,18 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         const res = await ninjaClient(token).get(
           `/device/${device_id}/script/result/${result_id}`
         );
-        return ok(res.data);
+        const d = res.data as Record<string, unknown>;
+        return ok({
+          id: d["id"],
+          deviceId: d["deviceId"],
+          scriptId: d["scriptId"],
+          status: d["status"],
+          exitCode: d["exitCode"],
+          output: d["output"],
+          startTime: d["startTime"],
+          endTime: d["endTime"],
+          duration: d["duration"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -209,7 +237,18 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         const params: Record<string, string> = { status: "PENDING" };
         if (severity) params["severity"] = severity.toUpperCase();
         const res = await ninjaClient(token).get(`/device/${device_id}/patches`, { params });
-        return ok(res.data);
+        const patches = (res.data as Record<string, unknown>[]).map((p) => ({
+          id: p["id"],
+          name: p["name"],
+          kbNumber: p["kbNumber"],
+          severity: p["severity"],
+          status: p["status"],
+          rebootRequired: p["rebootRequired"],
+          installedAt: p["installedAt"],
+          publishedDate: p["publishedDate"],
+          type: p["type"],
+        }));
+        return ok(patches);
       } catch (e) {
         return err(e);
       }
@@ -231,7 +270,18 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         const res = await ninjaClient(token).get(`/device/${device_id}/patches`, {
           params: { status: "INSTALLED", pageSize: page_size },
         });
-        return ok(res.data);
+        const patches = (res.data as Record<string, unknown>[]).map((p) => ({
+          id: p["id"],
+          name: p["name"],
+          kbNumber: p["kbNumber"],
+          severity: p["severity"],
+          status: p["status"],
+          rebootRequired: p["rebootRequired"],
+          installedAt: p["installedAt"],
+          publishedDate: p["publishedDate"],
+          type: p["type"],
+        }));
+        return ok(patches);
       } catch (e) {
         return err(e);
       }
@@ -253,7 +303,18 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/device/${device_id}/volumes`);
-        return ok(res.data);
+        const volumes = (res.data as Record<string, unknown>[]).map((v) => ({
+          name: v["name"],
+          label: v["label"],
+          deviceType: v["deviceType"],
+          fileSystem: v["fileSystem"],
+          capacity: v["capacity"],
+          freeSpace: v["freeSpace"],
+          percentUsed: v["capacity"] != null && v["freeSpace"] != null
+            ? Math.round((1 - (v["freeSpace"] as number) / (v["capacity"] as number)) * 100)
+            : null,
+        }));
+        return ok(volumes);
       } catch (e) {
         return err(e);
       }
@@ -327,7 +388,17 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/device/${device_id}/alerts`);
-        return ok(res.data);
+        const alerts = (res.data as Record<string, unknown>[]).map((a) => ({
+          id: a["id"],
+          deviceId: a["deviceId"],
+          severity: a["severity"],
+          message: a["message"],
+          type: a["type"],
+          triggered: a["triggered"],
+          status: a["status"],
+          sourceConfigUid: a["sourceConfigUid"],
+        }));
+        return ok(alerts);
       } catch (e) {
         return err(e);
       }
@@ -349,7 +420,17 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/device/${device_id}/backup`);
-        return ok(res.data);
+        const backups = (res.data as Record<string, unknown>[]).map((b) => ({
+          deviceId: b["deviceId"],
+          planName: b["planName"],
+          jobName: b["jobName"],
+          status: b["status"],
+          lastRun: b["lastRun"],
+          nextRun: b["nextRun"],
+          backupSize: b["backupSize"],
+          errorMessage: b["errorMessage"],
+        }));
+        return ok(backups);
       } catch (e) {
         return err(e);
       }
@@ -423,7 +504,15 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         if (after) params["after"] = after;
         if (lang) params["lang"] = lang;
         const res = await ninjaClient(token).get("/scripting/scripts", { params });
-        return ok(res.data);
+        const scripts = (res.data as Record<string, unknown>[]).map((s) => ({
+          id: s["id"],
+          name: s["name"],
+          description: s["description"],
+          language: s["language"],
+          scope: s["scope"],
+          category: s["category"],
+        }));
+        return ok(scripts);
       } catch (e) {
         return err(e);
       }
@@ -442,7 +531,17 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/scripting/script/${script_id}`);
-        return ok(res.data);
+        const s = res.data as Record<string, unknown>;
+        return ok({
+          id: s["id"],
+          name: s["name"],
+          description: s["description"],
+          language: s["language"],
+          scope: s["scope"],
+          category: s["category"],
+          content: s["content"],
+          parameters: s["parameters"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -464,7 +563,8 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/device/${device_id}/custom-fields`);
-        return ok(res.data);
+        // Custom fields come back as a flat key-value object — pass through as-is (already shaped)
+        return ok(res.data as Record<string, unknown>);
       } catch (e) {
         return err(e);
       }
@@ -484,7 +584,8 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/organization/${org_id}/custom-fields`);
-        return ok(res.data);
+        // Custom fields come back as a flat key-value object — pass through as-is (already shaped)
+        return ok(res.data as Record<string, unknown>);
       } catch (e) {
         return err(e);
       }
@@ -513,7 +614,15 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         const params: Record<string, number> = { pageSize: page_size };
         if (after) params["after"] = after;
         const res = await ninjaClient(token).get("/organizations", { params });
-        return ok(res.data);
+        const orgs = (res.data as Record<string, unknown>[]).map((o) => ({
+          id: o["id"],
+          name: o["name"],
+          description: o["description"],
+          nodeApprovalMode: o["nodeApprovalMode"],
+          tags: o["tags"],
+          fields: o["fields"],
+        }));
+        return ok(orgs);
       } catch (e) {
         return err(e);
       }
@@ -532,7 +641,17 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       try {
         const token = await getNinjaToken();
         const res = await ninjaClient(token).get(`/organization/${org_id}`);
-        return ok(res.data);
+        const o = res.data as Record<string, unknown>;
+        return ok({
+          id: o["id"],
+          name: o["name"],
+          description: o["description"],
+          nodeApprovalMode: o["nodeApprovalMode"],
+          tags: o["tags"],
+          fields: o["fields"],
+          locations: o["locations"],
+          policies: o["policies"],
+        });
       } catch (e) {
         return err(e);
       }

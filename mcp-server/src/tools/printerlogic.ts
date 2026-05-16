@@ -3,6 +3,8 @@ import { z } from "zod";
 import { printerlogicClient } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 
+type A = Record<string, unknown>;
+
 // Custom build wrapping the Vasion (formerly PrinterLogic) REST API.
 // Read-only: browse, deployment status, audit logs, quotas.
 
@@ -32,7 +34,20 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
         if (search) params.search = search;
         if (folder_id) params.folder_id = folder_id;
         const res = await client.get("/api/v1/printers", { params });
-        return ok(res.data);
+        const raw = res.data as A;
+        const items = ((raw["printers"] as A[] | undefined) ?? (raw["data"] as A[] | undefined) ?? (Array.isArray(raw) ? raw as A[] : []));
+        const printers = items.map((p: A) => ({
+          id: p["id"],
+          name: p["name"],
+          ip_address: p["ip_address"] ?? p["ipAddress"],
+          location: p["location"],
+          driver_name: p["driver_name"] ?? p["driverName"],
+          status: p["status"],
+          active: p["active"] ?? p["enabled"],
+          folder_id: p["folder_id"] ?? p["folderId"],
+          model: p["model"],
+        }));
+        return ok({ total: raw["total"] ?? raw["count"], count: printers.length, printers });
       } catch (e) {
         return err(e);
       }
@@ -54,7 +69,24 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
           client.get(`/api/v1/printers/${printer_id}`),
           client.get(`/api/v1/printers/${printer_id}/deployments`),
         ]);
-        return ok({ ...details.data, deployments: deployments.data });
+        const d = details.data as A;
+        const dep = deployments.data as A;
+        return ok({
+          id: d["id"],
+          name: d["name"],
+          ip_address: d["ip_address"] ?? d["ipAddress"],
+          location: d["location"],
+          driver_name: d["driver_name"] ?? d["driverName"],
+          driver_id: d["driver_id"] ?? d["driverId"],
+          status: d["status"],
+          active: d["active"] ?? d["enabled"],
+          folder_id: d["folder_id"] ?? d["folderId"],
+          model: d["model"],
+          port: d["port"],
+          protocol: d["protocol"],
+          settings: d["settings"],
+          deployments: (dep["deployments"] as A[] | undefined) ?? (dep["data"] as A[] | undefined) ?? (Array.isArray(dep) ? dep : []),
+        });
       } catch (e) {
         return err(e);
       }
@@ -81,7 +113,18 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
         if (search) params.search = search;
         if (os_filter) params.os = os_filter;
         const res = await client.get("/api/v1/drivers", { params });
-        return ok(res.data);
+        const raw = res.data as A;
+        const items = ((raw["drivers"] as A[] | undefined) ?? (raw["data"] as A[] | undefined) ?? (Array.isArray(raw) ? raw as A[] : []));
+        const drivers = items.map((d: A) => ({
+          id: d["id"],
+          name: d["name"],
+          version: d["version"],
+          manufacturer: d["manufacturer"],
+          os_compatibility: d["os_compatibility"] ?? d["osCompatibility"],
+          inf_file: d["inf_file"] ?? d["infFile"],
+          created: d["created"] ?? d["createdAt"],
+        }));
+        return ok({ count: drivers.length, drivers });
       } catch (e) {
         return err(e);
       }
@@ -101,7 +144,17 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
       try {
         const client = printerlogicClient();
         const res = await client.get("/api/v1/profiles", { params: { limit } });
-        return ok(res.data);
+        const raw = res.data as A;
+        const items = ((raw["profiles"] as A[] | undefined) ?? (raw["data"] as A[] | undefined) ?? (Array.isArray(raw) ? raw as A[] : []));
+        const profiles = items.map((p: A) => ({
+          id: p["id"],
+          name: p["name"],
+          description: p["description"],
+          enabled: p["enabled"] ?? p["active"],
+          type: p["type"],
+          target_count: p["target_count"] ?? p["targetCount"],
+        }));
+        return ok({ count: profiles.length, profiles });
       } catch (e) {
         return err(e);
       }
@@ -123,7 +176,16 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
         const res = await client.get(
           `/api/v1/printers/${printer_id}/deployment-status`
         );
-        return ok(res.data);
+        const raw = res.data as A;
+        return ok({
+          printer_id,
+          installed: raw["installed"] ?? raw["success"],
+          pending: raw["pending"],
+          failed: raw["failed"] ?? raw["error"],
+          total: raw["total"],
+          last_updated: raw["last_updated"] ?? raw["lastUpdated"],
+          details: (raw["details"] as A[] | undefined) ?? [],
+        });
       } catch (e) {
         return err(e);
       }
@@ -161,7 +223,19 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
         if (event_type) params.event_type = event_type;
         if (user) params.user = user;
         const res = await client.get("/api/v1/audit-logs", { params });
-        return ok(res.data);
+        const raw = res.data as A;
+        const items = ((raw["logs"] as A[] | undefined) ?? (raw["data"] as A[] | undefined) ?? (Array.isArray(raw) ? raw as A[] : []));
+        const logs = items.map((l: A) => ({
+          id: l["id"],
+          event_type: l["event_type"] ?? l["eventType"],
+          user: l["user"] ?? l["username"],
+          printer_name: l["printer_name"] ?? l["printerName"],
+          printer_id: l["printer_id"] ?? l["printerId"],
+          timestamp: l["timestamp"] ?? l["created_at"] ?? l["createdAt"],
+          details: l["details"],
+          ip_address: l["ip_address"] ?? l["ipAddress"],
+        }));
+        return ok({ total: raw["total"] ?? raw["count"], count: logs.length, logs });
       } catch (e) {
         return err(e);
       }
@@ -181,7 +255,16 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
       try {
         const client = printerlogicClient();
         const res = await client.get(`/api/v1/quotas/${encodeURIComponent(user_or_group)}`);
-        return ok(res.data);
+        const raw = res.data as A;
+        return ok({
+          user_or_group,
+          quota_limit: raw["quota_limit"] ?? raw["limit"],
+          pages_used: raw["pages_used"] ?? raw["used"],
+          pages_remaining: raw["pages_remaining"] ?? raw["remaining"],
+          reset_date: raw["reset_date"] ?? raw["resetDate"],
+          reset_period: raw["reset_period"] ?? raw["resetPeriod"],
+          enabled: raw["enabled"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -209,7 +292,18 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
         if (start_date) params.start_date = start_date;
         if (end_date) params.end_date = end_date;
         const res = await client.get("/api/v1/reports/usage", { params });
-        return ok(res.data);
+        const raw = res.data as A;
+        const items = ((raw["data"] as A[] | undefined) ?? (Array.isArray(raw) ? raw as A[] : []));
+        const rows = items.map((r: A) => ({
+          name: r["name"] ?? r["user"] ?? r["printer"] ?? r["department"],
+          pages_printed: r["pages_printed"] ?? r["pagesPrinted"] ?? r["count"],
+          color_pages: r["color_pages"] ?? r["colorPages"],
+          mono_pages: r["mono_pages"] ?? r["monoPages"],
+          duplex_pages: r["duplex_pages"] ?? r["duplexPages"],
+          period_start: r["period_start"] ?? r["periodStart"],
+          period_end: r["period_end"] ?? r["periodEnd"],
+        }));
+        return ok({ report_type, count: rows.length, rows });
       } catch (e) {
         return err(e);
       }

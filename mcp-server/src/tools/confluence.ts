@@ -3,6 +3,8 @@ import { z } from "zod";
 import { confluenceClient } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 
+type A = Record<string, unknown>;
+
 export function registerConfluenceTools(server: McpServer, enabled: boolean): void {
   if (!enabled) return;
 
@@ -21,7 +23,21 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
         const params: Record<string, string | number> = { limit };
         if (cursor) params["cursor"] = cursor;
         const res = await confluenceClient().get("/spaces", { params });
-        return ok(res.data);
+        const raw = res.data as A;
+        const items = (raw["results"] as A[] | undefined) ?? (raw["data"] as A[] | undefined) ?? [];
+        const spaces = items.map((s: A) => ({
+          id: s["id"],
+          key: s["key"],
+          name: s["name"],
+          type: s["type"],
+          status: s["status"],
+          homepageId: (s["homepage"] as A | undefined)?.["id"],
+        }));
+        return ok({
+          count: spaces.length,
+          spaces,
+          next: (raw["_links"] as A | undefined)?.["next"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -46,7 +62,23 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
         const params: Record<string, string | number> = { cql, limit };
         if (cursor) params["cursor"] = cursor;
         const res = await confluenceClient().get("/pages", { params });
-        return ok(res.data);
+        const raw = res.data as A;
+        const items = (raw["results"] as A[] | undefined) ?? (raw["data"] as A[] | undefined) ?? [];
+        const pages = items.map((p: A) => ({
+          id: p["id"],
+          title: p["title"],
+          status: p["status"],
+          spaceId: p["spaceId"],
+          parentId: p["parentId"],
+          version: (p["version"] as A | undefined)?.["number"],
+          createdAt: p["createdAt"],
+          authorId: p["authorId"],
+        }));
+        return ok({
+          count: pages.length,
+          pages,
+          next: (raw["_links"] as A | undefined)?.["next"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -73,7 +105,28 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
         const res = await confluenceClient().get(`/pages/${page_id}`, {
           params: { "body-format": body_format },
         });
-        return ok(res.data);
+        const p = res.data as A;
+        return ok({
+          id: p["id"],
+          title: p["title"],
+          status: p["status"],
+          spaceId: p["spaceId"],
+          parentId: p["parentId"],
+          authorId: p["authorId"],
+          createdAt: p["createdAt"],
+          version: {
+            number: (p["version"] as A | undefined)?.["number"],
+            createdAt: (p["version"] as A | undefined)?.["createdAt"],
+            authorId: (p["version"] as A | undefined)?.["authorId"],
+            message: (p["version"] as A | undefined)?.["message"],
+          },
+          body: (p["body"] as A | undefined) ? {
+            representation: (p["body"] as A)["representation"] ?? body_format,
+            value: (p["body"] as A)[body_format]
+              ? ((p["body"] as A)[body_format] as A)?.["value"]
+              : (p["body"] as A)["value"],
+          } : undefined,
+        });
       } catch (e) {
         return err(e);
       }
@@ -95,7 +148,20 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
         const params: Record<string, string | number> = { limit };
         if (cursor) params["cursor"] = cursor;
         const res = await confluenceClient().get(`/pages/${page_id}/children`, { params });
-        return ok(res.data);
+        const raw = res.data as A;
+        const items = (raw["results"] as A[] | undefined) ?? (raw["data"] as A[] | undefined) ?? [];
+        const children = items.map((p: A) => ({
+          id: p["id"],
+          title: p["title"],
+          status: p["status"],
+          spaceId: p["spaceId"],
+          version: (p["version"] as A | undefined)?.["number"],
+        }));
+        return ok({
+          count: children.length,
+          children,
+          next: (raw["_links"] as A | undefined)?.["next"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -134,7 +200,16 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
         };
         if (parent_id) payload["parentId"] = parent_id;
         const res = await confluenceClient().post("/pages", payload);
-        return ok(res.data);
+        const p = res.data as A;
+        return ok({
+          id: p["id"],
+          title: p["title"],
+          status: p["status"],
+          spaceId: p["spaceId"],
+          parentId: p["parentId"],
+          version: (p["version"] as A | undefined)?.["number"],
+          webUrl: (p["_links"] as A | undefined)?.["webui"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -172,7 +247,14 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
         if (title) payload["title"] = title;
         if (body) payload["body"] = { representation: "storage", value: body };
         const res = await confluenceClient().put(`/pages/${page_id}`, payload);
-        return ok(res.data);
+        const p = res.data as A;
+        return ok({
+          id: p["id"],
+          title: p["title"],
+          status: p["status"],
+          version: (p["version"] as A | undefined)?.["number"],
+          webUrl: (p["_links"] as A | undefined)?.["webui"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -194,7 +276,24 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
         const params: Record<string, string | number> = { limit, sort: "-created-date" };
         if (cursor) params["cursor"] = cursor;
         const res = await confluenceClient().get(`/pages/${page_id}/footer-comments`, { params });
-        return ok(res.data);
+        const raw = res.data as A;
+        const items = (raw["results"] as A[] | undefined) ?? (raw["data"] as A[] | undefined) ?? [];
+        const comments = items.map((c: A) => ({
+          id: c["id"],
+          pageId: c["pageId"],
+          authorId: c["authorId"],
+          createdAt: c["createdAt"],
+          version: (c["version"] as A | undefined)?.["number"],
+          body: (c["body"] as A | undefined) ? {
+            value: ((c["body"] as A)["storage"] as A | undefined)?.["value"]
+              ?? (c["body"] as A)["value"],
+          } : undefined,
+        }));
+        return ok({
+          count: comments.length,
+          comments,
+          next: (raw["_links"] as A | undefined)?.["next"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -217,7 +316,13 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
         const res = await confluenceClient().post(`/pages/${page_id}/footer-comments`, {
           body: { representation: "storage", value: body },
         });
-        return ok(res.data);
+        const c = res.data as A;
+        return ok({
+          id: c["id"],
+          pageId: c["pageId"],
+          authorId: c["authorId"],
+          createdAt: c["createdAt"],
+        });
       } catch (e) {
         return err(e);
       }
