@@ -24,7 +24,7 @@ Architecture decisions, token-cost analysis, and workflow friction points. Revie
 | PowerShell module suite | 14 modules covering all integrated systems. New: `SVH.AD` (Active Directory via PSRemoting), `SVH.Network` (AD DNS, Windows DHCP, cross-platform .NET validation). |
 | PowerShell `.env` references | Removed from `connect.ps1`, `SVH.Core.psm1` error messages, and session-start hook. BW_SESSION is required; no fallback. |
 | Reference file auto-sync | `session-start.sh` runs `rsync -a --delete ~/SVH-OpsMan/references/ "$VAULT/References/"` on every session start. |
-| Response shaping — `teams.ts` read tools | `teams_list_teams`, `teams_list_channels`, `teams_list_messages` shaped. `teams_list_messages` HTML-stripped + truncated to 400 chars. 3 write ops (`send_message`, `create_channel`, `add_member`) remain raw — lower priority. |
+| Response shaping — `teams.ts` read tools | All 5 read tools shaped and HTML-stripped (400-char truncation on body fields). 3 write ops (`send_message`, `create_channel`, `add_member`) remain raw — lower priority. |
 | Day-ender sentinel | `<!-- DAY-STARTER-END -->` added to day-starter template. `obsidian-output.md` updated: do NOT read daily note before appending; empty read means tool failure, not empty file. |
 | Session-start hook LAST_BRIEFING fallback | Hook writes `LAST_BRIEFING` to `.claude/briefing-state` when vault is accessible. Reads it as fallback in non-WSL environments. `BRIEFING_EXISTS` and `OPEN_INCIDENTS` still vault-dependent. |
 
@@ -43,7 +43,7 @@ Architecture decisions, token-cost analysis, and workflow friction points. Revie
 | `wazuh.ts` | 0 | 7 ✓ | Done |
 | `defender-mde.ts` | 0 | 6 ✓ | Done |
 | `outlook-mail.ts` | 4 | 5 | |
-| `teams.ts` | 3 | 6 ✓ | 3 remaining are write ops (send/create/add) |
+| `teams.ts` | 3 | 8 ✓ | 3 remaining are write ops (send/create/add) |
 | `ninjaone.ts` | 12 | 6 | |
 | `entra-admin.ts` | 8 | 2 | |
 | `outlook-calendar.ts` | 6 | 2 | |

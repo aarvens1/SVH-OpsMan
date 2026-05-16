@@ -177,7 +177,7 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
     },
     async ({ top }) => {
       if (!graphUserId)
-        return cfgErr("teams_list_my_chats — set GRAPH_USER_ID in your .env or Bitwarden vault");
+        return cfgErr("teams_list_my_chats — set GRAPH_USER_ID in your Bitwarden vault");
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/users/${graphUserId}/chats`, {
@@ -200,7 +200,7 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
             lastMessage: preview
               ? {
                   from: (fromUser?.["displayName"] as string) ?? "System",
-                  body: ((preview["body"] as Record<string, unknown>)?.["content"] as string) ?? "",
+                  body: (((preview["body"] as Record<string, unknown>)?.["content"] as string) ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400),
                   createdDateTime: preview["createdDateTime"],
                 }
               : null,
@@ -227,7 +227,7 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
     },
     async ({ chat_id, top }) => {
       if (!graphUserId)
-        return cfgErr("teams_get_chat_messages — set GRAPH_USER_ID in your .env or Bitwarden vault");
+        return cfgErr("teams_get_chat_messages — set GRAPH_USER_ID in your Bitwarden vault");
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/chats/${chat_id}/messages`, {
@@ -241,7 +241,7 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
             id: msg["id"],
             createdDateTime: msg["createdDateTime"],
             from: (fromUser?.["displayName"] as string) ?? "System",
-            body: ((msg["body"] as Record<string, unknown>)?.["content"] as string) ?? "",
+            body: (((msg["body"] as Record<string, unknown>)?.["content"] as string) ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400),
             messageType: msg["messageType"],
           };
         });
