@@ -21,7 +21,9 @@ BRIEFING_EXISTS="unknown"
 OPEN_INCIDENTS="unknown"
 LAST_BRIEFING="unknown"
 
-STATE_FILE="$(git rev-parse --show-toplevel 2>/dev/null)/.claude/briefing-state"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+STATE_FILE="$REPO_ROOT/.claude/briefing-state"
+PUSH_LOG="$REPO_ROOT/.claude/push-log"
 
 if [ -d "$VAULT" ]; then
   [ -f "$VAULT/Briefings/Daily/$TODAY.md" ] && BRIEFING_EXISTS="yes" || BRIEFING_EXISTS="no"
@@ -33,12 +35,16 @@ if [ -d "$VAULT" ]; then
     printf '%s\n' "$LAST_BRIEFING" > "$STATE_FILE" 2>/dev/null || true
   fi
 
+  LAST_PUSH=$(tail -1 "$PUSH_LOG" 2>/dev/null || echo "none")
+
   # Sync reference docs so Obsidian MCP always has the latest versions
   rsync -a --delete ~/SVH-OpsMan/references/ "$VAULT/References/" 2>/dev/null || true
 elif [ -f "$STATE_FILE" ]; then
   LAST_BRIEFING=$(cat "$STATE_FILE" 2>/dev/null || echo "unknown")
 fi
 
-printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"Branch: %s | Uncommitted: %s | Ahead: %s | Bitwarden: %s | Day: %s (%s) | Briefing today: %s | Open incidents: %s | Last briefing: %s"}}\n' \
+LAST_PUSH=${LAST_PUSH:-$(tail -1 "$PUSH_LOG" 2>/dev/null || echo "none")}
+
+printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"Branch: %s | Uncommitted: %s | Ahead: %s | Bitwarden: %s | Day: %s (%s) | Briefing today: %s | Open incidents: %s | Last briefing: %s | Last push: %s"}}\n' \
   "$BRANCH" "$DIRTY" "$AHEAD" "$BW_STATUS" \
-  "$DOW" "$TODAY" "$BRIEFING_EXISTS" "$OPEN_INCIDENTS" "$LAST_BRIEFING"
+  "$DOW" "$TODAY" "$BRIEFING_EXISTS" "$OPEN_INCIDENTS" "$LAST_BRIEFING" "$LAST_PUSH"
