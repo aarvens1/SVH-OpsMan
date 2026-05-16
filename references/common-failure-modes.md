@@ -96,14 +96,46 @@ SVH-specific failure patterns for the Troubleshooting Methodology skill. Referen
 
 ---
 
-## FailoverClustering Events (Reference IDs)
+## PrinterLogic
 
-| Event ID | Source | Meaning |
-|----------|--------|---------|
-| 1069 | FailoverClustering | Cluster resource failed |
-| 1177 | FailoverClustering | Cluster quorum lost — imminent failover |
-| 1205 | FailoverClustering | Cluster service failed to bring resource online |
-| 1254 | FailoverClustering | Node lost connectivity to cluster network |
-| 5120 | Microsoft-Windows-FailoverClustering | CSV volume status changed |
-| 5142 | Microsoft-Windows-FailoverClustering | CSV volume is no longer accessible |
-| 7036 | Service Control Manager | Service state change — look for backup agent, vmms, SQL |
+### Printers Not Appearing for Users
+
+- **Symptoms:** Users can't see printers that should be deployed to them; PrinterLogic web portal shows printers as assigned
+- **Common causes:**
+  - PrinterLogic client agent service (`PrinterLogicClient`) stopped or not installed on the workstation
+  - Agent not reaching the PrinterLogic server — check firewall rules for TCP 443 from workstation to PrinterLogic URL
+  - Stale assignment cache on the client — agent may not have pulled the latest policy since enrollment
+- **Checks:** NinjaOne services for `PrinterLogicClient`, NinjaOne event logs for PrinterLogic agent errors, verify client can reach PrinterLogic URL from the affected machine
+
+### Print Jobs Stuck in Queue
+
+- **Symptoms:** Jobs show in queue but don't print; clearing and re-sending doesn't help
+- **Common causes:**
+  - Print spooler in a wedged state on the workstation — common after a driver update or a partial install
+  - Driver mismatch between the version deployed by PrinterLogic and what's cached locally
+  - Printer offline or backend unreachable (IP change, DHCP lease, powered off)
+- **Fix path:** Restart Print Spooler on the affected machine (`Restart-Service Spooler`); if that doesn't clear it, delete jobs manually from `C:\Windows\System32\spool\PRINTERS\` while spooler is stopped, then restart
+
+### Driver Deployment Failures
+
+- **Symptoms:** PrinterLogic reports driver install failed; printer appears in Devices but not usable
+- **Common causes:**
+  - Driver package in PrinterLogic admin console is mismatched to OS architecture (x86 vs x64)
+  - Unsigned driver blocked by Windows Driver Signature Enforcement
+  - Previous failed install left a partial INF entry — requires manual cleanup via `pnputil /delete-driver`
+- **Checks:** PrinterLogic admin console → Deployment Logs for the affected machine, Windows Application log for Spooler errors (Event IDs 372, 375, 6161)
+
+### PrinterLogic Server / Portal Unreachable
+
+- **Symptoms:** Agents go offline in the PrinterLogic console; web portal returns 503 or times out
+- **Common causes:**
+  - PrinterLogic server service stopped (IIS-based or native service depending on version)
+  - Database backend (SQL) under memory pressure — same pattern as MABS/SQL issues
+  - SSL certificate expired on the PrinterLogic web service
+- **Checks:** NinjaOne services on the PrinterLogic server, NinjaOne volumes for the PrinterLogic data drive, check SSL cert expiry from a browser
+
+---
+
+## FailoverClustering Events
+
+See `common-event-clusters.md` for the full event ID reference. Key IDs for quick lookup: 1069 (resource failed), 1177 (quorum lost), 1254 (node connectivity), 5120/5142 (CSV state).
