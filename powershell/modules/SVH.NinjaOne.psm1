@@ -5,27 +5,12 @@
 
 Set-StrictMode -Version Latest
 
-$script:NinjaToken       = $null
-$script:NinjaTokenExpiry = [DateTime]::MinValue
-
 function script:Get-NinjaToken {
-    if ($script:NinjaToken -and (Get-Date) -lt $script:NinjaTokenExpiry) {
-        Write-Verbose "[Ninja] Using cached token (expires $($script:NinjaTokenExpiry.ToString('HH:mm:ss')))"
-        return $script:NinjaToken
-    }
-    Write-Verbose '[Ninja] Acquiring new token'
-    $r = Invoke-RestMethod -Method Post `
-        -Uri 'https://app.ninjarmm.com/ws/oauth/token' `
-        -Body @{
-            grant_type    = 'client_credentials'
-            client_id     = (Get-SVHCredential 'NINJA_CLIENT_ID')
-            client_secret = (Get-SVHCredential 'NINJA_CLIENT_SECRET')
-            scope         = 'monitoring management control'
-        } -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
-    $script:NinjaToken       = $r.access_token
-    $script:NinjaTokenExpiry = (Get-Date).AddSeconds($r.expires_in - 60)
-    Write-Verbose "[Ninja] Token acquired, valid for ~$([math]::Round($r.expires_in/60)) minutes"
-    $r.access_token
+    Get-SVHOAuth2Token -CacheKey 'NinjaOne' `
+        -TokenEndpoint 'https://app.ninjarmm.com/ws/oauth/token' `
+        -ClientId     (Get-SVHCredential 'NINJA_CLIENT_ID') `
+        -ClientSecret (Get-SVHCredential 'NINJA_CLIENT_SECRET') `
+        -Scope        'monitoring management control'
 }
 
 function script:nHeaders { @{ Authorization = "Bearer $(Get-NinjaToken)" } }

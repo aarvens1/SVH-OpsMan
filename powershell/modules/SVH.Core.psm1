@@ -31,7 +31,7 @@ function Get-SVHCredential {
         Safe accessor for $Global:SVHCreds. Throws a descriptive error when a
         required key is missing rather than silently returning $null.
     .PARAMETER Key
-        The credential key (matches the Bitwarden custom field name / .env key).
+        The credential key (matches the Bitwarden custom field name in the 'SVH OpsMan' vault item).
     .EXAMPLE
         $tenantId = Get-SVHCredential 'GRAPH_TENANT_ID'
     #>
@@ -47,7 +47,7 @@ function Get-SVHCredential {
         }
         $value = $Global:SVHCreds[$Key]
         if ([string]::IsNullOrEmpty($value)) {
-            throw "Credential '$Key' is not set. Add it to Bitwarden 'SVH OpsMan' or powershell/.env"
+            throw "Credential '$Key' is not set. Add it to Bitwarden 'SVH OpsMan' (custom fields)."
         }
         $value
     }
@@ -61,33 +61,43 @@ function Get-SVHOAuth2Token {
     .SYNOPSIS
         Acquire and cache an OAuth2 client-credentials bearer token.
     .DESCRIPTION
-        Calls the Microsoft identity platform token endpoint. Caches the result
-        until 60 seconds before expiry so callers never hold a near-expired token.
+        Supports Microsoft identity platform (supply TenantId) and any other
+        OAuth2 client-credentials endpoint (supply TokenEndpoint directly).
+        Caches the result until 60 seconds before expiry.
     .PARAMETER CacheKey
-        Unique identifier for this token in the cache (e.g. 'Graph', 'ARM', 'MDE').
+        Unique identifier for this token in the cache (e.g. 'Graph', 'NinjaOne').
     .PARAMETER TenantId
-        Azure AD tenant ID.
+        Azure AD tenant ID. Required when TokenEndpoint is not specified.
     .PARAMETER ClientId
-        App registration client/application ID.
+        App registration or API client ID.
     .PARAMETER ClientSecret
-        App registration client secret.
+        Client secret.
     .PARAMETER Scope
-        OAuth2 scope, typically '<resource>/.default'.
+        OAuth2 scope. For Microsoft APIs: '<resource>/.default'.
+    .PARAMETER TokenEndpoint
+        Full token URL. Overrides TenantId when specified — use for non-Microsoft OAuth2 services.
     .EXAMPLE
-        $token = Get-SVHOAuth2Token -CacheKey 'Graph' `
+        Get-SVHOAuth2Token -CacheKey 'Graph' `
             -TenantId     (Get-SVHCredential 'GRAPH_TENANT_ID') `
             -ClientId     (Get-SVHCredential 'GRAPH_CLIENT_ID') `
             -ClientSecret (Get-SVHCredential 'GRAPH_CLIENT_SECRET') `
             -Scope        'https://graph.microsoft.com/.default'
+    .EXAMPLE
+        Get-SVHOAuth2Token -CacheKey 'NinjaOne' `
+            -TokenEndpoint 'https://app.ninjarmm.com/ws/oauth/token' `
+            -ClientId     (Get-SVHCredential 'NINJA_CLIENT_ID') `
+            -ClientSecret (Get-SVHCredential 'NINJA_CLIENT_SECRET') `
+            -Scope        'monitoring management control'
     #>
     [CmdletBinding()]
     [OutputType([string])]
     param(
         [Parameter(Mandatory)][string]$CacheKey,
-        [Parameter(Mandatory)][string]$TenantId,
+        [string]$TenantId,
         [Parameter(Mandatory)][string]$ClientId,
         [Parameter(Mandatory)][string]$ClientSecret,
-        [Parameter(Mandatory)][string]$Scope
+        [Parameter(Mandatory)][string]$Scope,
+        [string]$TokenEndpoint
     )
 
     $cached = $script:TokenCache[$CacheKey]
@@ -96,9 +106,14 @@ function Get-SVHOAuth2Token {
         return $cached.Token
     }
 
-    Write-Verbose "[$CacheKey] Acquiring new token from tenant $TenantId"
+    if (-not $TokenEndpoint) {
+        if (-not $TenantId) { throw "[$CacheKey] TenantId is required when TokenEndpoint is not specified." }
+        $TokenEndpoint = "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/token"
+    }
+
+    Write-Verbose "[$CacheKey] Acquiring new token from $TokenEndpoint"
     $r = Invoke-RestMethod -Method Post `
-        -Uri "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/token" `
+        -Uri $TokenEndpoint `
         -Body @{
             grant_type    = 'client_credentials'
             client_id     = $ClientId

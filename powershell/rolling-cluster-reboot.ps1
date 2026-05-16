@@ -113,7 +113,7 @@ $_clusterVM = Get-ClusterGroup -ErrorAction SilentlyContinue |
               Where-Object { $_.GroupType -eq 'VirtualMachine' -and $_.Name -like "*$_hostName*" }
 
 if (-not $_clusterVM) {
-    $isVM = (Get-WmiObject -Class Win32_ComputerSystem).Model -match 'Virtual|VMware|HVM'
+    $isVM = (Get-CimInstance -ClassName Win32_ComputerSystem).Model -match 'Virtual|VMware|HVM'
     if ($isVM) {
         Write-Warn "This machine ($_hostName) is a VM but NOT a clustered HA role."
         Write-Warn "It will NOT migrate during node drain -- script may die mid-run."
