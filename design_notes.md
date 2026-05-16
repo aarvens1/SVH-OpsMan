@@ -197,6 +197,35 @@ This is the highest-ROI item for the daily experience, but also the most work â€
 
 ---
 
+## Dev tools
+
+### MCP inspector
+
+Browse all registered tools interactively without opening Claude:
+
+```bash
+cd mcp-server
+npm run build
+npx @modelcontextprotocol/inspector node dist/index.js
+```
+
+Useful for verifying a new tool registered correctly and checking its input schema before testing end-to-end.
+
+---
+
+## Known runtime quirks
+
+**Planner update fails with 412 Precondition Failed**
+Re-fetch the task before updating â€” Planner requires the current ETag. Ask Claude to retry from a fresh `planner_get_task` call.
+
+**UniFi controller session expires mid-session**
+Sessions refresh automatically but last ~1 hour. Repeated auth errors usually mean `UNIFI_CONTROLLER_URL`, `UNIFI_USERNAME`, or `UNIFI_PASSWORD` is wrong, or the controller isn't reachable from WSL.
+
+**Wazuh TLS errors**
+The Wazuh client skips certificate verification (on-prem installations use self-signed certs). "Connection refused" means check that `WAZUH_URL` uses `https://` and port 55000 is reachable from WSL.
+
+---
+
 ## Data access model
 
 A note on what "Claude has access to X" means in practice.
