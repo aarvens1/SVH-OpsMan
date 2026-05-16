@@ -15,6 +15,7 @@
 7. [Driving Claude — how to talk to it](#7-driving-claude--how-to-talk-to-it)
 8. [WezTerm environment](#8-wezterm-environment)
 9. [PowerShell modules](#9-powershell-modules)
+   - [9.1 PowerShell TUI](#91-powershell-tui)
 10. [Customization guide](#10-customization-guide)
 11. [FAQ](#11-faq)
 12. [Examples — real prompts and what happens](#12-examples--real-prompts-and-what-happens)
@@ -802,6 +803,80 @@ For rolling cluster reboots (draining nodes, rebooting one at a time, waiting fo
 ```
 
 The actual script (`rolling-cluster-reboot.ps1`) runs on the cluster server, not your workstation.
+
+### 9.1 PowerShell TUI
+
+The TUI is a terminal interface that wraps all 237 SVH module functions. It runs inside WSL on WezTerm. Instead of remembering function names and parameter syntax, you browse by module, fill a form, and the command is built for you. Destructive commands (Remove, Restart, Revoke, Reset, Block, Stop) require an explicit confirmation step before they execute.
+
+#### Starting the TUI
+
+```bash
+# BW_SESSION must be set (same requirement as the MCP server)
+export BW_SESSION=$(bw unlock --raw)
+
+# From the repo root in WSL
+./run-tui.sh
+```
+
+The TUI starts pwsh, dot-sources `connect.ps1`, and loads all SVH modules in the background. While that runs you can already browse functions. The status in the title bar shows when the session is ready.
+
+#### Layout
+
+```
+┌──────────────────────┬──────────────────────────────────────────────────────┐
+│  / Search functions… │  Get-SVHUser  [Read]  SVH.Entra                      │
+│──────────────────────│  Get Entra ID user account details                   │
+│  ▶ SVH.AD            │──────────────────────────────────────────────────────│
+│  ▼ SVH.Entra         │  Identity *  [string]    ________________________     │
+│      Get-SVHUser  ●  │──────────────────────────────────────────────────────│
+│      Get-GuestUsers  │  Get-SVHUser -Identity "jdoe@shoestringvalley.com"   │
+│      Get-UserMFA     │  [● Console] [○ Obsidian]          [▶ Run]           │
+│  ▶ SVH.Exchange      │──────────────────────────────────────────────────────│
+│  ▶ SVH.Azure         │  ❯ Get-SVHUser -Identity "jdoe@shoestringvalley.com" │
+│  ▶ SVH.NinjaOne      │  displayName       : John Doe                        │
+│  ▶ SVH.OnPrem        │  accountEnabled    : True                             │
+│  ▶ SVH.UniFi         │  ...                                                 │
+└──────────────────────┴──────────────────────────────────────────────────────┘
+```
+
+- **Sidebar** — all 14 modules, collapsible. Search filters live as you type.
+- **Detail panel** — synopsis, parameter form, editable command preview.
+- **Output panel** — full command output. `Ctrl+L` clears it.
+
+#### Risk colour coding
+
+| Colour | Verb examples | Behaviour |
+|--------|--------------|-----------|
+| Green `[Read]` | Get, Test, Find | Runs immediately |
+| Yellow `[Write]` | New, Set, Start, Enable | Runs immediately |
+| Red `[⚠ Destructive]` | Remove, Restart, Reset, Revoke, Block, Stop | Requires confirmation dialog |
+
+#### Output destinations
+
+- **Console** — output stays in the TUI output panel.
+- **Obsidian** — output is saved to `OpsManVault/Investigations/YYYY-MM-DD-FunctionName-HHMMSS.md` with proper frontmatter. The file name appears in the output panel when the save completes.
+
+#### Keyboard shortcuts
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+F` | Focus the search box |
+| `Ctrl+R` | Run the current command |
+| `Ctrl+L` | Clear the output panel |
+| `Escape` | Blur the focused input |
+| `Ctrl+Q` | Quit |
+
+#### Command preview (editable)
+
+The command preview input auto-builds from the parameter form. You can edit it directly before running — the form and preview are independent once you start typing in the preview box. This lets you add flags the form doesn't cover or paste a command from Claude's output.
+
+#### Requirements
+
+- `BW_SESSION` set (same as for the MCP server)
+- `pwsh` (PowerShell Core) installed in WSL
+- Python 3 + `textual` package (`pip install textual`)
+
+`setup.sh` installs textual automatically.
 
 ---
 

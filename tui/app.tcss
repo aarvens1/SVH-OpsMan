@@ -1,0 +1,171 @@
+/* SVH PowerShell TUI — Textual stylesheet */
+
+/* ── Overall layout ─────────────────────────────────────────────────────── */
+
+Screen {
+    layout: vertical;
+}
+
+#main {
+    layout: horizontal;
+    height: 1fr;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+
+#sidebar {
+    width: 32;
+    layout: vertical;
+    background: $surface-darken-1;
+    border-right: tall $primary-darken-2;
+}
+
+#search {
+    margin: 1 1 0 1;
+    border: tall $primary-darken-2;
+}
+
+#func-tree {
+    margin: 0 0 0 0;
+    height: 1fr;
+    scrollbar-gutter: stable;
+}
+
+/* ── Right panel ─────────────────────────────────────────────────────────── */
+
+#right {
+    layout: vertical;
+    width: 1fr;
+}
+
+#detail {
+    height: 40%;
+    padding: 1 2;
+    border-bottom: tall $primary-darken-2;
+    background: $surface;
+}
+
+#output-section {
+    height: 1fr;
+    layout: vertical;
+    padding: 0 0;
+    background: $surface-darken-1;
+}
+
+/* ── Detail widgets ─────────────────────────────────────────────────────── */
+
+#func-name {
+    margin-bottom: 0;
+    padding: 0 0 1 0;
+    border-bottom: solid $primary-darken-3;
+}
+
+#func-synopsis {
+    color: $text-muted;
+    margin: 1 0 0 0;
+}
+
+#func-example {
+    margin-bottom: 1;
+}
+
+#params-container {
+    margin-top: 1;
+    height: auto;
+}
+
+.param-row {
+    height: 3;
+    layout: horizontal;
+    margin-bottom: 0;
+}
+
+.param-label {
+    width: 26;
+    content-align: left middle;
+    height: 3;
+    color: $text-muted;
+    padding-top: 1;
+}
+
+.param-label.-mandatory {
+    color: $text;
+}
+
+.param-input {
+    width: 1fr;
+}
+
+#cmd-preview {
+    margin-top: 1;
+}
+
+#actions-row {
+    height: 3;
+    margin-top: 1;
+    layout: horizontal;
+    align: left middle;
+}
+
+#output-dest {
+    width: auto;
+    margin-right: 2;
+    height: 3;
+}
+
+#run-btn {
+    width: 16;
+    height: 3;
+}
+
+/* ── Output log ─────────────────────────────────────────────────────────── */
+
+#output-log {
+    height: 1fr;
+    border-top: tall $primary-darken-2;
+    padding: 0 1;
+    scrollbar-gutter: stable;
+}
+
+/* ── Confirmation modal ─────────────────────────────────────────────────── */
+
+ConfirmModal {
+    align: center middle;
+}
+
+#confirm-dialog {
+    background: $surface;
+    border: tall $error;
+    padding: 2 4;
+    width: 72;
+    height: auto;
+}
+
+#confirm-title {
+    color: $error;
+    text-style: bold;
+    margin-bottom: 1;
+    content-align: center middle;
+}
+
+#confirm-cmd {
+    background: $surface-darken-2;
+    padding: 1 2;
+    margin-bottom: 2;
+    color: $text;
+    overflow-x: auto;
+}
+
+#confirm-buttons {
+    align: center middle;
+    height: 3;
+}
+
+#btn-confirm {
+    margin-right: 2;
+    width: 14;
+}
+
+#btn-cancel {
+    width: 14;
+}

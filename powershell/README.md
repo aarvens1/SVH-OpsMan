@@ -4,6 +4,18 @@ PowerShell Core module suite for SVH IT operations. All modules run from WSL 2 u
 
 ## Quick start
 
+**Option A — TUI (recommended for interactive use)**
+
+```bash
+# From WSL, in the repo root — requires BW_SESSION and pwsh
+export BW_SESSION=$(bw unlock --raw)
+./run-tui.sh
+```
+
+The TUI starts a persistent pwsh session, loads all modules, and shows a searchable browser for all 237 functions. Fill parameters in a form, preview the generated command, and run it — with a confirmation dialog before any destructive operation. Output stays in the terminal or saves to Obsidian. See `tui/` and `USER_GUIDE.md §9.1` for full docs.
+
+**Option B — raw pwsh session**
+
 ```powershell
 # 1. Unlock Bitwarden (in WSL bash, not PowerShell)
 export BW_SESSION=$(bw unlock --raw)

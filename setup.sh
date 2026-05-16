@@ -195,7 +195,18 @@ register_mcp_with_key "firecrawl" FIRECRAWL_API_KEY \
   firecrawl -e FIRECRAWL_API_KEY="${FIRECRAWL_API_KEY:-placeholder}" \
   -- npx -y @mendableai/firecrawl-mcp-server
 
-# ── 10. .env scaffold ─────────────────────────────────────────────────────────
+# ── 10. Python TUI dependencies ───────────────────────────────────────────────
+step "PowerShell TUI — Python dependencies"
+if ! python3 -c "import textual" &>/dev/null; then
+  pip install textual --quiet
+  ok "textual installed"
+else
+  ok "textual already installed ($(python3 -c 'import textual; print(textual.__version__)'))"
+fi
+chmod +x "$REPO_DIR/run-tui.sh"
+ok "run-tui.sh marked executable"
+
+# ── 11. .env scaffold ─────────────────────────────────────────────────────────
 step "mcp-server .env"
 if [ ! -f "$REPO_DIR/mcp-server/.env" ]; then
   cp "$REPO_DIR/mcp-server/.env.example" "$REPO_DIR/mcp-server/.env"
@@ -250,3 +261,4 @@ echo -e "     by setting the env var and re-running, or with: ${BOLD}claude mcp 
 echo -e "  5. ${BOLD}cd mcp-server && npm start${RESET}  — verify the server starts cleanly"
 echo -e "  6. On Windows: ${BOLD}dotfiles\\install-windows.ps1${RESET}  — install WezTerm + fonts"
 echo -e "  7. Open the repo in Claude Code: ${BOLD}claude${RESET}  — or type: ${BOLD}opsman${RESET}"
+echo -e "  8. PowerShell TUI: ${BOLD}./run-tui.sh${RESET}  — browse and run module functions in terminal"
