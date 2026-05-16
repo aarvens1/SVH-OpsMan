@@ -784,14 +784,34 @@ Each module uses one of these credential tiers — the tier determines which acc
 | `m365` | `ma_stevens@shoestringvalley.com` | Passkey (BW) — interactive browser | M365 admin operations |
 | `app` | `aa_stevens@shoestringvalley.com` | Passkey (BW) — interactive browser | App registrations |
 | `domain` | `ACCO\da_stevens` | Password — unattended | Active Directory |
+| `ra` | `ra_stevens@andersen-cost.com` | Password (BW: `DC_REMOTE_PASSWORD`) | Desktop Commander read-only PSRemoting |
 
 ```powershell
 Get-SVHTierUsername -Tier server   # returns the correct username for that tier
+Get-SVHTierUsername -Tier ra       # → ra_stevens@andersen-cost.com
 ```
 
 ### PSRemoting setup (one-time)
 
 The on-prem modules reach Windows servers via PSRemoting from WSL. This requires a one-time trust setup — see `references/setup-winrm.md` for the exact steps.
+
+### Desktop Commander PSRemoting account (ra_stevens)
+
+Desktop Commander uses a separate minimal-privilege account (`ra_stevens`) for diagnostic PSRemoting — read event logs, query processes/services/network state, and read DHCP leases. It cannot modify anything. The account exists in AD and optionally as a local user on non-domain servers.
+
+Create it with:
+
+```powershell
+.\setup-dc-remote-account.ps1 -DomainController ACCODC01 -DhcpServer ACCODHCP01
+```
+
+Store the generated password in the **SVH OpsMan** BW item (`DC_REMOTE_USER` / `DC_REMOTE_PASSWORD`), then export it in your WSL session:
+
+```bash
+export DC_REMOTE_PASSWORD=$(bw get password "DC Remote Account")
+```
+
+See `powershell/README.md` for full parameter reference and non-domain server setup.
 
 ### Cluster reboot orchestration
 

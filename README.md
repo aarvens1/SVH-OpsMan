@@ -419,8 +419,9 @@ Load from Windows Terminal with `. ./connect.ps1`. Credentials from Bitwarden (`
 | `m365` | `ma_stevens@shoestringvalley.com` | Passkey (BW) | ✗ — interactive browser |
 | `app` | `aa_stevens@shoestringvalley.com` | Passkey (BW) | ✗ — interactive browser |
 | `domain` | `ACCO\da_stevens` | Password | ✓ — AD domain operations |
+| `ra` | `ra_stevens@andersen-cost.com` | Password (BW: `DC_REMOTE_PASSWORD`) | ✓ — Desktop Commander read-only PSRemoting |
 
-Use `Get-SVHTierUsername -Tier server` to retrieve the correct account name for PSRemoting credentials.
+Use `Get-SVHTierUsername -Tier <tier>` to retrieve the correct account name for any tier. The `ra` account is created by `powershell/setup-dc-remote-account.ps1` — see `powershell/README.md` for details.
 
 ---
 

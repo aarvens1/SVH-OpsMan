@@ -61,9 +61,47 @@ pwsh
 | `m365` | `ma_stevens@shoestringvalley.com` | Exchange Online admin (EXO module), PIM-eligible GA |
 | `app` | `aa_stevens@shoestringvalley.com` | Azure portal, app registrations |
 | `domain` | `da_stevens@andersen-cost.com` | Active Directory, DNS/DHCP server admin |
+| `ra` | `ra_stevens@andersen-cost.com` | Desktop Commander read-only PSRemoting (diagnostic queries only) |
 
 ```powershell
 Get-SVHTierUsername -Tier server   # → sa_stevens@andersen-cost.com
+Get-SVHTierUsername -Tier ra       # → ra_stevens@andersen-cost.com
+```
+
+### ra_stevens — Desktop Commander PSRemoting account
+
+`ra_stevens` is a minimal-privilege service account for Desktop Commander diagnostic queries. It is **not** used by any SVH PowerShell module — it exists solely so Desktop Commander can PSRemote into servers for read-only diagnostics without needing `sa_stevens` or `da_stevens`.
+
+**What it can do:**
+- PSRemote into domain-joined servers (via Remote Management Users)
+- Read Security, System, Application event logs (via Event Log Readers)
+- Query processes, services, disks, network adapters, IP config, routing table, active TCP connections
+- Run `Test-NetConnection`, `Resolve-DnsName`, `Get-NetTCPConnection`, traceroute from a server's context
+- Read DHCP scopes and leases on the DHCP server (via local DHCP Users group)
+- Connect to non-domain-joined servers using a matching local account
+
+**What it cannot do:** modify anything in AD, stop/start/restart services, reboot servers, access admin shares, or run anything requiring elevation.
+
+Create the account with `setup-dc-remote-account.ps1`:
+
+```powershell
+# Minimal — AD account + domain groups (Remote Management Users, Event Log Readers)
+.\setup-dc-remote-account.ps1 -DomainController ACCODC01
+
+# Add DHCP lease read access
+.\setup-dc-remote-account.ps1 -DomainController ACCODC01 -DhcpServer ACCODHCP01
+
+# Full — AD + DHCP + non-domain servers
+.\setup-dc-remote-account.ps1 -DomainController ACCODC01 `
+    -DhcpServer ACCODHCP01 `
+    -TargetServers ACCOSERVER01, ACCOSQL01 `
+    -NonDomainServers 10.1.1.50, 10.1.1.51
+```
+
+After running, store the generated password in the **SVH OpsMan** BW item as `DC_REMOTE_USER` / `DC_REMOTE_PASSWORD`, then export for Desktop Commander:
+
+```bash
+export DC_REMOTE_PASSWORD=$(bw get password "DC Remote Account")
 ```
 
 ---
