@@ -6,8 +6,7 @@ This is a custom MCP server that gives Claude access to SVH's IT systems: Micros
 
 - **Platform:** WSL 2 (Ubuntu 22.04) on Windows, running in Windows Terminal
 - **Client:** Claude Code CLI — `claude mcp add` registers MCPs, not Claude Desktop
-- **Secrets:** Bitwarden CLI (`bw`) — unlock vault before starting: `export BW_SESSION=$(bw unlock --raw)`
-- **Fallback:** `.env` file if `BW_SESSION` is not set
+- **Secrets:** Bitwarden CLI (`bw`) — unlock vault before starting: `export BW_SESSION=$(bw unlock --raw)`. Required — server will not start without an active session.
 
 ## Repo layout
 
@@ -21,7 +20,7 @@ This is a custom MCP server that gives Claude access to SVH's IT systems: Micros
 mcp-server/
   src/
     index.ts            ← entrypoint; registers all tool groups
-    secrets.ts          ← Bitwarden + .env credential loader
+    secrets.ts          ← Bitwarden credential loader
     auth/               ← per-service token helpers
     tools/              ← one file per integrated system
     utils/http.ts       ← axios client factories + formatError
@@ -51,7 +50,7 @@ Invoke by name (`/day-starter`) or trigger phrase (e.g., "morning briefing", "X 
 
 1. Create `mcp-server/src/tools/<service>.ts` — export `register<Service>Tools(server, enabled)`
 2. Add to `mcp-server/src/index.ts` — import, add env-based `enabled` flag, call register
-3. Add credentials to `mcp-server/.env.example`
+3. Add credentials to the **SVH OpsMan** Bitwarden item (custom fields)
 4. Document in README.md under "What Claude has access to" and "Credential reference"
 5. Add the tool name(s) to the `allowed-tools` frontmatter of any skill that uses it
 
@@ -85,7 +84,7 @@ Buckets: To do · In progress · Waiting · Backlog
 ### Bitwarden credentials
 All credentials are in the **SVH OpsMan** BW item. Check both custom fields AND notes — some credentials are stored in notes rather than fields.
 
-In SVH OpsMan (custom fields): GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET, GRAPH_USER_ID, MDE_*, AZURE_*, NINJA_CLIENT_ID, NINJA_CLIENT_SECRET, OBSIDIAN_API_KEY. All also written to `mcp-server/.env` as fallback (gitignored).
+In SVH OpsMan (custom fields): GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET, GRAPH_USER_ID, MDE_*, AZURE_*, NINJA_CLIENT_ID, NINJA_CLIENT_SECRET, OBSIDIAN_API_KEY.
 
 Not yet found in BW: WAZUH_*, CONFLUENCE_*, UNIFI_*, PRINTERLOGIC_*. Search BW notes when looking for these.
 

@@ -258,13 +258,6 @@ All credentials are stored as custom fields on a single Bitwarden vault item nam
 export BW_SESSION=$(bw unlock --raw)   # unlock vault before starting
 ```
 
-If `BW_SESSION` is not set, the server falls back to `mcp-server/.env`:
-
-```bash
-cp mcp-server/.env.example mcp-server/.env
-# fill in only the services you're configuring
-```
-
 Verify startup:
 ```
 [svh-opsman] Loaded 20 credential(s) from Bitwarden vault
