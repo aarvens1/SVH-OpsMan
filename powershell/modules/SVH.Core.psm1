@@ -244,15 +244,20 @@ function Get-SVHTierUsername {
           m365      ma_stevens@shoestringvalley.com   — Entra / M365 admin; passkey (BW) — interactive only
           app       aa_stevens@shoestringvalley.com   — SaaS platform admin; passkey (BW) — interactive only
           domain    ACCO\da_stevens                   — AD domain admin (rarely used); PASSWORD auth
+          ra        ra_stevens@andersen-cost.com      — read-only PSRemoting for Desktop Commander; PASSWORD auth
 
         Passkey accounts (standard, m365, app) cannot be used as PSCredential objects.
         They authenticate via an interactive browser flow — e.g. Connect-ExchangeOnline
         opens a browser window. There is no unattended/scripted path for those tiers.
 
-        Password accounts (server, domain) can use Get-Credential or be supplied via
+        Password accounts (server, domain, ra) can use Get-Credential or be supplied via
         $PSCmdlet -Credential for PSRemoting and domain operations. From a domain-joined
         Windows Terminal session already running as sa_stevens@, Kerberos handles
         PSRemoting to domain machines transparently — no explicit credential needed.
+
+        The ra tier (ra_stevens) is a constrained service account — Remote Management Users
+        and Event Log Readers only. Use it when Desktop Commander needs PSRemoting for
+        diagnostic queries. Do not use it for write operations; it has no permission to do so.
 
         The app registrations loaded by connect.ps1 (Graph, MDE, ARM, NinjaOne, etc.)
         are service principals — they are not any of these human accounts.
@@ -261,12 +266,21 @@ function Get-SVHTierUsername {
     .EXAMPLE
         $cred = Get-Credential (Get-SVHTierUsername -Tier server)
         Get-SVHEventLogSummary -ComputerName SVH-SQL01 -Credential $cred
+    .EXAMPLE
+        # Desktop Commander diagnostic PSRemoting — read-only account
+        $cred = New-Object PSCredential(
+            (Get-SVHTierUsername -Tier ra),
+            (ConvertTo-SecureString $env:DC_REMOTE_PASSWORD -AsPlainText -Force)
+        )
+        Invoke-Command -ComputerName ACCOSERVER01 -Credential $cred -ScriptBlock {
+            Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4625; StartTime=(Get-Date).AddHours(-4)}
+        }
     #>
     [CmdletBinding()]
     [OutputType([string])]
     param(
         [Parameter(Mandatory)]
-        [ValidateSet('standard','server','m365','app','domain')]
+        [ValidateSet('standard','server','m365','app','domain','ra')]
         [string]$Tier
     )
     switch ($Tier) {
@@ -275,6 +289,7 @@ function Get-SVHTierUsername {
         'm365'     { "ma_stevens@$SVHMailDomain" }
         'app'      { "aa_stevens@$SVHMailDomain" }
         'domain'   { "$SVHOnPremNetBIOS\da_stevens" }
+        'ra'       { "ra_stevens@$SVHOnPremDomain" }
     }
 }
 Export-ModuleMember -Function Get-SVHTierUsername

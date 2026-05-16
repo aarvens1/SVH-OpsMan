@@ -41,8 +41,13 @@ This loads `SVH.Core` first, which initialises the credential store, then loads 
 | SVH.OnPrem (Hyper-V, failover cluster, S2D, MABS, SQL) | `sa_stevens@andersen-cost.com` |
 | SVH.AD (Active Directory, domain health, replication) | `da_stevens@andersen-cost.com` |
 | SVH.Network (AD DNS, Windows DHCP) | `da_stevens@andersen-cost.com` |
+| Desktop Commander diagnostics (event logs, processes, network) | `ra_stevens@andersen-cost.com` |
 
 PSRemoting functions require a one-time WinRM trust setup from WSL — see `references/setup-winrm.md`.
+
+`ra_stevens` is a constrained service account — `Remote Management Users` + `Event Log Readers` only.
+Credentials are stored in BW as `DC_REMOTE_USER` / `DC_REMOTE_PASSWORD` (env vars, not interactive).
+Created by `powershell/setup-dc-remote-account.ps1`.
 
 ## Adding a new module
 
