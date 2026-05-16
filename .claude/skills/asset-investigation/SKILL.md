@@ -67,6 +67,7 @@ date: YYYY-MM-DD
 skill: Asset Investigation
 status: draft
 tags: [asset]
+asset_type: server|workstation|user
 ninja_device_id: <id field from ninja_get_server response>
 mde_machine_id: <id field from mde_get_device response>
 ---
