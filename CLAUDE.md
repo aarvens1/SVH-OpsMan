@@ -1,6 +1,6 @@
-# SVH Helm — Claude Code project context
+# SVH OpsMan — Claude Code project context
 
-SVH Helm is a purpose-built IT operations command station. This repo is its custom MCP server — a TypeScript ESM Node.js process that gives Claude access to SVH's IT systems: Microsoft 365, Azure, Defender, NinjaOne, Wazuh, UniFi, PrinterLogic, and Confluence. Communicates over stdio.
+SVH OpsMan is a purpose-built IT operations command station. This repo is its custom MCP server — a TypeScript ESM Node.js process that gives Claude access to SVH's IT systems: Microsoft 365, Azure, Defender, NinjaOne, Wazuh, UniFi, PrinterLogic, and Confluence. Communicates over stdio.
 
 ## Runtime
 

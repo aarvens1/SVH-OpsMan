@@ -1,4 +1,4 @@
-# SVH Helm — User Guide
+# SVH OpsMan — User Guide
 
 > Target reader: IT sysadmin starting from a fresh Windows 11 workstation. No prior Claude Code experience assumed.
 
@@ -24,7 +24,7 @@
 
 ## 1. What this is
 
-SVH Helm is a purpose-built IT operations command station. You talk to it in plain English inside a terminal. It queries your real systems — Microsoft 365, Entra ID, Defender for Endpoint, Azure, NinjaOne, Wazuh, UniFi, PrinterLogic, Confluence — synthesizes the results, and stages any write operations in Obsidian for your review before anything goes anywhere.
+SVH OpsMan is a purpose-built IT operations command station. You talk to it in plain English inside a terminal. It queries your real systems — Microsoft 365, Entra ID, Defender for Endpoint, Azure, NinjaOne, Wazuh, UniFi, PrinterLogic, Confluence — synthesizes the results, and stages any write operations in Obsidian for your review before anything goes anywhere.
 
 ```
 "Day starter."

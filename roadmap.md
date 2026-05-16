@@ -1,4 +1,4 @@
-# SVH Helm — Roadmap & Design Notes
+# SVH OpsMan — Roadmap & Design Notes
 
 Architecture decisions, open issues, and the evolution plan. Review before making changes to the server or skills.
 
@@ -22,7 +22,7 @@ Everything here landed after the initial roadmap was written. Not in any prior p
 | Centralized config | config.yaml fully populated; session-start injects it at the top of every session |
 | LAST_BRIEFING fallback | Hook writes briefing-state on WSL, reads it as fallback in remote sessions |
 | USER_GUIDE.md | Full fresh Win11 + WSL setup guide |
-| SVH Helm rebrand | Renamed from SVH OpsMan |
+
 | Response shaping — Wazuh, Defender, Planner, Teams (read), NinjaOne (partial), Confluence, Entra, Calendar | See open issues for what's left |
 | Day-ender sentinel | `<!-- DAY-STARTER-END -->` in template; day-ender appends without reading first |
 

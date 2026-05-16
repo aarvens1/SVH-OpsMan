@@ -1,4 +1,4 @@
-# SVH Helm
+# SVH OpsMan
 
 A purpose-built command station for SVH IT operations. Every system connected â€” Microsoft 365, Entra ID, Defender for Endpoint, Azure, NinjaOne, Wazuh, UniFi, PrinterLogic, Confluence. Twenty-three pre-wired investigation workflows. A live status dashboard. Claude is the intelligence layer; you drive.
 
@@ -18,7 +18,7 @@ A purpose-built command station for SVH IT operations. Every system connected â€
 
 ```mermaid
 graph LR
-    You["You (SVH Helm)"]
+    You["You (SVH OpsMan)"]
 
     subgraph Custom["Custom MCP Server (this repo)"]
         direction TB
