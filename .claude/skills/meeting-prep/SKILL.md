@@ -59,19 +59,13 @@ Update (or create) `Meetings/YYYY-MM-DD-[meeting-name].md` with a post-call sect
 [paste Fathom summary/notes here]
 ```
 
-Then append a block to today's daily note (`Briefings/Daily/YYYY-MM-DD.md`) in **append mode**:
+Then append a single line to today's daily note (`Briefings/Daily/YYYY-MM-DD.md`) under `# 📝 Notes`, using the `edit_block` insert-before-Day-Ender pattern from the Obsidian output conventions:
 
 ```markdown
-## 📋 [Meeting Name] — [HH:MM]
-[1–2 sentence summary from Fathom's output — key topic and outcome only]
-
-Action items:
-- [each action item Fathom flagged, one bullet per item — or "None" if Fathom found none]
-
-Full notes → [[Meetings/YYYY-MM-DD-meeting-name]]
+- [[Meetings/YYYY-MM-DD-meeting-name]] — [one sentence: key topic and outcome]
 ```
 
-If multiple calls are filed in one session, append a block per meeting. Never rewrite the daily note — always append.
+If multiple calls are filed in one session, add one line per meeting. Full content stays in the meeting note — the daily note gets only the link. Never rewrite the daily note.
 
 ### Step 4 — Suggest tasks (drafts only)
 

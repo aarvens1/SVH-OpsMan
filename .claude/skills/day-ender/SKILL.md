@@ -52,10 +52,10 @@ The day-ender's job is close-out, not repetition. Do not re-run the infra tables
 - [What actually got done — based on Planner task state from Step 1 vs. what was open this morning]
 
 ## 🔄 Still open — yours
-- [Aaron's tasks only. One line each: task + one-line next action. Not the team board.]
+- [Aaron's tasks only. One line each: task + one-line next action. Not the team board. If the task has a related investigation, incident, or change note, link to it: `→ [[Investigations/YYYY-MM-DD-topic]]`]
 
 ## 🔴 Active issues at EOD
-- [Only alerts or infra problems still live right now, or new since morning. If everything cleared: "✅ No active issues at EOD."]
+- [Only alerts or infra problems still live right now, or new since morning. If everything cleared: "✅ No active issues at EOD." Link to any open incident notes: `→ [[Incidents/Active/YYYY-MM-DD-name]]`]
 
 ## 📨 Communications close-out
 - [Emails needing a response from the mail search. External senders and flagged items first. Unresolved DMs or @mentions.]
@@ -118,6 +118,26 @@ Default destination for new tasks:
 ```
 
 Checklist items are **what** needs to happen, not **how**. Each should be a short outcome phrase (5–10 words). Keep 3–5 items max. Put process guidance, suggestions, and approach notes in the Notes field.
+
+**REMOVE format** (discard a draft — no Planner action, just delete the block):
+
+```
+#### REMOVE — [task title or brief reason]
+- **Reason:** [optional — why this draft is being dropped]
+```
+
+**TODO format** (routes to personal To Do instead of Planner):
+
+```
+#### TODO — [task title]
+- **List:** [To Do list name — or leave blank for default]
+- **Due:** [YYYY-MM-DD or leave blank]
+- **Notes:** [1–2 sentences of context]
+```
+
+**Processing and cleanup:**
+
+After Aaron confirms and you execute any block — CREATE pushed to Planner, UPDATE pushed to Planner, TODO pushed to To Do, REMOVE discarded — immediately remove that subsection from the daily note using `edit_block`. When all blocks in the section have been processed, remove the `### 📝 Draft Planner updates` section header as well.
 
 ## Step 4 — Update state file
 

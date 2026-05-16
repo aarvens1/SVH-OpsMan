@@ -104,13 +104,13 @@ Include To Do items alongside Planner tasks. Show due-today and overdue first, t
 Read only the `# 🌆 Day Ender` section of the previous business day's briefing note (`Briefings/Daily/YYYY-MM-DD.md`). The Day Ender is always the last top-level section — use `offset` to read from that point rather than loading the full note. Look for:
 
 1. **"🔄 Still open"** items in the EOD section — explicitly unresolved items from the day-ender
-2. **"📝 Draft Planner actions"** that were written as CREATE or UPDATE but not yet confirmed/pushed — surface them again so Aaron can act on them or discard
+2. **"📝 Draft Planner actions"** that were written as CREATE, UPDATE, or TODO but not yet confirmed/pushed — surface them again so Aaron can act on them or discard. Skip any REMOVE blocks — those need no action.
 3. **"🟡 Worth watching"** items that had a clear suggested action and weren't resolved
 
 Write a **"⏮ Carried from yesterday"** section in the new note, placed immediately after **🔴 Needs attention now**. Format each item as:
 
 ```
-- **[Item title]** *(from [Still open / Draft tasks / Worth watching] — [yesterday's date])*: [one-sentence status or action needed]
+- **[Item title]** *(→ [[Briefings/Daily/YYYY-MM-DD]])* — [one-sentence status or action needed]
 ```
 
 Skip items that are already surfacing today via Planner task list or current security alerts (they're accounted for). Only surface items that might otherwise fall off.
@@ -137,7 +137,7 @@ tags: [briefing, daily]
 
 # 📝 Notes
 
-*Add notes, manual entries, and meeting summaries here throughout the day.*
+*Links to active investigations, meeting notes, and mid-day findings go here. If it has a note in the vault, link to it — don't duplicate the content.*
 
 ---
 
@@ -149,13 +149,13 @@ tags: [briefing, daily]
 All day-starter content (the sections below) goes under the `# 🌅 Day Starter — HH:MM` header.
 
 ### 🔴 Needs attention now
-Any Critical/High alerts, risky users, active M365 incidents, or overdue tasks. One bullet per item with source and recommended action.
+Any Critical/High alerts, risky users, active M365 incidents, or overdue tasks. One bullet per item with source and recommended action. If an incident note or investigation already exists for a finding, link to it inline (`→ [[Incidents/Active/YYYY-MM-DD-name]]`). If the finding is serious enough to open a new note, do so and link from here.
 
 ### ⏮ Carried from yesterday
 Items surfaced by Step 2b — open threads, unpushed draft tasks, and unresolved worth-watching items from the previous day's note. Omit this section if there is nothing to carry forward.
 
 ### 📅 Today
-Calendar events in time order. Flag any meeting that needs prep.
+Calendar events in time order. Flag any meeting that needs prep. If a meeting-prep note already exists (`Meetings/YYYY-MM-DD-name.md`), link to it inline rather than restating the prep details.
 
 For each meeting on today's calendar, check whether a Fathom recording already exists (`list_meetings` filtered to today). If one exists:
 - Show the meeting name, time, and a 1-sentence summary from Fathom's notes
@@ -265,6 +265,26 @@ Checklist items are **what** needs to happen, not **how**. Each should be a shor
 - **Change:** [what to update: new due date / set percent complete / new assignee / etc.]
 - **Notes:** [optional — reason for the update]
 ```
+
+**REMOVE format** (discard a draft — no Planner action, just delete the block):
+
+```
+#### REMOVE — [task title or brief reason]
+- **Reason:** [optional — why this draft is being dropped]
+```
+
+**TODO format** (routes to personal To Do instead of Planner):
+
+```
+#### TODO — [task title]
+- **List:** [To Do list name — or leave blank for default]
+- **Due:** [YYYY-MM-DD or leave blank]
+- **Notes:** [1–2 sentences of context]
+```
+
+**Processing and cleanup:**
+
+After Aaron confirms and you execute any block — CREATE pushed to Planner, UPDATE pushed to Planner, TODO pushed to To Do, REMOVE discarded — immediately remove that subsection from the daily note using `edit_block`. When all blocks in the section have been processed, remove the `### 📝 Draft Planner actions` section header as well.
 
 ## Step 4 — Update state file
 
