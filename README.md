@@ -224,7 +224,7 @@ echo '[ -f ~/SVH-OpsMan/dotfiles/bashrc.sh ] && . ~/SVH-OpsMan/dotfiles/bashrc.s
 source ~/.bashrc
 ```
 
-This adds: BW unlock warning on new shells · `bwu` alias · `ops` alias · git branch in prompt · 10k-line history · `wexp` / `clip` / `wpath` helpers · git shorthand aliases.
+This adds: BW unlock warning on new shells · `bwu` alias · `ops` alias · git branch in prompt · 10k-line history · `wexp` / `clip` / `wpath` helpers · git shorthand aliases · `opsman` / `wez-sync` / `wez-stop` for WezTerm.
 
 ---
 
@@ -438,6 +438,96 @@ Use `Get-SVHTierUsername -Tier server` to retrieve the correct account name for 
 | `setup-winrm.md` | Event Log Triage — one-time WinRM trust setup from WSL to Windows targets |
 | `credentials.md` | Credential reference — what's in Bitwarden vs. still missing |
 | `users.md` | Team directory — Entra object IDs and UPNs for IT staff |
+
+---
+
+---
+
+## WezTerm environment
+
+WezTerm replaces Windows Terminal as the ops workspace. Files live in `dotfiles/`.
+
+### Screen layout
+
+```
+┌──────────────────┬─────────────────────────┐
+│                  │  [Claude][pwsh][bash][+] │
+│    Obsidian      │                          │
+│    ~40%          │       WezTerm            │
+│    (sidebar      │       ~60%               │
+│     collapsed)   │                          │
+│                  ├─────────────────────────┤
+│                  │ status bar               │
+└──────────────────┴─────────────────────────┘
+```
+
+Tabs are colour-coded: **blue** = Claude Code, **yellow** = PowerShell, **green** = WSL bash.
+
+### Status bar
+
+```
+BW ✓ · Wazuh 3 · MDE 1 · Risky 0 · Ninja 34/35 · M365 ✓ · UniFi ✓ · main* · 2m ago
+```
+
+Refreshes every 2 minutes. BW and git check locally; Wazuh/MDE/Entra/NinjaOne/M365/UniFi are fetched by `status-refresh.sh` running in the background. Shows `⚠ stale` if the refresh script isn't running or BW is locked.
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `dotfiles/wezterm.lua` | Main WezTerm config — symlinked to `%USERPROFILE%\.config\wezterm\wezterm.lua` |
+| `dotfiles/install-windows.ps1` | Windows-side one-time setup: WezTerm (winget), Cascadia Code NF font, config symlink |
+| `dotfiles/status-refresh.sh` | Background daemon — polls APIs every 120s, writes `/tmp/svh-opsman-status.json` |
+| `dotfiles/bashrc.sh` | WSL shell environment — includes `opsman`, `wez-sync`, `wez-stop` |
+
+### Setup
+
+**Windows (once):**
+```powershell
+# From Windows Terminal — installs WezTerm, font, creates config symlink
+.\dotfiles\install-windows.ps1
+```
+
+**WSL (once — included in `setup.sh`):**
+```bash
+# Copies wezterm.lua to Windows config path, marks status-refresh.sh executable
+bash setup.sh
+```
+
+**Daily launch:**
+```bash
+opsman   # checks BW, starts status refresh daemon, opens WezTerm with Claude Code
+```
+
+### Keybindings
+
+Leader key: **CTRL+\\**
+
+| Chord | Action |
+|-------|--------|
+| `LEADER+d` | `/day-starter` |
+| `LEADER+e` | `/day-ender` |
+| `LEADER+w` | `/week-starter` |
+| `LEADER+p` | `/posture-check` |
+| `LEADER+t` | `/troubleshoot` |
+| `LEADER+n` | `/network-troubleshooter` |
+| `LEADER+c` | `/change-record` |
+| `LEADER+v` | `/vuln-triage` |
+| `LEADER+a` | `/asset-investigation` |
+| `LEADER+x` | `/patch-campaign` |
+| `LEADER+C` | New Claude tab |
+| `LEADER+P` | New PowerShell tab |
+| `LEADER+B` | New bash tab |
+| `LEADER+r` | Rename current tab |
+| `LEADER+2` | 2-pane horizontal split |
+| `LEADER+3` | 3-pane horizontal split |
+| `LEADER+h/j/k/l` | Navigate between split panes |
+| `LEADER+o` | Quick-select `obsidian://` URIs from scrollback and open in Obsidian |
+| `LEADER+u` | Force status bar refresh (bypasses 120s TTL) |
+
+### obsidian:// deep links
+
+Skills print their output note path as an `obsidian://` URI. WezTerm detects it as a hyperlink — click to open. Or use `LEADER+o` to quick-select any URI in the scrollback and open it.
 
 ---
 

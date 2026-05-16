@@ -104,6 +104,21 @@ Chosen fix: structural sentinel. The day-starter template now ends with `<!-- DA
 
 ---
 
+### 5. WezTerm status bar data model
+
+The status bar needs ambient security data (Wazuh, MDE, Entra risky users, NinjaOne, M365, UniFi) but WezTerm is a native Windows app running Lua — it can't call MCP tools directly.
+
+**Architecture chosen:** two-layer cache.
+
+- `status-refresh.sh` runs in background (started by `opsman`). It authenticates to each API directly via curl/jq and writes `/tmp/svh-opsman-status.json` every 120 seconds. Credentials loaded from Bitwarden via `bw get item "SVH OpsMan"` — requires `BW_SESSION` to be set.
+- `wezterm.lua` reads the cache file on the same 120s interval via `wezterm.run_child_process`. BW unlock state and git branch are checked independently (fast local calls). The status bar shows `⚠ stale` if the cache file is absent or all security fields are `-1` (meaning the refresh script isn't running or all API calls failed).
+
+**Why not call the MCP server from Lua?** The svh-opsman MCP server uses stdio transport — it has no HTTP endpoint to call from outside Claude Code sessions.
+
+**Why not a timer/coroutine?** WezTerm's Lua runtime doesn't expose timer primitives that work reliably across the status bar event. The `os.time()` TTL check inside `update-right-status` is simpler and accurate enough at 2-minute intervals.
+
+---
+
 ## Dev tools
 
 ### MCP inspector
