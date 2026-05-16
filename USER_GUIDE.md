@@ -1,4 +1,4 @@
-# SVH OpsMan — User Guide
+# SVH Helm — User Guide
 
 > Target reader: IT sysadmin starting from a fresh Windows 11 workstation. No prior Claude Code experience assumed.
 
