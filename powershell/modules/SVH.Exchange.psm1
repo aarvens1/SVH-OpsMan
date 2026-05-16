@@ -6,8 +6,10 @@
 #   Organization.Read.All, ReportSettings.Read.All
 #
 # NOTE: Classic Exchange cmdlets (Get-Mailbox, Get-MessageTrace, etc.) require
-# the ExchangeOnlineManagement module and an interactive Connect-ExchangeOnline
-# session. Those functions are grouped in the EXO MODULE REQUIRED region below.
+# the ExchangeOnlineManagement module and a Connect-ExchangeOnline session.
+# Those functions are grouped in the EXO MODULE REQUIRED region below.
+# From WSL, use device code flow — no browser window needed:
+#   Connect-ExchangeOnline -UserPrincipalName (Get-SVHTierUsername -Tier m365) -UseDeviceAuthentication
 # Graph-native alternatives are used everywhere possible.
 
 Set-StrictMode -Version Latest
@@ -44,16 +46,20 @@ Export-ModuleMember -Function Get-SVHMailboxSettings
 
 function Get-SVHMailboxForwarding {
     <#
-    .SYNOPSIS  Find all mailboxes with forwarding configured — a key security check.
+    .SYNOPSIS  Scan all member mailboxes for enabled or scheduled out-of-office auto-replies.
     .DESCRIPTION
-        Pulls all users' mailbox settings and filters for any with forwardingSmtpAddress
-        or automaticRepliesSmtpAddress set. External forwarding is a common exfiltration vector.
-    .EXAMPLE   Get-SVHMailboxForwarding | Where-Object ForwardingAddress -like '*@*' | Format-Table
+        Queries Graph mailboxSettings for every member user and returns those with
+        automaticRepliesSetting.status of 'enabled' or 'scheduled'. Useful for spotting
+        accounts left in OOO state after a departure.
+
+        Graph v1.0 does not expose SMTP-level forwardingSmtpAddress — that requires
+        Exchange Online cmdlets. Use Get-SVHEXOForwarding for SMTP forwarding detection.
+    .EXAMPLE   Get-SVHMailboxForwarding | Format-Table UserPrincipalName, AutoReplyStatus, ScheduledEnd
     #>
     [CmdletBinding()]
     [OutputType([PSObject])]
     param([int]$Top = 500)
-    Write-Verbose 'Scanning all mailboxes for forwarding rules...'
+    Write-Verbose 'Scanning all mailboxes for active auto-reply status...'
     $users = (gGet '/users' @{
         '$filter' = "userType eq 'Member'"
         '$select' = 'id,displayName,userPrincipalName,mail'
@@ -63,20 +69,21 @@ function Get-SVHMailboxForwarding {
     foreach ($u in $users) {
         try {
             $settings = gGet "/users/$($u.id)/mailboxSettings"
-            $fwd = $settings.automaticRepliesSetting?.externalReplyMessage ?? ''
-            # Graph doesn't expose SMTP forwarding directly; check via mailboxSettings redirect
-            if ($settings.userPurpose -or $fwd) {
+            $ooo = $settings.automaticRepliesSetting
+            if ($ooo?.status -in 'enabled','scheduled') {
                 [PSCustomObject]@{
                     DisplayName       = $u.displayName
                     UserPrincipalName = $u.userPrincipalName
-                    AutoReplyStatus   = $settings.automaticRepliesSetting?.status
+                    AutoReplyStatus   = $ooo.status
+                    ScheduledStart    = $ooo.scheduledStartDateTime?.dateTime
+                    ScheduledEnd      = $ooo.scheduledEndDateTime?.dateTime
+                    ExternalReply     = [bool]$ooo.externalReplyMessage
                 }
             }
         } catch {
             Write-Verbose "Skipped $($u.userPrincipalName): $_"
         }
     }
-    Write-Verbose 'Note: SMTP-level forwarding rules require ExchangeOnlineManagement (Get-SVHEXOForwarding).'
 }
 Export-ModuleMember -Function Get-SVHMailboxForwarding
 

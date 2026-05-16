@@ -7,8 +7,8 @@
 # -Credential (Get-Credential (Get-SVHTierUsername -Tier server)).
 #
 # References:
-#   powershell/references/setup-winrm.md   — one-time WinRM trust setup from WSL
-#   powershell/references/ps-remoting-snippets.md — Get-WinEvent recipes
+#   references/setup-winrm.md          — one-time WinRM trust setup from WSL
+#   references/ps-remoting-snippets.md — Get-WinEvent recipes
 
 Set-StrictMode -Version Latest
 
