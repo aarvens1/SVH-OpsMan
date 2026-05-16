@@ -293,7 +293,19 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
           }
         }
 
-        return ok({ ...task, checklist_items_added: checklist_items?.length ?? 0 });
+        return ok({
+          id: task["id"],
+          title: task["title"],
+          planId: task["planId"],
+          bucketId: task["bucketId"],
+          percentComplete: task["percentComplete"],
+          dueDateTime: task["dueDateTime"],
+          assignments: task["assignments"],
+          appliedCategories: task["appliedCategories"],
+          priority: task["priority"],
+          etag: task["@odata.etag"],
+          checklist_items_added: checklist_items?.length ?? 0,
+        });
       } catch (e) {
         return err(e);
       }

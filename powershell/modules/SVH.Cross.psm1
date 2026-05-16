@@ -327,37 +327,36 @@ function Invoke-SVHUserLockdown {
         [string]$IsolationComment = 'Isolated via SVH IR lockdown procedure'
     )
 
-    $errors = @()
+    $errors  = @()
+    $isoNote = if ($MDEMachineId) { ', isolate device' } else { '' }
 
     Write-Verbose "[Cross] Starting lockdown for $UserPrincipalName"
 
-    if ($PSCmdlet.ShouldProcess($UserPrincipalName, 'Revoke all sessions')) {
+    if ($PSCmdlet.ShouldProcess($UserPrincipalName, "Revoke sessions, disable account$isoNote")) {
         try {
-            Revoke-SVHUserSessions -UserPrincipalName $UserPrincipalName
+            Revoke-SVHUserSessions -Identity $UserPrincipalName -Confirm:$false
             Write-Verbose "[Cross] Sessions revoked for $UserPrincipalName"
         } catch {
             $errors += "Session revoke failed: $_"
             Write-Warning "[Cross] Session revoke failed: $_"
         }
-    }
 
-    if ($PSCmdlet.ShouldProcess($UserPrincipalName, 'Disable Entra account')) {
         try {
-            Set-SVHUserEnabled -UserPrincipalName $UserPrincipalName -Enabled $false
+            Set-SVHUserEnabled -Identity $UserPrincipalName -Enabled $false -Confirm:$false
             Write-Verbose "[Cross] Entra account disabled for $UserPrincipalName"
         } catch {
             $errors += "Account disable failed: $_"
             Write-Warning "[Cross] Account disable failed: $_"
         }
-    }
 
-    if ($MDEMachineId -and $PSCmdlet.ShouldProcess($MDEMachineId, 'Isolate device in Defender MDE')) {
-        try {
-            Invoke-SVHMDEIsolation -MachineId $MDEMachineId -Comment $IsolationComment
-            Write-Verbose "[Cross] MDE isolation requested for machine $MDEMachineId"
-        } catch {
-            $errors += "MDE isolation failed: $_"
-            Write-Warning "[Cross] MDE isolation failed: $_"
+        if ($MDEMachineId) {
+            try {
+                Invoke-SVHMDEIsolation -MachineId $MDEMachineId -Comment $IsolationComment -Confirm:$false
+                Write-Verbose "[Cross] MDE isolation requested for machine $MDEMachineId"
+            } catch {
+                $errors += "MDE isolation failed: $_"
+                Write-Warning "[Cross] MDE isolation failed: $_"
+            }
         }
     }
 
@@ -383,7 +382,9 @@ function Test-SVHWinRM {
     .SYNOPSIS  Verify WinRM connectivity from WSL to a Windows target.
     .DESCRIPTION
         Runs DNS, ping, TCP port checks (5985/5986), and a test PSSession.
-        Reference: powershell/references/setup-winrm.md
+        Uses cross-platform .NET APIs — works from WSL without Resolve-DnsName
+        or Test-NetConnection (both Windows-only).
+        Reference: references/setup-winrm.md
     .EXAMPLE   Test-SVHWinRM -ComputerName 'SVH-SQL01'
     .EXAMPLE   Test-SVHWinRM -ComputerName 'SVH-SQL01' -Credential (Get-Credential (Get-SVHTierUsername -Tier server))
     #>
@@ -397,13 +398,22 @@ function Test-SVHWinRM {
     $result = [ordered]@{ ComputerName = $ComputerName }
 
     try {
-        $dns = Resolve-DnsName -Name $ComputerName -ErrorAction Stop
-        $result['DNS'] = $dns.IPAddress -join ', '
+        $addrs = [System.Net.Dns]::GetHostAddresses($ComputerName)
+        $result['DNS'] = ($addrs | ForEach-Object { $_.IPAddressToString }) -join ', '
     } catch { $result['DNS'] = "FAILED: $_" }
 
-    $result['Ping']       = if (Test-Connection -ComputerName $ComputerName -Count 1 -Quiet) { 'OK' } else { 'FAILED' }
-    $result['WinRM-5985'] = if ((Test-NetConnection -ComputerName $ComputerName -Port 5985 -WarningAction SilentlyContinue).TcpTestSucceeded) { 'Open' } else { 'Closed' }
-    $result['WinRM-5986'] = if ((Test-NetConnection -ComputerName $ComputerName -Port 5986 -WarningAction SilentlyContinue).TcpTestSucceeded) { 'Open' } else { 'Closed' }
+    $result['Ping'] = if (Test-Connection -ComputerName $ComputerName -Count 1 -Quiet -ErrorAction SilentlyContinue) { 'OK' } else { 'FAILED' }
+
+    foreach ($port in 5985, 5986) {
+        $label = "WinRM-$port"
+        try {
+            $tcp     = [System.Net.Sockets.TcpClient]::new()
+            $connect = $tcp.BeginConnect($ComputerName, $port, $null, $null)
+            $ok      = $connect.AsyncWaitHandle.WaitOne(2000)
+            $tcp.Close()
+            $result[$label] = if ($ok) { 'Open' } else { 'Timeout' }
+        } catch { $result[$label] = 'Closed' }
+    }
 
     try {
         $sp = @{ ComputerName = $ComputerName; ErrorAction = 'Stop' }
@@ -413,7 +423,7 @@ function Test-SVHWinRM {
         Remove-PSSession $session
     } catch { $result['PSSession'] = "FAILED: $_" }
 
-    [PSCustomObject]$result | Format-List
+    [PSCustomObject]$result
 }
 Export-ModuleMember -Function Test-SVHWinRM
 

@@ -4,22 +4,44 @@
     background process, then monitors output and handles confirmations from your laptop.
 
     If your laptop disconnects, the script keeps running on the server. Re-run this
-    script to reconnect -- it will tail from where it left off and wait at any pending prompt.
+    script to reconnect — it will tail from where it left off and wait at any pending prompt.
+
+.PARAMETER Server
+    IP or hostname of the Windows server that will run the reboot orchestration.
+    Defaults to the AccoColo management host.
+
+.PARAMETER ClusterNames
+    One or more failover cluster names to reboot. Passed to rolling-cluster-reboot.ps1.
+
+.PARAMETER WorkDir
+    Working directory on the remote server for transcripts and status files.
+
+.PARAMETER TimeoutSeconds
+    How long to wait for each node reboot before treating it as a failure.
+
+.PARAMETER Credential
+    Credential for the sa_stevens (server tier) account. Prompted if not supplied.
+
+.EXAMPLE
+    .\Connect-ClusterReboot.ps1
+
+.EXAMPLE
+    .\Connect-ClusterReboot.ps1 -Server 172.18.201.145 -ClusterNames AccoColoHypCon, AccoColoHypVC
 
 .NOTES
-    Edit the CONFIG block below before running.
-    Run from your laptop in a regular PowerShell window (no elevation needed).
+    Run from your laptop or WSL in a regular PowerShell window (no elevation needed).
 #>
+[CmdletBinding()]
+param(
+    [string]  $Server         = '172.18.201.145',
+    [string[]]$ClusterNames   = @('AccoColoHypCon', 'AccoColoHypVC'),
+    [string]  $WorkDir        = 'C:\cluster-reboot',
+    [int]     $TimeoutSeconds = 600,
+    [System.Management.Automation.PSCredential]$Credential
+)
 
-# -- CONFIG --------------------------------------------------------------------
-
-$Server         = '172.18.201.145'
-$WorkDir        = 'C:\cluster-reboot'
-$ClusterNames   = @('AccoColoHypCon', 'AccoColoHypVC')
-$TimeoutSeconds = 600
-
-# Path to rolling-cluster-reboot.ps1 on YOUR machine (will be copied to server)
-$LocalScript    = "$PSScriptRoot\rolling-cluster-reboot.ps1"
+# Path to rolling-cluster-reboot.ps1 beside this script (copied to server at runtime)
+$LocalScript = Join-Path $PSScriptRoot 'rolling-cluster-reboot.ps1'
 
 # -- HELPERS -------------------------------------------------------------------
 
@@ -28,9 +50,11 @@ function Write-Prompt { param([string]$t) Write-Host "`n  [PROMPT] $t" -Foregrou
 function Write-Conn   { param([string]$t) Write-Host $t -ForegroundColor DarkGray }
 
 # -- CREDENTIALS ---------------------------------------------------------------
-# Prompt once for sa_stevens -- reused for every PSSession including reconnects.
+# Prompt once for sa_stevens — reused for every PSSession including reconnects.
 
-$Credential = Get-Credential -UserName 'sa_stevens' -Message "Enter credentials for $Server"
+if (-not $Credential) {
+    $Credential = Get-Credential -UserName 'sa_stevens' -Message "Enter credentials for $Server"
+}
 if (-not $Credential) { Write-Host "No credentials provided. Exiting." -ForegroundColor Red; exit 1 }
 
 # -- SESSION -------------------------------------------------------------------

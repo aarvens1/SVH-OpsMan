@@ -7,8 +7,8 @@
 # -Credential (Get-Credential (Get-SVHTierUsername -Tier server)).
 #
 # References:
-#   powershell/references/setup-winrm.md   — one-time WinRM trust setup from WSL
-#   powershell/references/ps-remoting-snippets.md — Get-WinEvent recipes
+#   references/setup-winrm.md          — one-time WinRM trust setup from WSL
+#   references/ps-remoting-snippets.md — Get-WinEvent recipes
 
 Set-StrictMode -Version Latest
 
@@ -386,3 +386,89 @@ ORDER BY wait_time_ms DESC;
     }
 }
 Export-ModuleMember -Function Get-SVHSQLWaitStats
+
+# ── VERIFY: Storage Spaces Direct (S2D / HCI) ─────────────────────────────────
+
+function Get-SVHS2DHealth {
+    <#
+    .SYNOPSIS  Full S2D health overview — storage pools, virtual disks, physical disks, and faults.
+    .DESCRIPTION
+        Queries the Storage Spaces Direct stack on a cluster node via PSRemoting.
+        Returns four objects:
+          Pools         — storage pool operational status and usage
+          VirtualDisks  — resilience type, health, operational state, and size
+          PhysicalDisks — health and usage per spindle/SSD/NVMe
+          Faults        — active storage subsystem faults with recommended actions
+
+        Any pool OperationalStatus != OK, virtual disk HealthStatus != Healthy,
+        or physical disk HealthStatus != Healthy should be treated as an alert.
+    .EXAMPLE   Get-SVHS2DHealth -ComputerName ACCOHV01 -Credential $c
+    .EXAMPLE   Get-SVHS2DHealth -ComputerName ACCOHV01 -Credential $c | ForEach-Object { $_.Faults }
+    #>
+    [CmdletBinding()]
+    [OutputType([PSObject])]
+    param(
+        [Parameter(Mandatory)][string]$ComputerName,
+        [System.Management.Automation.PSCredential]$Credential
+    )
+    Write-Verbose "[OnPrem] Querying S2D health on $ComputerName"
+    try {
+        Invoke-Command @(RemoteParams $ComputerName $Credential) -ScriptBlock {
+            $subsystem = Get-StorageSubSystem -CimSession (New-CimSession) -ErrorAction Stop |
+                         Where-Object FriendlyName -like 'Clustered*' | Select-Object -First 1
+
+            $pools = Get-StoragePool -IsPrimordial $false -ErrorAction SilentlyContinue |
+                     Select-Object FriendlyName, OperationalStatus, HealthStatus,
+                         @{ N='AllocatedGB'; E={ [math]::Round($_.AllocatedSize / 1GB, 1) } },
+                         @{ N='SizeGB';      E={ [math]::Round($_.Size / 1GB, 1) } }
+
+            $vdisks = Get-VirtualDisk -ErrorAction SilentlyContinue |
+                      Select-Object FriendlyName, ResiliencySettingName, OperationalStatus,
+                          HealthStatus, IsManualAttach,
+                          @{ N='SizeGB';      E={ [math]::Round($_.Size / 1GB, 1) } },
+                          @{ N='AllocatedGB'; E={ [math]::Round($_.AllocatedSize / 1GB, 1) } }
+
+            $pdisks = Get-PhysicalDisk -ErrorAction SilentlyContinue |
+                      Select-Object FriendlyName, MediaType, BusType, HealthStatus, OperationalStatus,
+                          @{ N='SizeGB'; E={ [math]::Round($_.Size / 1GB, 1) } },
+                          @{ N='UsageGB'; E={ [math]::Round($_.AllocatedSize / 1GB, 1) } }
+
+            $faults = if ($subsystem) {
+                Get-StorageDiagnosticInfo -StorageSubSystem $subsystem -ErrorAction SilentlyContinue |
+                    Where-Object Severity -ne 'None' |
+                    Select-Object Severity, Reason, RecommendedActions
+            } else { @() }
+
+            [PSCustomObject]@{
+                Pools         = $pools
+                VirtualDisks  = $vdisks
+                PhysicalDisks = $pdisks
+                Faults        = $faults
+                Timestamp     = Get-Date
+            }
+        }
+    } catch {
+        Write-Warning "[OnPrem] $ComputerName S2D health query failed: $_"
+    }
+}
+Export-ModuleMember -Function Get-SVHS2DHealth
+
+function Get-SVHS2DPhysicalDiskAlerts {
+    <#
+    .SYNOPSIS  Return only physical disks with non-Healthy status across a cluster node.
+    .EXAMPLE   Get-SVHS2DPhysicalDiskAlerts -ComputerName ACCOHV01 -Credential $c
+    #>
+    [CmdletBinding()]
+    [OutputType([PSObject])]
+    param(
+        [Parameter(Mandatory)][string]$ComputerName,
+        [System.Management.Automation.PSCredential]$Credential
+    )
+    Invoke-Command @(RemoteParams $ComputerName $Credential) -ScriptBlock {
+        Get-PhysicalDisk -ErrorAction SilentlyContinue |
+            Where-Object { $_.HealthStatus -ne 'Healthy' -or $_.OperationalStatus -ne 'OK' } |
+            Select-Object FriendlyName, MediaType, BusType, HealthStatus, OperationalStatus,
+                @{ N='SizeGB'; E={ [math]::Round($_.Size / 1GB, 1) } }
+    }
+}
+Export-ModuleMember -Function Get-SVHS2DPhysicalDiskAlerts

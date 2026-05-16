@@ -175,7 +175,26 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
           },
           manager: (alert["manager"] as A | undefined)?.["name"],
           location: alert["location"],
-          data: alert["data"],
+          // Extract only diagnostic top-level fields from the raw event payload.
+          // The full data blob (Windows eventdata XML, audit records) can be 500+ tokens
+          // per alert and is almost never needed for triage. If deeper data is required,
+          // query Wazuh directly with a narrowed filter.
+          data: (() => {
+            const d = alert["data"] as A | undefined;
+            if (!d) return undefined;
+            const out: A = {};
+            for (const k of ["srcip","dstip","srcuser","dstuser","dstport","protocol","action","command","url","status"]) {
+              if (d[k] !== undefined) out[k] = d[k];
+            }
+            const win = d["win"] as A | undefined;
+            if (win) {
+              const sys = win["system"] as A | undefined;
+              if (sys?.["eventID"]) out["eventID"] = sys["eventID"];
+              const ed = win["eventdata"] as A | undefined;
+              if (ed) Object.assign(out, Object.fromEntries(Object.entries(ed).slice(0, 5)));
+            }
+            return Object.keys(out).length ? out : undefined;
+          })(),
         }));
         return ok({
           total: data["total_affected_items"],

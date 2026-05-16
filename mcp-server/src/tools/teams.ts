@@ -26,7 +26,13 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
             $top: top,
           },
         });
-        return ok(res.data);
+        const teams = ((res.data as Record<string, unknown>)["value"] as Record<string, unknown>[] ?? []).map((t) => ({
+          id: t["id"],
+          displayName: t["displayName"],
+          description: t["description"],
+          visibility: t["visibility"],
+        }));
+        return ok({ count: teams.length, teams });
       } catch (e) {
         return err(e);
       }
@@ -45,7 +51,15 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/teams/${team_id}/channels`);
-        return ok(res.data);
+        const channels = ((res.data as Record<string, unknown>)["value"] as Record<string, unknown>[] ?? []).map((c) => ({
+          id: c["id"],
+          displayName: c["displayName"],
+          description: c["description"],
+          membershipType: c["membershipType"],
+          email: c["email"],
+          webUrl: c["webUrl"],
+        }));
+        return ok({ count: channels.length, channels });
       } catch (e) {
         return err(e);
       }
@@ -100,7 +114,24 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
           `/teams/${team_id}/channels/${channel_id}/messages`,
           { params: { $top: top } }
         );
-        return ok(res.data);
+        const messages = ((res.data as Record<string, unknown>)["value"] as Record<string, unknown>[] ?? []).map((m) => {
+          const fromUser = ((m["from"] as Record<string, unknown> | undefined)?.["user"]) as Record<string, unknown> | undefined;
+          const rawContent = ((m["body"] as Record<string, unknown> | undefined)?.["content"] as string) ?? "";
+          // Strip HTML tags and truncate — raw Teams HTML can be 2–5k tokens per message
+          const textContent = rawContent.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400);
+          return {
+            id: m["id"],
+            createdDateTime: m["createdDateTime"],
+            lastModifiedDateTime: m["lastModifiedDateTime"],
+            messageType: m["messageType"],
+            from: fromUser ? { displayName: fromUser["displayName"], id: fromUser["id"] } : null,
+            body: textContent,
+            hasAttachments: ((m["attachments"] as unknown[] | undefined)?.length ?? 0) > 0,
+            reactionCount: (m["reactions"] as unknown[] | undefined)?.length ?? 0,
+            mentionCount: (m["mentions"] as unknown[] | undefined)?.length ?? 0,
+          };
+        });
+        return ok({ count: messages.length, messages });
       } catch (e) {
         return err(e);
       }
@@ -146,7 +177,7 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
     },
     async ({ top }) => {
       if (!graphUserId)
-        return cfgErr("teams_list_my_chats — set GRAPH_USER_ID in your .env or Bitwarden vault");
+        return cfgErr("teams_list_my_chats — set GRAPH_USER_ID in your Bitwarden vault");
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/users/${graphUserId}/chats`, {
@@ -169,7 +200,7 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
             lastMessage: preview
               ? {
                   from: (fromUser?.["displayName"] as string) ?? "System",
-                  body: ((preview["body"] as Record<string, unknown>)?.["content"] as string) ?? "",
+                  body: (((preview["body"] as Record<string, unknown>)?.["content"] as string) ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400),
                   createdDateTime: preview["createdDateTime"],
                 }
               : null,
@@ -196,7 +227,7 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
     },
     async ({ chat_id, top }) => {
       if (!graphUserId)
-        return cfgErr("teams_get_chat_messages — set GRAPH_USER_ID in your .env or Bitwarden vault");
+        return cfgErr("teams_get_chat_messages — set GRAPH_USER_ID in your Bitwarden vault");
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/chats/${chat_id}/messages`, {
@@ -210,7 +241,7 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
             id: msg["id"],
             createdDateTime: msg["createdDateTime"],
             from: (fromUser?.["displayName"] as string) ?? "System",
-            body: ((msg["body"] as Record<string, unknown>)?.["content"] as string) ?? "",
+            body: (((msg["body"] as Record<string, unknown>)?.["content"] as string) ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400),
             messageType: msg["messageType"],
           };
         });
