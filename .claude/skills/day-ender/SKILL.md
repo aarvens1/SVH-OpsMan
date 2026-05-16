@@ -119,6 +119,26 @@ Default destination for new tasks:
 
 Checklist items are **what** needs to happen, not **how**. Each should be a short outcome phrase (5–10 words). Keep 3–5 items max. Put process guidance, suggestions, and approach notes in the Notes field.
 
+**REMOVE format** (discard a draft — no Planner action, just delete the block):
+
+```
+#### REMOVE — [task title or brief reason]
+- **Reason:** [optional — why this draft is being dropped]
+```
+
+**TODO format** (routes to personal To Do instead of Planner):
+
+```
+#### TODO — [task title]
+- **List:** [To Do list name — or leave blank for default]
+- **Due:** [YYYY-MM-DD or leave blank]
+- **Notes:** [1–2 sentences of context]
+```
+
+**Processing and cleanup:**
+
+After Aaron confirms and you execute any block — CREATE pushed to Planner, UPDATE pushed to Planner, TODO pushed to To Do, REMOVE discarded — immediately remove that subsection from the daily note using `edit_block`. When all blocks in the section have been processed, remove the `### 📝 Draft Planner updates` section header as well.
+
 ## Step 4 — Update state file
 
 After the Obsidian note is appended, update `System/briefing-state.md` in the Obsidian vault:
