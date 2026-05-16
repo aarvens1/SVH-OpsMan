@@ -47,13 +47,13 @@ Daily notes have three fixed top-level sections: `# 🌅 Day Starter`, `# 📝 N
 
 **Day Starter** — written once at the start of day. Use `mode: rewrite` (new file).
 
-**Day Ender** — appended at end of day. Use `mode: append` — it naturally lands in the Day Ender section since that section is at the bottom.
+**Day Ender** — appended at end of day. Use `mode: append`. **Do NOT read the daily note before appending.** The Obsidian MCP tool sometimes returns only metadata with no body content; if you read first and get an empty result, you'll incorrectly conclude the file is empty and overwrite it. The day-starter template ends with `<!-- DAY-STARTER-END -->` as a structural sentinel — the day ender content appends naturally after it.
 
-**Notes section (mid-day additions)** — do NOT use `mode: append`. Appending goes to the end of the file, which is after `# 🌆 Day Ender`. Instead, use `edit_block` to insert content before the Day Ender header:
-- `old_string`: `\n---\n\n# 🌆 Day Ender`
-- `new_string`: `\n[new content]\n\n---\n\n# 🌆 Day Ender`
+**Notes section (mid-day additions)** — do NOT use `mode: append`. Appending goes to the end of the file, which is after `# 🌆 Day Ender`. Instead, use `edit_block` to insert content before the Day Ender header using the sentinel:
+- `old_string`: `<!-- DAY-STARTER-END -->`
+- `new_string`: `<!-- DAY-STARTER-END -->\n\n[new content]`
 
-If a read of an existing daily note returns no body content, assume the file has content that the tool failed to surface — not that the file is empty. When in doubt, ask before rewriting any Obsidian note.
+**If a read of an existing daily note returns no body content:** assume the file has content that the tool failed to surface — not that the file is empty. Never rewrite a daily note without confirming the file is actually empty or brand new.
 
 ## Daily note as timeline
 

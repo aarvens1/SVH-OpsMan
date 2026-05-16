@@ -133,6 +133,8 @@ tags: [briefing, daily]
 
 [all day-starter content sections]
 
+<!-- DAY-STARTER-END -->
+
 ---
 
 # 📝 Notes
