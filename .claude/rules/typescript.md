@@ -17,7 +17,7 @@ Shape all API responses before returning — never pass raw ARM/Graph/API JSON t
 
 ## Error messages
 
-Return actionable errors: `formatError` from `utils/http.ts` wraps axios errors and adds the HTTP status. For missing config, return: `"<tool_name> is not configured — set <ENV_VARS> in your .env or Bitwarden vault"`.
+Return actionable errors: `formatError` from `utils/http.ts` wraps axios errors and adds the HTTP status. For missing config, return: `"<tool_name> is not configured — set <ENV_VARS> in the SVH OpsMan Bitwarden item"`.
 
 ## Zod schemas
 

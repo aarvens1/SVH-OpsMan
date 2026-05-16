@@ -22,7 +22,6 @@
       "Read(mcp-server/src/**)",
       "Read(mcp-server/package.json)",
       "Read(mcp-server/tsconfig.json)",
-      "Read(mcp-server/.env.example)",
       "Read(references/**)",
       "Read(README.md)",
       "Read(CLAUDE.md)",

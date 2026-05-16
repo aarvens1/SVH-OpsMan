@@ -393,7 +393,7 @@ az role assignment create --assignee <client-id> --role "Cost Management Reader"
 
 ## PowerShell modules
 
-Load from Windows Terminal with `. ./connect.ps1`. Credentials from Bitwarden (`bw unlock`) or `powershell/.env`.
+Load from Windows Terminal with `. ./connect.ps1`. Credentials from Bitwarden — run `export BW_SESSION=$(bw unlock --raw)` first.
 
 | Module | Coverage |
 |--------|---------|

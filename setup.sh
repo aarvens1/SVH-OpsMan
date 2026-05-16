@@ -206,15 +206,6 @@ fi
 chmod +x "$REPO_DIR/run-tui.sh"
 ok "run-tui.sh marked executable"
 
-# ── 11. .env scaffold ─────────────────────────────────────────────────────────
-step "mcp-server .env"
-if [ ! -f "$REPO_DIR/mcp-server/.env" ]; then
-  cp "$REPO_DIR/mcp-server/.env.example" "$REPO_DIR/mcp-server/.env"
-  warn ".env created from .env.example — fill in credentials (or use Bitwarden)"
-else
-  ok ".env already exists"
-fi
-
 # ── 11. WezTerm config ────────────────────────────────────────────────────────
 step "WezTerm config"
 WEZ_CONFIG_DIR="/mnt/c/Users/astevens/.config/wezterm"
@@ -255,7 +246,6 @@ echo -e "\nNext steps:"
 echo -e "  1. ${BOLD}source ~/.bashrc${RESET}  (or open a new terminal)"
 echo -e "  2. If a new SSH key was generated above, add it to ${BOLD}github.com/settings/keys${RESET}"
 echo -e "  3. ${BOLD}export BW_SESSION=\$(bw unlock --raw)${RESET}  — unlock Bitwarden"
-echo -e "     ${CYAN}or${RESET} fill in ${BOLD}mcp-server/.env${RESET} directly"
 echo -e "  4. Register any skipped MCPs (github, obsidian, fathom, firecrawl)"
 echo -e "     by setting the env var and re-running, or with: ${BOLD}claude mcp add ...${RESET}"
 echo -e "  5. ${BOLD}cd mcp-server && npm start${RESET}  — verify the server starts cleanly"

@@ -4,7 +4,7 @@ Where credentials live for each integrated service. Check both custom fields AND
 
 ## Bitwarden item: "SVH OpsMan"
 
-All of the following are stored as **custom fields** in the "SVH OpsMan" BW item. All were also written to `mcp-server/.env` as fallback on 2026-05-11.
+All of the following are stored as **custom fields** in the "SVH OpsMan" BW item.
 
 | Env var | Service |
 |---------|---------|
@@ -35,7 +35,7 @@ export DC_REMOTE_PASSWORD=$(bw get password "DC Remote Account")
 
 Or retrieve inline from the SVH OpsMan item fields with `bw get item "SVH OpsMan"`.
 
-## Not yet in BW or .env
+## Not yet in BW
 
 These services will fail when BW is locked until credentials are added:
 
@@ -50,4 +50,4 @@ These services will fail when BW is locked until credentials are added:
 
 - A separate "Ninja API Key" BW item (`d3271524...`) previously held old NinjaOne credentials in its notes — deleted by user.
 - When searching BW for missing credentials, check both custom fields and item notes.
-- `.env` is gitignored (`mcp-server/.gitignore`). Do not commit it.
+- Credentials live exclusively in Bitwarden. There is no `.env` file.
