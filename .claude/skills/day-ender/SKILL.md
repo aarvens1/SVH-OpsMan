@@ -37,36 +37,44 @@ Run in parallel:
 - For DMs: `teams_list_my_chats` → `teams_get_chat_messages` (top: 10, as a **number not a string**) for threads with activity since `last_day_starter`. IT Team channels: `teams_list_teams` → `teams_list_channels` → `teams_list_messages` on General, Changes, Infrastructure, Alerts. Filter to messages after `last_day_starter`.
 - `confluence_search_pages` — pages modified today in INF, PROC, POL, SITE.
 
-## Step 2 — Read today's note
+## Step 2 — Append to today's note
 
-Read `Briefings/Daily/YYYY-MM-DD.md` from Obsidian to understand what was flagged this morning.
+**Do NOT read today's daily note before writing.** Reading before appending is what causes overwrites when the Obsidian tool returns metadata-only instead of file content. Your comparison of morning vs. current state comes from the Step 1 tool results — not from re-reading the note.
 
-**IMPORTANT:** If the read returns only metadata (e.g. `{"fileName":...,"fileType":"markdown"}` with no body), do NOT assume the file is empty. The day starter may have already written content that the tool failed to surface. Always treat the file as potentially having existing content.
+**Always use `mode: append`.** Never `mode: rewrite`. The day-starter content is already in the file; appending adds after it.
 
-## Step 3 — Append to today's note
+The daily note already contains a `# 🌆 Day Ender` placeholder section created by day-starter. Appended content lands there naturally.
 
-**CRITICAL: Always use `mode: append` when writing to the daily note. Never use `mode: rewrite`. The day starter content must be preserved.**
-
-The daily note already contains a `# 🌆 Day Ender` placeholder section created by day-starter. Append the end-of-day content to `Briefings/Daily/YYYY-MM-DD.md` — it will naturally land in that section.
-
-The day-ender's job is close-out, not repetition. The morning starter already has the full infra snapshot and team board. Do not re-run those tables. Write only what changed, what's still live, and what needs to move to tomorrow.
+The day-ender's job is close-out, not repetition. Do not re-run the infra tables or team board. Write only what changed, what's still live, and what needs to move to tomorrow.
 
 ```markdown
 ## ✅ Closed today
-- [What actually got done — cross-reference against this morning's open items and tasks]
+- [What actually got done — based on Planner task state from Step 1 vs. what was open this morning]
 
 ## 🔄 Still open — yours
 - [Aaron's tasks only. One line each: task + one-line next action. Not the team board.]
 
 ## 🔴 Active issues at EOD
-- [Only alerts or infra problems that are still live right now, or that are new since the morning briefing. If a morning alert cleared: note "NinjaOne: morning alerts cleared" as a one-liner. If nothing is active: "✅ No active issues at EOD."]
+- [Only alerts or infra problems still live right now, or new since morning. If everything cleared: "✅ No active issues at EOD."]
 
 ## 📨 Communications close-out
-- [Emails that arrived during the day needing a response — from the mail search. External senders and flagged items first. DMs or @mentions that are still unresolved. If an email from someone important arrived late in the day, call it out explicitly here rather than burying it in a list.]
+- [Emails needing a response from the mail search. External senders and flagged items first. Unresolved DMs or @mentions.]
 
 ## 🌅 First move tomorrow
 - [Single item — most time-sensitive or highest-impact.]
+
+## 📌 Carry Forward
+**Open (must action):**
+- [Item + suggested first move — only things not already captured in Planner]
+
+**Context to hold:**
+- [Brief fact worth knowing tomorrow that isn't in Planner]
+
+**Watching:**
+- [Item that doesn't need action but should stay on radar]
 ```
+
+Keep the Carry Forward section tight — 25 lines max. Only include items that would otherwise fall off between sessions. Skip anything already tracked in Planner.
 
 ### 📝 Draft Planner updates
 

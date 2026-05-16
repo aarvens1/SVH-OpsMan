@@ -1,0 +1,29 @@
+# SVH OpsMan — centralized config
+# Source of truth for IDs and paths used across skill files.
+# The session-start hook reads this and injects values into context.
+# If a skill file has a hardcoded value that conflicts with this file,
+# the value here takes precedence.
+
+user:
+  upn: astevens@shoestringvalley.com
+  entra_id: 5a637656-9bd4-4e0c-9a4e-ae52ee2fd15d
+  display_name: Aaron Stevens
+
+groups:
+  it_team: 1acb76b4-f2eb-42fc-8ae3-3b2262277516
+
+obsidian:
+  vault: /mnt/c/Users/astevens/vaults/OpsManVault
+
+planner:
+  # Operational boards (IT team queues)
+  sysadmin: "-aZEdilGAUqLC8B8GwOLfmQAAh9M"      # IT Sysadmin Tasks
+  recurring: "ZTlTUrl1gUunMMwExKSDRWQABKjH"      # IT Recurring Tasks
+  management: "e0-6qZKUSkyZJUQg9nNbzmQAEjoO"     # IT Management Tasks
+  overview: "nyrAlo2ciUKVEv8GXUA78WQAG8mL"       # IT Task Overview
+  # Project boards
+  office_network: "E4PruQekE0K25KH40pWa9WQAAfAr" # Office Network Standardization
+  bdr_testing: "lJQrriNYnUuLKm5u485GX2QAE_WS"    # BDR Testing
+  isp: "2es7HS5UakyP3K6ZkwRfd2QAF3I_"            # Information Security Program
+  cmmc_l1: "qxQKzAEGd0m3Q6EUysaGVmQADbmg"        # CMMC Level 1
+  copilot_audit: "wP9PL7YWCEqGbG6o4aYVT2QADaLq"  # Copilot Audit for IT team

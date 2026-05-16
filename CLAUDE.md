@@ -13,8 +13,9 @@ This is a custom MCP server that gives Claude access to SVH's IT systems: Micros
 
 ```
 .claude/
+  config.yaml           ← centralized config: UPNs, group IDs, Planner board IDs, vault path
   settings.json         ← permissions + SessionStart hook
-  hooks/session-start   ← injects git state + BW_SESSION status
+  hooks/session-start   ← injects git state, BW status, ops context (day, briefing, incidents)
   rules/                ← path-scoped conventions (TypeScript, Obsidian output)
   skills/               ← one directory per skill; Claude loads on demand
 mcp-server/
@@ -24,7 +25,7 @@ mcp-server/
     auth/               ← per-service token helpers
     tools/              ← one file per integrated system
     utils/http.ts       ← axios client factories + formatError
-references/             ← triage and troubleshooting reference docs
+references/             ← triage and troubleshooting reference docs (auto-synced to vault on session start)
 ```
 
 ## Key conventions
@@ -55,6 +56,9 @@ Invoke by name (`/day-starter`) or trigger phrase (e.g., "morning briefing", "X 
 5. Add the tool name(s) to the `allowed-tools` frontmatter of any skill that uses it
 
 ## Operational references
+
+### Config
+Canonical values (UPNs, group IDs, Planner board IDs, vault path) live in `.claude/config.yaml`. The session-start hook injects them at the top of every session. **If a skill file has a hardcoded value that conflicts with config.yaml, the config.yaml value takes precedence.** Update config.yaml when any of these values change — skill files do not need to be touched.
 
 ### Obsidian
 Vault: `/mnt/c/Users/astevens/vaults/OpsManVault/`  
@@ -94,7 +98,7 @@ Not yet found in BW: WAZUH_*, CONFLUENCE_*, UNIFI_*, PRINTERLOGIC_*. Search BW n
 
 ## References
 
-`references/` contains triage guides and SVH-specific failure patterns. Copy to `Obsidian/References/` so the Obsidian MCP can serve them in any Claude session, not just when this repo is open.
+`references/` contains triage guides and SVH-specific failure patterns. The session-start hook auto-syncs them to `OpsManVault/References/` on every session — no manual copy needed. The repo versions are the source of truth.
 
 | File | Used by |
 |------|---------|
