@@ -46,3 +46,48 @@ alias ops='cd "$OPSMANDIR"'
 
 # Start new shells in OpsMan when opened from the default home directory
 [[ "$PWD" == "$HOME" ]] && cd "$OPSMANDIR"
+
+# ── WezTerm ───────────────────────────────────────────────────────────────────
+
+# opsman — launch the full ops workspace:
+#   1. Verifies BW is unlocked
+#   2. Starts status-refresh.sh in background (idempotent)
+#   3. Opens WezTerm with a Claude Code pane in SVH-OpsMan
+opsman() {
+    if ! bw status 2>/dev/null | grep -q '"status":"unlocked"'; then
+        echo "⚠  Bitwarden locked — run: bwu"
+        return 1
+    fi
+
+    # Start status refresh daemon if not already running
+    if ! pgrep -f "dotfiles/status-refresh.sh" >/dev/null 2>&1; then
+        nohup bash "$OPSMANDIR/dotfiles/status-refresh.sh" >/dev/null 2>&1 &
+        disown
+        echo "✓ Status refresh daemon started (PID $!)"
+    fi
+
+    # Launch WezTerm → WSL bash → cd OpsMan → start claude
+    # wezterm.exe is the native Windows binary; callable from WSL2 via interop
+    wezterm.exe start -- wsl.exe --exec bash -c 'cd ~/SVH-OpsMan && exec claude' 2>/dev/null &
+    disown
+    echo "✓ WezTerm launching with Claude Code"
+    echo "  Leader key: CTRL+\\  |  Day Starter: LEADER+d  |  All skills: LEADER+?"
+}
+
+# wez-sync — copy wezterm.lua to the Windows config path after editing
+# (run this after editing dotfiles/wezterm.lua if the symlink setup wasn't used)
+wez-sync() {
+    local dest="/mnt/c/Users/astevens/.config/wezterm/wezterm.lua"
+    mkdir -p "$(dirname "$dest")"
+    cp "$OPSMANDIR/dotfiles/wezterm.lua" "$dest"
+    echo "✓ wezterm.lua synced to $(wslpath -w "$dest")"
+}
+
+# wez-stop — stop the background status refresh daemon
+wez-stop() {
+    if pkill -f "dotfiles/status-refresh.sh" 2>/dev/null; then
+        echo "✓ Status refresh daemon stopped"
+    else
+        echo "  Status refresh daemon was not running"
+    fi
+}
