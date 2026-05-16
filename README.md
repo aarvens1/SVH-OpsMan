@@ -1,6 +1,6 @@
-# SVH OpsMan
+# SVH Helm
 
-Your IT operations assistant, powered by Claude. Talk to it in plain English — it queries your systems, synthesizes answers, and stages anything write-side in Obsidian for your review before it goes anywhere.
+A purpose-built command station for SVH IT operations. Every system connected — Microsoft 365, Entra ID, Defender for Endpoint, Azure, NinjaOne, Wazuh, UniFi, PrinterLogic, Confluence. Twenty-three pre-wired investigation workflows. A live status dashboard. Claude is the intelligence layer; you drive.
 
 ```
 "Day starter."
@@ -18,7 +18,7 @@ Your IT operations assistant, powered by Claude. Talk to it in plain English —
 
 ```mermaid
 graph LR
-    You["You (Claude Code CLI)"]
+    You["You (SVH Helm)"]
 
     subgraph Custom["Custom MCP Server (this repo)"]
         direction TB
@@ -42,15 +42,15 @@ graph LR
     You --> External
 ```
 
-**Obsidian is home base.** Briefings, incident notes, change records, meeting notes — everything Claude produces lands in Obsidian. Nothing goes to Teams, Mail, Planner, or Confluence without you explicitly asking.
+**Obsidian is home base.** Briefings, incident notes, change records, meeting notes — everything Helm produces lands in Obsidian. Nothing goes to Teams, Mail, Planner, or Confluence without you explicitly asking.
 
-**Human-initiated only.** Skills are prompt patterns you trigger. Nothing runs on a schedule and Claude doesn't act autonomously.
+**Human-initiated only.** Skills are prompt patterns you trigger. Nothing runs on a schedule. Claude synthesizes — you command.
 
-**PowerShell module suite** lives in `powershell/`. Load with `. ./connect.ps1` from Windows Terminal. The modules cover write operations and on-prem checks that Claude doesn't do autonomously — disabling accounts, isolating devices, rebooting servers, querying Hyper-V and MABS via PSRemoting.
+**PowerShell module suite** lives in `powershell/`. Load with `. ./connect.ps1` from Windows Terminal. The modules cover write operations and on-prem checks — disabling accounts, isolating devices, rebooting servers, querying Hyper-V and MABS via PSRemoting.
 
 ---
 
-## What Claude can access
+## Connected systems
 
 > 🔒 = read-only
 

@@ -23,7 +23,7 @@
 
 ## 1. What this is
 
-SVH OpsMan is a custom AI assistant for IT operations. You talk to it in plain English inside a terminal. It queries your real systems — Microsoft 365, Entra ID, Defender for Endpoint, Azure, NinjaOne, Wazuh, UniFi, PrinterLogic, Confluence — synthesizes the results, and stages any write operations in Obsidian for your review before anything goes anywhere.
+SVH Helm is a purpose-built IT operations command station. You talk to it in plain English inside a terminal. It queries your real systems — Microsoft 365, Entra ID, Defender for Endpoint, Azure, NinjaOne, Wazuh, UniFi, PrinterLogic, Confluence — synthesizes the results, and stages any write operations in Obsidian for your review before anything goes anywhere.
 
 ```
 "Day starter."
@@ -33,6 +33,8 @@ SVH OpsMan is a custom AI assistant for IT operations. You talk to it in plain E
 "Help me plan this month's patching."
 "Did this email from finance@vendor.com actually deliver to Sarah?"
 ```
+
+Claude is the intelligence layer — it reads your prompts, picks the right tools, and synthesizes answers. The command station is the product: 23 pre-wired investigation workflows, a live status dashboard, a PowerShell module suite, and Obsidian as the staging area. You're at the helm.
 
 It is not:
 - A chatbot you visit in a browser tab
