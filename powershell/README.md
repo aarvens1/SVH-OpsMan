@@ -402,6 +402,99 @@ Invoke-SVHUserLockdown -UserPrincipalName jdoe@shoestringvalley.com   # requires
 
 ---
 
+## Getting the scripts onto a Windows machine
+
+The modules run from WSL by default, but they also work natively from any Windows machine that has PowerShell Core and Bitwarden CLI installed — a jump server, an admin workstation, or a Hyper-V host.
+
+### Prerequisites
+
+Install these once on the Windows machine. Run the winget commands in an elevated PowerShell window.
+
+```powershell
+# PowerShell Core (if not already installed — required, replaces Windows PowerShell 5.x)
+winget install Microsoft.PowerShell
+
+# Bitwarden CLI (the bw command)
+winget install Bitwarden.CLI
+
+# Git (to clone the repo — skip if you're copying files another way)
+winget install Git.Git
+```
+
+Optional — install only the modules you actually use:
+
+```powershell
+# Exchange Online (for EXO functions in SVH.Exchange)
+Install-Module ExchangeOnlineManagement -Scope CurrentUser -Force
+
+# Active Directory RSAT (for SVH.AD and SVH.Network DNS/DHCP)
+# On a domain controller or member server with RSAT already installed, skip this.
+# On a workstation:
+Add-WindowsCapability -Online -Name Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0
+Add-WindowsCapability -Online -Name Rsat.DHCP.Tools~~~~0.0.1.0
+Add-WindowsCapability -Online -Name Rsat.DNS.Tools~~~~0.0.1.0
+```
+
+> **Note:** SVH.AD and SVH.Network use PSRemoting to a DC — the RSAT tools only need to be installed on the DC itself, not on your workstation. You only need the RSAT modules locally if you want to run AD/DNS cmdlets without PSRemoting.
+
+### Option A — Clone the repo (recommended)
+
+```powershell
+# In an elevated PowerShell window on the Windows machine
+git clone https://github.com/aarvens1/svh-opsman.git C:\SVH-OpsMan
+
+# Or if already on WSL, clone into a Windows path accessible from WSL:
+git clone https://github.com/aarvens1/svh-opsman.git /mnt/c/SVH-OpsMan
+```
+
+### Option B — Copy from your WSL environment
+
+```powershell
+# From WSL bash — copy the powershell/ folder to a Windows path
+cp -r ~/SVH-OpsMan/powershell /mnt/c/SVH-OpsMan/powershell
+
+# Or use robocopy from Windows:
+robocopy \\wsl$\Ubuntu\home\user\SVH-OpsMan\powershell C:\SVH-OpsMan\powershell /E
+```
+
+### Unlock Bitwarden and load the modules (Windows)
+
+The steps are the same as WSL — the only difference is how you set `BW_SESSION`.
+
+```powershell
+# In PowerShell Core (pwsh.exe) on Windows:
+
+# 1. Unlock Bitwarden — sets BW_SESSION for this process
+$env:BW_SESSION = bw unlock --raw
+
+# 2. Allow local scripts to run (one-time, per machine)
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+
+# 3. Load everything
+cd C:\SVH-OpsMan\powershell
+. .\connect.ps1
+```
+
+After dot-sourcing, all SVH functions are available in the session exactly as they are from WSL.
+
+### Running on a Windows Server directly
+
+For servers that will run scripts on a schedule or need the modules available without WSL, set up a persistent profile:
+
+```powershell
+# Add to $PROFILE (creates file if it doesn't exist)
+# Find your profile path: $PROFILE
+notepad $PROFILE
+
+# Add these lines to the profile:
+$env:BW_SESSION = bw unlock --raw   # prompts on each pwsh launch
+. C:\SVH-OpsMan\powershell\connect.ps1
+```
+
+> For scheduled/unattended use, store the BW session key in Windows Credential Manager or Task Scheduler environment variables rather than prompting interactively.
+
+---
+
 ## WSL notes
 
 ### Interactive authentication (EXO, Azure AD)
@@ -416,24 +509,38 @@ Connect-ExchangeOnline -UserPrincipalName (Get-SVHTierUsername -Tier m365) -UseD
 Connect-AzAccount -UseDeviceAuthentication
 ```
 
+On Windows natively, interactive auth works normally — a browser window opens automatically.
+
 ### PSRemoting from WSL
 
-WinRM from WSL requires initial trust configuration. Run the one-time setup from `references/setup-winrm.md` before using any `SVH.OnPrem` or `SVH.Network` functions.
+WinRM from WSL requires initial trust configuration. Run the one-time setup from `references/setup-winrm.md` before using any `SVH.OnPrem`, `SVH.AD`, or `SVH.Network` PSRemoting functions.
 
-Cross-platform cmdlets that **don't work** in pwsh on Linux:
-- `Resolve-DnsName` → use `Resolve-SVHDns` from `SVH.Network` (pure .NET)
+Cross-platform cmdlets that **don't work** in pwsh on Linux (they work fine on Windows):
+- `Resolve-DnsName` → use `Resolve-SVHDns` from `SVH.Network` (pure .NET, works everywhere)
 - `Test-NetConnection` → use `Test-SVHPort` from `SVH.Network` (pure .NET TcpClient)
 - `New-NetFirewallRule`, `Get-NetAdapter` → PSRemoting into the target Windows host
 
-### Cluster scripts (from WSL)
+### Cluster scripts
 
-`Connect-ClusterReboot.ps1` launches the rolling-reboot orchestrator on the Hyper-V server and tails its transcript. Useful when you can't RDP but need to walk nodes through a scheduled reboot.
+`Connect-ClusterReboot.ps1` is the only script you run yourself. It:
+1. Prompts for `sa_stevens` credentials
+2. Creates a PSSession to the Hyper-V management server
+3. Copies `rolling-cluster-reboot.ps1` to `C:\cluster-reboot\` on that server
+4. Starts the orchestration as a background job on the server
+5. Tails the transcript so you see output in real time
+6. Handles interactive prompts (drain confirmations) from your local session
+
+If your connection drops, re-run `Connect-ClusterReboot.ps1` — it reconnects and resumes tailing from where it left off. The orchestration on the server keeps running regardless.
 
 ```powershell
-# Run from WSL — prompts for sa_stevens credential
+# From WSL or Windows PowerShell — prompts for sa_stevens credential
 ./Connect-ClusterReboot.ps1
-./Connect-ClusterReboot.ps1 -Server 172.18.201.145 -ClusterNames AccoColoHypCon,AccoColoHypVC
+
+# Override defaults
+./Connect-ClusterReboot.ps1 -Server 172.18.201.145 -ClusterNames AccoColoHypCon,AccoColoHypVC -TimeoutSeconds 900
 ```
+
+`rolling-cluster-reboot.ps1` is **not run directly** — it runs on the remote server, launched by `Connect-ClusterReboot.ps1`.
 
 ---
 
