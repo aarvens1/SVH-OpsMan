@@ -4,6 +4,8 @@ import { getGraphToken } from "../auth/graph.js";
 import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
 import { ok, err, cfgErr } from "../utils/response.js";
 
+type A = Record<string, unknown>;
+
 const NO_USER_MSG =
   "Calendar tools are not configured: set GRAPH_USER_ID to your UPN (e.g. you@company.com)";
 
@@ -309,7 +311,16 @@ export function registerOutlookCalendarTools(
         const res = await graphClient(token).get("/places/microsoft.graph.room", {
           params: { $top: top, $select: "id,displayName,emailAddress,capacity,building,floorNumber,isWheelChairAccessible" },
         });
-        return ok(res.data);
+        const rooms = ((res.data as A)["value"] as A[] ?? []).map((r: A) => ({
+          id: r["id"],
+          displayName: r["displayName"],
+          emailAddress: r["emailAddress"],
+          capacity: r["capacity"],
+          building: r["building"],
+          floorNumber: r["floorNumber"],
+          isWheelChairAccessible: r["isWheelChairAccessible"],
+        }));
+        return ok({ count: rooms.length, rooms });
       } catch (e) {
         return err(e);
       }

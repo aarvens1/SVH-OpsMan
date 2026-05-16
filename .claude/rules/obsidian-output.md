@@ -19,7 +19,7 @@ Extra fields by note type:
 - **Incidents:** `incident_id: INC-YYYY-NNN`, `severity: critical|high|medium|low`, `status: open|contained|closed`
 - **Changes:** `change_id: CHG-YYYY-NNN`, `risk: low|medium|high`, `window: YYYY-MM-DD HH:MM – HH:MM`, `change_date: YYYY-MM-DD` (clean date for Bases calendar view — same day as the window start)
 - **Vulnerabilities:** `cve: CVE-YYYY-NNNNN`, `priority: emergency|this-week|next-cycle|accept`
-- **Assets:** `asset_type: server|workstation|user`
+- **Assets:** `asset_type: server|workstation|user`, `ninja_device_id: <id>` (if in NinjaOne), `mde_machine_id: <id>` (if in Defender)
 - **Daily briefings:** `has_pending_tasks: true|false` — set to `true` if the note contains draft Planner actions that were not pushed during the session
 - **Weekly briefings:** `week: YYYY-WW`
 - **Meetings:** `attendees: [Name, Name]`

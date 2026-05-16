@@ -14,7 +14,7 @@ allowed-tools: "mcp__svh-opsman__calendar_list_events mcp__svh-opsman__calendar_
 
 ### Step 2 — Pull context
 Run in parallel:
-- **Fathom** — search past recordings with the same attendees or organisation. Any open action items from the last call?
+- **Fathom** — use `search_meetings` or `list_meetings` to find past recordings with the same attendees or organisation. Any open action items from the last call?
 - `confluence_search_pages` — any docs related to this meeting's topic or the attendee's org.
 - Obsidian — read any existing meeting notes for this recurring meeting or vendor.
 - `planner_list_tasks` — any open tasks assigned to or from the attendees.

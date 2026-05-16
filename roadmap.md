@@ -134,7 +134,7 @@ Copy-Item -Path "C:\path\to\file" -Destination ~/landing/ -FromSession $s
 | `defender-mde.ts` | ✓ Done | |
 | `confluence.ts` | ✓ Done | |
 | `entra-admin.ts` | ✓ Done | |
-| `outlook-calendar.ts` | ✓ Done | |
+| `outlook-calendar.ts` | ✓ Done | `calendar_list_rooms` shaped in 2026-05-16 session |
 | `ninjaone.ts` | ✓ Done | Custom field tools pass flat key-value through as-is (already shaped) |
 | `ms-admin.ts` | ✓ Done | |
 | `exchange-admin.ts` | ✓ Done | |
@@ -145,7 +145,7 @@ Copy-Item -Path "C:\path\to\file" -Destination ~/landing/ -FromSession $s
 | `sharepoint.ts` | ✓ Done | |
 | `unifi-cloud.ts` | ✓ Done | |
 | `unifi-network.ts` | ✓ Done | |
-| `outlook-mail.ts` | ✓ Done | Shaped in 2026-05-16 session |
+| `outlook-mail.ts` | ✓ Done | All tools shaped in 2026-05-16 session |
 | `teams.ts` | Partial | 3 remaining raw returns are write ops (send_message, create_channel, add_member) — low priority |
 
 ### 2. TTL cache on tool responses

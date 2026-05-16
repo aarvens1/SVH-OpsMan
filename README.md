@@ -46,7 +46,7 @@ graph LR
 
 **Human-initiated only.** Skills are prompt patterns you trigger. Nothing runs on a schedule. Claude synthesizes — you command.
 
-**PowerShell module suite** lives in `powershell/`. Load with `. ./connect.ps1` from Windows Terminal. The modules cover write operations and on-prem checks — disabling accounts, isolating devices, rebooting servers, querying Hyper-V and MABS via PSRemoting. A **TUI** (`./run-tui.sh`) wraps all 237 module functions in a searchable terminal interface: browse by module, fill parameters in a form, preview the command, confirm before anything destructive runs, and save output to Obsidian or view it inline.
+**PowerShell module suite** lives in `powershell/`. Load with `. ./connect.ps1` from Windows Terminal. The modules cover write operations and on-prem checks — disabling accounts, isolating devices, rebooting servers, querying Hyper-V and MABS via PSRemoting. A **TUI** (`./run-tui.sh`) wraps all module functions in a searchable terminal interface: browse by module, fill parameters in a form, preview the command, confirm before anything destructive runs, and save output to Obsidian or view it inline.
 
 ---
 
@@ -408,6 +408,8 @@ Load from Windows Terminal with `. ./connect.ps1`. Credentials from Bitwarden (`
 | `SVH.Confluence` | Pages, search, comments |
 | `SVH.PrinterLogic` | Printers, drivers, deployment, quotas, audit log |
 | `SVH.OnPrem` | PSRemoting — disk, services, pending reboot, Hyper-V VMs, cluster state, MABS job log, SQL memory config |
+| `SVH.AD` | Active Directory via PSRemoting — users, groups, computers, domain health, replication |
+| `SVH.Network` | AD DNS, Windows DHCP, cross-platform .NET validation |
 | `SVH.Cross` | Cross-system composites — user/asset summaries, patch surface, backup health, compliance gap, IR lockdown |
 
 ### Credential tiers

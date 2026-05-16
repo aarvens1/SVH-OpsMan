@@ -6,6 +6,8 @@ import { ok, err, cfgErr } from "../utils/response.js";
 
 type A = Record<string, unknown>;
 
+const addr = (a: string) => ({ emailAddress: { address: a } });
+
 const NO_USER_MSG =
   "Mail tools are not configured: set GRAPH_USER_ID to your UPN (e.g. you@company.com)";
 
@@ -34,24 +36,16 @@ export function registerOutlookMailTools(
           .max(50)
           .default(20)
           .describe("Max messages to return"),
-        select: z
-          .string()
-          .optional()
-          .describe(
-            "Comma-separated fields to return. Default: id,subject,from,receivedDateTime,hasAttachments,bodyPreview"
-          ),
       }),
     },
-    async ({ query, top, select }) => {
+    async ({ query, top }) => {
       if (!userId) return cfgErr(NO_USER_MSG);
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const params: Record<string, string | number> = {
           $search: `"${query}"`,
           $top: top,
-          $select:
-            select ??
-            "id,subject,from,receivedDateTime,hasAttachments,bodyPreview,importance,isRead",
+          $select: "id,subject,from,receivedDateTime,hasAttachments,bodyPreview,importance,isRead",
         };
         const res = await graphClient(token).get(`/users/${userId}/messages`, { params });
         const msgs = ((res.data as A)["value"] as A[] ?? []).map((m: A) => ({
@@ -87,7 +81,22 @@ export function registerOutlookMailTools(
           graphClient(token).get(`/users/${userId}/messages/${message_id}`),
           graphClient(token).get(`/users/${userId}/messages/${message_id}/attachments?$select=id,name,contentType,size`),
         ]);
-        return ok({ ...msg.data, attachments: attachments.data.value });
+        const m = msg.data as A;
+        return ok({
+          id: m["id"],
+          subject: m["subject"],
+          from: (m["from"] as A | undefined)?.["emailAddress"],
+          to: (m["toRecipients"] as A[] | undefined)?.map((r: A) => (r["emailAddress"] as A)?.["address"]),
+          cc: (m["ccRecipients"] as A[] | undefined)?.map((r: A) => (r["emailAddress"] as A)?.["address"]),
+          receivedDateTime: m["receivedDateTime"],
+          sentDateTime: m["sentDateTime"],
+          hasAttachments: m["hasAttachments"],
+          importance: m["importance"],
+          isRead: m["isRead"],
+          body: (m["body"] as A | undefined)?.["content"],
+          bodyContentType: (m["body"] as A | undefined)?.["contentType"],
+          attachments: (attachments.data as A)["value"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -123,15 +132,14 @@ export function registerOutlookMailTools(
       if (!userId) return cfgErr(NO_USER_MSG);
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const toRecipients = to.map((addr) => ({ emailAddress: { address: addr } }));
         const payload: Record<string, unknown> = {
           message: {
             subject,
             importance,
             body: { contentType: body_type, content: body },
-            toRecipients,
-            ...(cc?.length ? { ccRecipients: cc.map((a) => ({ emailAddress: { address: a } })) } : {}),
-            ...(bcc?.length ? { bccRecipients: bcc.map((a) => ({ emailAddress: { address: a } })) } : {}),
+            toRecipients: to.map(addr),
+            ...(cc?.length ? { ccRecipients: cc.map(addr) } : {}),
+            ...(bcc?.length ? { bccRecipients: bcc.map(addr) } : {}),
           },
           saveToSentItems: save_to_sent,
         };
@@ -164,12 +172,12 @@ export function registerOutlookMailTools(
           subject,
           importance,
           body: { contentType: body_type, content: body },
-          toRecipients: to.map((a) => ({ emailAddress: { address: a } })),
-          ...(cc?.length ? { ccRecipients: cc.map((a) => ({ emailAddress: { address: a } })) } : {}),
+          toRecipients: to.map(addr),
+          ...(cc?.length ? { ccRecipients: cc.map(addr) } : {}),
         };
         const res = await graphClient(token).post(`/users/${userId}/messages`, payload);
-        const d = res.data as A;
-        return ok({ id: d["id"], subject: d["subject"], created: true });
+        const draft = res.data as A;
+        return ok({ id: draft["id"], subject: draft["subject"], created: true });
       } catch (e) {
         return err(e);
       }
@@ -227,8 +235,7 @@ export function registerOutlookMailTools(
           `/users/${userId}/messages/${message_id}/move`,
           { destinationId: destination_folder_id }
         );
-        const m = res.data as A;
-        return ok({ id: m["id"], moved: true, destination: destination_folder_id });
+        return ok({ id: (res.data as A)["id"], moved: true, destination: destination_folder_id });
       } catch (e) {
         return err(e);
       }
