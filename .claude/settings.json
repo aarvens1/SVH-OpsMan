@@ -53,6 +53,15 @@
             "command": ".claude/hooks/pre-tool-use.sh"
           }
         ]
+      },
+      {
+        "matcher": "mcp__desktop-commander__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/desktop-commander-guard.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [
