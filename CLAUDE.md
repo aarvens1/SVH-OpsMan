@@ -12,19 +12,25 @@ This is a custom MCP server that gives Claude access to SVH's IT systems: Micros
 
 ```
 .claude/
-  config.yaml           ← centralized config: UPNs, group IDs, Planner board IDs, vault path
-  settings.json         ← permissions + SessionStart hook
-  hooks/session-start   ← injects git state, BW status, ops context (day, briefing, incidents)
-  rules/                ← path-scoped conventions (TypeScript, Obsidian output)
-  skills/               ← one directory per skill; Claude loads on demand
+  config.yaml              ← centralized config: UPNs, group IDs, Planner board IDs, vault path
+  settings.json            ← permissions + SessionStart hook
+  hooks/session-start.sh   ← injects git state, BW status, ops context (day, briefing, incidents)
+  rules/                   ← path-scoped conventions (TypeScript, Obsidian output)
+  skills/                  ← one directory per skill; Claude loads on demand
 mcp-server/
   src/
-    index.ts            ← entrypoint; registers all tool groups
-    secrets.ts          ← Bitwarden credential loader
-    auth/               ← per-service token helpers
-    tools/              ← one file per integrated system
-    utils/http.ts       ← axios client factories + formatError
-references/             ← triage and troubleshooting reference docs (auto-synced to vault on session start)
+    index.ts               ← entrypoint; registers all tool groups
+    secrets.ts             ← Bitwarden credential loader
+    auth/                  ← per-service token helpers
+    tools/                 ← one file per integrated system
+    utils/http.ts          ← axios client factories + formatError
+powershell/
+  connect.ps1              ← dot-source to load credentials + all modules (requires BW_SESSION)
+  modules/SVH.*.psm1       ← one module per integrated system; see powershell/README.md
+  rolling-cluster-reboot.ps1  ← HCI node drain/reboot orchestration (runs on remote server)
+  Connect-ClusterReboot.ps1   ← WSL/laptop launcher for rolling-cluster-reboot
+  setup-*.ps1              ← one-time app registration and policy setup scripts
+references/                ← triage and troubleshooting reference docs (auto-synced to vault on session start)
 ```
 
 ## Key conventions
@@ -87,6 +93,29 @@ All credentials are in the **SVH OpsMan** BW item. Check both custom fields AND 
 In SVH OpsMan (custom fields): GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET, GRAPH_USER_ID, MDE_*, AZURE_*, NINJA_CLIENT_ID, NINJA_CLIENT_SECRET, OBSIDIAN_API_KEY.
 
 Not yet found in BW: WAZUH_*, CONFLUENCE_*, UNIFI_*, PRINTERLOGIC_*. Search BW notes when looking for these.
+
+### PowerShell modules
+
+Full reference and examples in `powershell/README.md`. Load with `. ./connect.ps1` (requires `BW_SESSION`).
+
+| Module | Coverage | Credential tier |
+|--------|----------|----------------|
+| SVH.Core | Credential store, OAuth2 cache, HTTP helpers | — |
+| SVH.Entra | Users, groups, licenses, MFA, CA policies, Intune | Graph app |
+| SVH.Exchange | Mailbox settings, OOO, distribution groups, M365 health, EXO cmdlets | Graph app / EXO module |
+| SVH.M365 | Teams, mail, calendar, SharePoint, OneDrive, Planner, To Do | Graph app |
+| SVH.Azure | ARM (VMs, VNets, storage, costs, Recovery) + Defender MDE | ARM + MDE app |
+| SVH.NinjaOne | RMM: devices, alerts, patches, backups, script execution | NinjaOne API |
+| SVH.OnPrem | PSRemoting: disks, services, Hyper-V, failover cluster, S2D, MABS, SQL | sa_stevens |
+| SVH.AD | Active Directory: users, groups, computers, domain health, replication | da_stevens |
+| SVH.Network | AD DNS, Windows DHCP, cross-platform network validation (.NET) | da_stevens |
+| SVH.Wazuh | SIEM: agents, alerts, FIM, rootcheck, vulns | Wazuh JWT |
+| SVH.UniFi | Network: APs, switches, clients, firewall rules, WLANs | UniFi controller + cloud |
+| SVH.PrinterLogic | Printers, drivers, deployment, quotas | PrinterLogic API |
+| SVH.Confluence | KB pages, search, comments | Confluence API |
+| SVH.Cross | Cross-system: asset summary, patch surface, backup health, user lockdown | Combines above |
+
+PSRemoting functions (SVH.OnPrem, SVH.AD, SVH.Network) require one-time WinRM trust setup from WSL — see `references/setup-winrm.md`. AD and DNS/DHCP use `da_stevens@andersen-cost.com`; on-prem server management uses `sa_stevens@andersen-cost.com`.
 
 ### NinjaOne alerting rules
 - **Skip devices in maintenance mode.** Do not surface offline alerts, monitor alerts, or status warnings for any NinjaOne device that is in maintenance mode. Maintenance mode means the offline/alert state is intentional — treat these as non-events in briefings and investigations.

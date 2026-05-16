@@ -7,7 +7,7 @@ DIRTY=$(git status --short 2>/dev/null | wc -l | tr -d ' ')
 AHEAD=$(git rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
 
 if [ -z "${BW_SESSION:-}" ]; then
-  BW_STATUS="BW_SESSION not set — credentials fall back to .env"
+  BW_STATUS="BW_SESSION not set — run: export BW_SESSION=\$(bw unlock --raw)"
 else
   BW_STATUS="BW_SESSION active"
 fi

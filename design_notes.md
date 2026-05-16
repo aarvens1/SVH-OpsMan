@@ -8,8 +8,6 @@ Architecture decisions, token-cost analysis, and workflow friction points. Revie
 
 ## What's resolved
 
-These items were open in the previous audit and are now done. Leaving them here so the history makes sense.
-
 | Item | Resolution |
 |------|-----------|
 | All 140 tool schemas sent every session | Deferred tool loading — schemas cost tokens only when loaded via ToolSearch. A full ops session uses ~994 schema tokens. |
@@ -17,136 +15,78 @@ These items were open in the previous audit and are now done. Leaving them here 
 | Auth token caching | All four auth modules (`graph.ts`, `azure.ts`, `mde.ts`, `ninja.ts`, `wazuh.ts`) have in-memory TTL caches. No re-auth within a session. |
 | Bitwarden unlock alias | `bwu` alias and shell warning are live in `dotfiles/bashrc.sh`. |
 | Single monolithic MCP server | Deprioritized. With deferred tool loading, splitting into per-service servers saves negligible tokens. Not worth the added operational complexity. |
+| `aaron-voice.md` in `.claude/rules/` | Deleted. The skill copy in `.claude/skills/draft/` loads only when `/draft` or a drafting trigger phrase is used. Saves ~2.8k tokens on every non-drafting session. |
+| Centralized config | `.claude/config.yaml` exists and is fully populated: user UPN/ID, IT group ID, vault path, all 9 Planner board IDs. Session-start hook injects it at the top of every session. |
+| Session-start hook `.env` fallback message | Fixed. Hook now outputs `"run: export BW_SESSION=$(bw unlock --raw)"` instead of the stale `.env` reference. |
+| Response shaping — `wazuh.ts` | All 7 tools shaped. `wazuh_search_alerts` data field trimmed to diagnostic top-level fields only (srcip, dstip, srcuser, eventID, up to 5 Windows eventdata fields). Deep XML structures dropped. |
+| Response shaping — `defender-mde.ts` | All 6 tools shaped. `mde_list_devices` and agents have 60-second TTL response cache. |
+| Response shaping — `planner.ts` | All tools shaped. `planner_create_task` raw spread fixed — now returns same keyed shape as `planner_get_task`. |
+| PowerShell module suite | 14 modules covering all integrated systems. New: `SVH.AD` (Active Directory via PSRemoting), `SVH.Network` (AD DNS, Windows DHCP, cross-platform .NET validation). |
+| PowerShell `.env` references | Removed from `connect.ps1`, `SVH.Core.psm1` error messages, and session-start hook. BW_SESSION is required; no fallback. |
+| Reference file auto-sync | `session-start.sh` runs `rsync -a --delete ~/SVH-OpsMan/references/ "$VAULT/References/"` on every session start. |
 
 ---
 
 ## Open issues
 
-### 1. Response shaping — the dominant remaining lever
+### 1. Response shaping — remaining files
 
-The TypeScript rule says "shape all API responses before returning." In practice, 18 of 19 tool files still have raw `ok(res.data)` calls. `azure.ts` is the only fully-shaped file and is the pattern to follow.
+`azure.ts` is the fully-shaped reference. The table below reflects current state after completing planner, wazuh, and defender-mde.
 
-**Current state by file:**
+| File | Raw `ok(res.data)` | Shaped `.map()` | Notes |
+|------|--------------------|-----------------|-------|
+| `azure.ts` | 0 | 14 ✓ | Reference implementation |
+| `planner.ts` | 0 | 16 ✓ | Done |
+| `wazuh.ts` | 0 | 7 ✓ | Done |
+| `defender-mde.ts` | 0 | 6 ✓ | Done |
+| `outlook-mail.ts` | 4 | 5 | |
+| `teams.ts` | 6 | 3 | |
+| `ninjaone.ts` | 12 | 6 | |
+| `entra-admin.ts` | 8 | 2 | |
+| `outlook-calendar.ts` | 6 | 2 | |
+| `confluence.ts` | 8 | 0 | |
+| `exchange-admin.ts` | 6 | 0 | |
+| `intune.ts` | 6 | 0 | |
+| `ms-admin.ts` | 7 | 0 | |
+| `ms-todo.ts` | 5 | 0 | |
+| `onedrive.ts` | 6 | 0 | |
+| `printerlogic.ts` | 7 | 0 | |
+| `sharepoint.ts` | 7 | 0 | |
+| `unifi-cloud.ts` | 4 | 0 | |
+| `unifi-network.ts` | 7 | 0 | |
 
-| File | Raw `ok(res.data)` | Shaped `.map()` |
-|------|--------------------|-----------------|
-| `azure.ts` | 0 | 14 ✓ |
-| `outlook-mail.ts` | 4 | 5 |
-| `teams.ts` | 6 | 3 |
-| `ninjaone.ts` | 12 | 6 |
-| `entra-admin.ts` | 8 | 2 |
-| `outlook-calendar.ts` | 6 | 2 |
-| `planner.ts` | 10 | 0 |
-| `confluence.ts` | 8 | 0 |
-| `defender-mde.ts` | 6 | 0 |
-| `exchange-admin.ts` | 6 | 0 |
-| `intune.ts` | 6 | 0 |
-| `ms-admin.ts` | 7 | 0 |
-| `ms-todo.ts` | 5 | 0 |
-| `onedrive.ts` | 6 | 0 |
-| `planner.ts` | 10 | 0 |
-| `printerlogic.ts` | 7 | 0 |
-| `sharepoint.ts` | 7 | 0 |
-| `unifi-cloud.ts` | 4 | 0 |
-| `unifi-network.ts` | 7 | 0 |
-| `wazuh.ts` | 7 | 0 |
-
-Graph API responses include `@odata.*` metadata fields, `createdDateTime` on every sub-object, and deeply nested structures Claude never uses. A well-shaped response is 60–80% smaller.
-
-**Priority order for shaping:** Tools called by daily-rhythm skills first.
-1. `planner.ts` — called by every day-starter
-2. `wazuh.ts` — called by every day-starter and security posture
-3. `defender-mde.ts` — called by posture and vuln-triage
-4. `ninjaone.ts` — partially shaped; finish the remaining 12 raw returns
-5. `ms-admin.ts` — service health called daily
-6. Everything else — shape opportunistically when touching those files
+**Priority order for remaining shaping:** Tools called by daily-rhythm skills first.
+1. `ninjaone.ts` — partially shaped; finish the remaining 12 raw returns
+2. `ms-admin.ts` — service health called daily
+3. `teams.ts` — called by day-starter and day-ender
+4. `outlook-mail.ts` — partially shaped; finish remaining 4
+5. Everything else — shape opportunistically when touching those files
 
 ---
 
-### 2. `aaron-voice.md` loads every session
+### 2. Session-start hook injects too little ops context
 
-`aaron-voice.md` (~2.8k tokens) lives in `.claude/rules/` and loads into every session's system context — including debugging, investigations, and posture checks where no external communication is ever drafted.
+The hook currently outputs: branch, dirty-file count, ahead count, BW status, day of week, today's date, briefing-exists flag, open incident count, and last briefing date. The vault path is WSL-only (`/mnt/c/Users/astevens/...`), so the briefing/incident/last-briefing fields show as "unknown" in non-WSL environments (including remote execution sessions).
 
-The file was copied into `.claude/skills/draft/` but never removed from `rules/`. It's now in both places. The rules version loads unconditionally; the draft-skill version is redundant.
+**What would additionally help for ops:**
 
-**Fix:** Delete `.claude/rules/aaron-voice.md`. The skill copy is sufficient — it loads only when `/draft` or a trigger phrase is used.
-
-**Saving:** ~2.8k tokens on every non-drafting session.
-
----
-
-### 3. Centralized config doesn't exist
-
-The same values are hardcoded across skill files:
-
-- `astevens@shoestringvalley.com` — in day-starter, week-starter, and others
-- Planner board IDs (9 boards) — scattered across at least 3 skill files
-- `/mnt/c/Users/astevens/vaults/OpsManVault/` — vault path
-- IT Team group ID `1acb76b4-f2eb-42fc-8ae3-3b2262277516`
-
-There are at least 10 hardcoded occurrences across skill files. A board ID change currently means hunting through multiple files.
-
-**Fix:** Create `.claude/config.yaml` with named constants. Inject them via the session-start hook. Skill files reference `{{user.upn}}` or the hook-injected value instead of literals.
-
-```yaml
-user:
-  upn: astevens@shoestringvalley.com
-  entra_id: 5a637656-9bd4-4e0c-9a4e-ae52ee2fd15d
-  it_group_id: 1acb76b4-f2eb-42fc-8ae3-3b2262277516
-
-obsidian:
-  vault: /mnt/c/Users/astevens/vaults/OpsManVault
-
-planner:
-  sysadmin: -aZEdilGAUqLC8B8GwOLfmQAAh9M
-  recurring: ZTlTUrl1gUunMMwExKSDRWQABKjH
-  management: e0-6qZKUSkyZJUQg9nNbzmQAEjoO
-  overview: nyrAlo2ciUKVEv8GXUA78WQAG8mL
-  office_network: E4PruQekE0K25KH40pWa9WQAAfAr
-  bdr_testing: lJQrriNYnUuLKm5u485GX2QAE_WS
-  isp: 2es7HS5UakyP3K6ZkwRfd2QAF3I_
-  cmmc_l1: qxQKzAEGd0m3Q6EUysaGVmQADbmg
-  copilot_audit: wP9PL7YWCEqGbG6o4aYVT2QADaLq
-```
+- **Last briefing date** — currently requires the vault to be accessible. A fallback from git history or a written state file would make this reliable everywhere.
+- **Day of week** — present, but not surfaced in a way that triggers the 72h Monday lookback automatically without an explicit note in the day-starter skill.
 
 ---
 
-### 4. Session-start hook injects too little
+### 3. Tool response TTL cache
 
-The current hook outputs: branch, dirty-file count, ahead count, and BW status. Useful for dev sessions. In an ops session where the repo is clean, it's almost no information.
+Auth tokens are cached within a session (resolved). Tool *responses* are cached on `wazuh_list_agents` and `mde_list_devices`. The pattern should extend to:
 
-**What would actually help for ops:**
+- `ninja_list_servers` — called multiple times in a typical day-starter session
+- `admin_get_service_health` — called daily; changes rarely within a session
 
-- **Day of week** — so Claude knows Monday = 72h lookback without a time-tool call
-- **Today's briefing exists** — check `$VAULT/Briefings/Daily/YYYY-MM-DD.md`; if present, day-starter should offer append rather than regenerate
-- **Open incident count** — `ls $VAULT/Incidents/Active/*.md 2>/dev/null | wc -l`; Claude immediately knows whether there's an active incident without being told
-- **Last briefing date** — inject date of most recent daily file so Claude can compute the correct lookback on holidays and skip days
-
-```bash
-# Additions to session-start.sh
-TODAY=$(date +%Y-%m-%d)
-DOW=$(date +%A)
-VAULT="/mnt/c/Users/astevens/vaults/OpsManVault"
-BRIEFING_EXISTS=$([ -f "$VAULT/Briefings/Daily/$TODAY.md" ] && echo "yes" || echo "no")
-OPEN_INCIDENTS=$(ls "$VAULT/Incidents/Active/"*.md 2>/dev/null | wc -l | tr -d ' ')
-LAST_BRIEFING=$(ls "$VAULT/Briefings/Daily/"*.md 2>/dev/null | sort | tail -1 | xargs basename -s .md 2>/dev/null || echo "none")
-```
+This is lower priority than finishing response shaping — cache a small response, not a raw one.
 
 ---
 
-### 5. Tool response TTL cache
-
-Auth tokens are cached within a session (resolved, see above). Tool *responses* are not. In a day-starter run, Claude may call `ninja_list_servers` once for the briefing and again during a follow-up question about a specific server in the same session. The second call returns identical data.
-
-**Fix:** Add a module-level `Map<string, { data: unknown; expires_at: number }>` in high-read tools with a 60-second TTL. The MCP server process stays alive for the session, so module-level objects persist across tool calls.
-
-Good candidates: `ninja_list_servers`, `wazuh_list_agents`, `mde_list_devices`, `admin_get_service_health`.
-
-This is lower priority than response shaping — you can't cache a raw 8k-token response and call it a win. Shape first, then cache.
-
----
-
-### 6. Day-ender append fragility
+### 4. Day-ender append fragility
 
 The day-ender skill has a `CRITICAL: Always use mode: append` note and a workaround for the Obsidian MCP sometimes returning only metadata without body content. The workaround is in the skill instructions rather than fixed at the source.
 
@@ -157,43 +97,15 @@ The day-ender skill has a `CRITICAL: Always use mode: append` note and a workaro
 
 ---
 
-### 7. Reference file sync is manual
-
-`CLAUDE.md` says to copy `references/` to `$VAULT/References/` so the Obsidian MCP can serve them in any session. This is a manual step that's easy to skip, and skills that embed those docs may be working from a stale copy.
-
-**Fix:** Add to session-start hook:
-
-```bash
-rsync -a --delete ~/SVH-OpsMan/references/ "$VAULT/References/" 2>/dev/null || true
-```
-
-One line. The Obsidian MCP always has the latest versions. Zero manual steps.
-
----
-
-### 8. Pre-aggregation script for day-starter
-
-The day-starter skill makes 15+ sequential tool calls — each one adds API latency and tokens. A script that pre-fetches before you open Claude would eliminate most of that.
-
-**Shape:** A shell script (or session-start hook extension) that calls NinjaOne, Wazuh, Defender, Entra, M365 health, Planner, and Calendar APIs directly and writes a single staging JSON file to the vault. Claude reads the file, skips all the fetching, and jumps straight to synthesis.
-
-This is the highest-ROI item for the daily experience, but also the most work — it requires calling these APIs from bash or a small Node script outside Claude. Worth doing after response shaping is in place (so the pre-fetched data is already small).
-
----
-
 ## Priority table
 
 | Priority | Item | Effort | Notes |
 |----------|------|--------|-------|
-| **Now** | Response shaping — `planner.ts`, `wazuh.ts`, `defender-mde.ts` | Medium | Biggest per-result saving; compounds across entire session |
-| **Now** | Delete `aaron-voice.md` from `.claude/rules/` | Tiny | File already exists in draft skill; just remove the global copy |
-| **Soon** | Finish response shaping — remaining 16 files | Medium | Do opportunistically when touching a file anyway |
-| **Soon** | Centralize config into `.claude/config.yaml` | Small | Reduces skill-file maintenance burden significantly |
-| **Soon** | Session-start hook improvements | Small | Day of week, briefing exists, open incidents, last briefing date |
-| **Later** | Reference file auto-sync in session-start | Tiny | One rsync line |
-| **Later** | TTL cache on tool responses | Small | Shape first — cache a small response, not a raw one |
-| **Later** | Day-ender append fragility fix | Small | Investigate Obsidian MCP bug first before workarounds |
-| **Later** | Pre-aggregation morning script | Medium | Highest daily-experience ROI but requires external API calls from bash |
+| **Now** | Response shaping — `ninjaone.ts`, `ms-admin.ts`, `teams.ts` | Medium | Shapes tools called in every day-starter |
+| **Soon** | Finish response shaping — remaining 11 files | Medium | Do opportunistically when touching a file |
+| **Later** | TTL cache on tool responses — ninja_list_servers, admin_get_service_health | Small | Shape first |
+| **Later** | Day-ender append fragility fix | Small | Investigate Obsidian MCP bug first |
+| **Later** | Session-start hook vault fallback | Small | Make briefing/incident fields reliable outside WSL |
 
 ---
 
