@@ -110,7 +110,7 @@ Read only the `# 🌆 Day Ender` section of the previous business day's briefing
 Write a **"⏮ Carried from yesterday"** section in the new note, placed immediately after **🔴 Needs attention now**. Format each item as:
 
 ```
-- **[Item title]** *(from [Still open / Draft tasks / Worth watching] — [yesterday's date])*: [one-sentence status or action needed]
+- **[Item title]** *(→ [[Briefings/Daily/YYYY-MM-DD]])* — [one-sentence status or action needed]
 ```
 
 Skip items that are already surfacing today via Planner task list or current security alerts (they're accounted for). Only surface items that might otherwise fall off.
@@ -137,7 +137,7 @@ tags: [briefing, daily]
 
 # 📝 Notes
 
-*Add notes, manual entries, and meeting summaries here throughout the day.*
+*Links to active investigations, meeting notes, and mid-day findings go here. If it has a note in the vault, link to it — don't duplicate the content.*
 
 ---
 
@@ -149,13 +149,13 @@ tags: [briefing, daily]
 All day-starter content (the sections below) goes under the `# 🌅 Day Starter — HH:MM` header.
 
 ### 🔴 Needs attention now
-Any Critical/High alerts, risky users, active M365 incidents, or overdue tasks. One bullet per item with source and recommended action.
+Any Critical/High alerts, risky users, active M365 incidents, or overdue tasks. One bullet per item with source and recommended action. If an incident note or investigation already exists for a finding, link to it inline (`→ [[Incidents/Active/YYYY-MM-DD-name]]`). If the finding is serious enough to open a new note, do so and link from here.
 
 ### ⏮ Carried from yesterday
 Items surfaced by Step 2b — open threads, unpushed draft tasks, and unresolved worth-watching items from the previous day's note. Omit this section if there is nothing to carry forward.
 
 ### 📅 Today
-Calendar events in time order. Flag any meeting that needs prep.
+Calendar events in time order. Flag any meeting that needs prep. If a meeting-prep note already exists (`Meetings/YYYY-MM-DD-name.md`), link to it inline rather than restating the prep details.
 
 For each meeting on today's calendar, check whether a Fathom recording already exists (`list_meetings` filtered to today). If one exists:
 - Show the meeting name, time, and a 1-sentence summary from Fathom's notes

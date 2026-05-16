@@ -55,6 +55,21 @@ Daily notes have three fixed top-level sections: `# 🌅 Day Starter`, `# 📝 N
 
 If a read of an existing daily note returns no body content, assume the file has content that the tool failed to surface — not that the file is empty. When in doubt, ask before rewriting any Obsidian note.
 
+## Daily note as timeline
+
+The daily note is an index of the day, not a content repository. Prefer wikilinks over inline content wherever a dedicated note exists:
+
+| Situation | Daily note entry |
+|-----------|-----------------|
+| Open incident | `→ [[Incidents/Active/YYYY-MM-DD-name]]` |
+| Active investigation | `→ [[Investigations/YYYY-MM-DD-topic]]` |
+| Change record | `→ [[Changes/CHG-YYYY-NNN]]` |
+| Meeting notes | `- [[Meetings/YYYY-MM-DD-name]] — one sentence` (meeting-prep handles this) |
+| Asset with active alert | `→ [[Assets/device-name]]` |
+| Carry-forward item | `→ [[Briefings/Daily/YYYY-MM-DD]]` |
+
+Rule: if the content has a note elsewhere in the vault, the daily note gets a link, not the content.
+
 ## Nothing leaves Obsidian without explicit user instruction
 
 Draft all Teams messages, emails, Confluence pages, and Planner updates in Obsidian or as clearly-labelled drafts. Never send or publish without the user saying so in the current session.

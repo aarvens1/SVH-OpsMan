@@ -52,10 +52,10 @@ The day-ender's job is close-out, not repetition. Do not re-run the infra tables
 - [What actually got done — based on Planner task state from Step 1 vs. what was open this morning]
 
 ## 🔄 Still open — yours
-- [Aaron's tasks only. One line each: task + one-line next action. Not the team board.]
+- [Aaron's tasks only. One line each: task + one-line next action. Not the team board. If the task has a related investigation, incident, or change note, link to it: `→ [[Investigations/YYYY-MM-DD-topic]]`]
 
 ## 🔴 Active issues at EOD
-- [Only alerts or infra problems still live right now, or new since morning. If everything cleared: "✅ No active issues at EOD."]
+- [Only alerts or infra problems still live right now, or new since morning. If everything cleared: "✅ No active issues at EOD." Link to any open incident notes: `→ [[Incidents/Active/YYYY-MM-DD-name]]`]
 
 ## 📨 Communications close-out
 - [Emails needing a response from the mail search. External senders and flagged items first. Unresolved DMs or @mentions.]
