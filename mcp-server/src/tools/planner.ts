@@ -7,6 +7,8 @@ import { graphClient, GRAPH_SCOPE, formatError } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 import { randomUUID } from "crypto";
 
+type A = Record<string, unknown>;
+
 const CATEGORY_KEYS = [
   "category1","category2","category3","category4","category5","category6","category7",
   "category8","category9","category10","category11","category12","category13","category14",
@@ -32,7 +34,13 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/groups/${group_id}/planner/plans`);
-        return ok(res.data);
+        const plans = ((res.data as A)["value"] as A[] ?? []).map((p: A) => ({
+          id: p["id"],
+          title: p["title"],
+          owner: p["owner"],
+          createdDateTime: p["createdDateTime"],
+        }));
+        return ok(plans);
       } catch (e) {
         return err(e);
       }
@@ -51,7 +59,14 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/planner/plans/${plan_id}`);
-        return ok(res.data);
+        const p = res.data as A;
+        return ok({
+          id: p["id"],
+          title: p["title"],
+          owner: p["owner"],
+          createdDateTime: p["createdDateTime"],
+          etag: p["@odata.etag"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -71,7 +86,13 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).post("/planner/plans", { owner: group_id, title });
-        return ok(res.data);
+        const p = res.data as A;
+        return ok({
+          id: p["id"],
+          title: p["title"],
+          owner: p["owner"],
+          createdDateTime: p["createdDateTime"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -92,7 +113,13 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/planner/plans/${plan_id}/buckets`);
-        return ok(res.data);
+        const buckets = ((res.data as A)["value"] as A[] ?? []).map((b: A) => ({
+          id: b["id"],
+          name: b["name"],
+          planId: b["planId"],
+          orderHint: b["orderHint"],
+        }));
+        return ok(buckets);
       } catch (e) {
         return err(e);
       }
@@ -112,7 +139,12 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).post("/planner/buckets", { planId: plan_id, name });
-        return ok(res.data);
+        const b = res.data as A;
+        return ok({
+          id: b["id"],
+          name: b["name"],
+          planId: b["planId"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -139,7 +171,19 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
           ? `/planner/buckets/${bucket_id}/tasks`
           : `/planner/plans/${plan_id}/tasks`;
         const res = await client.get(url);
-        return ok(res.data);
+        const tasks = ((res.data as A)["value"] as A[] ?? []).map((t: A) => ({
+          id: t["id"],
+          title: t["title"],
+          planId: t["planId"],
+          bucketId: t["bucketId"],
+          percentComplete: t["percentComplete"],
+          dueDateTime: t["dueDateTime"],
+          assignments: t["assignments"],
+          appliedCategories: t["appliedCategories"],
+          priority: t["priority"],
+          etag: t["@odata.etag"],
+        }));
+        return ok(tasks);
       } catch (e) {
         return err(e);
       }
@@ -159,7 +203,19 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/planner/tasks/${task_id}`);
-        return ok(res.data);
+        const t = res.data as A;
+        return ok({
+          id: t["id"],
+          title: t["title"],
+          planId: t["planId"],
+          bucketId: t["bucketId"],
+          percentComplete: t["percentComplete"],
+          dueDateTime: t["dueDateTime"],
+          assignments: t["assignments"],
+          appliedCategories: t["appliedCategories"],
+          priority: t["priority"],
+          etag: t["@odata.etag"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -316,9 +372,21 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/users/${encodeURIComponent(user_id)}/planner/tasks`);
-        const tasks = (res.data?.value ?? []) as Record<string, unknown>[];
+        const tasks = (res.data?.value ?? []) as A[];
         const filtered = open_only ? tasks.filter((t) => (t["percentComplete"] as number) < 100) : tasks;
-        return ok({ "@odata.count": filtered.length, value: filtered });
+        const shaped = filtered.map((t: A) => ({
+          id: t["id"],
+          title: t["title"],
+          planId: t["planId"],
+          bucketId: t["bucketId"],
+          percentComplete: t["percentComplete"],
+          dueDateTime: t["dueDateTime"],
+          assignments: t["assignments"],
+          appliedCategories: t["appliedCategories"],
+          priority: t["priority"],
+          etag: t["@odata.etag"],
+        }));
+        return ok({ count: shaped.length, value: shaped });
       } catch (e) {
         return err(e);
       }
@@ -339,7 +407,13 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/users/${encodeURIComponent(user_id)}/planner/plans`);
-        return ok(res.data);
+        const plans = ((res.data as A)["value"] as A[] ?? []).map((p: A) => ({
+          id: p["id"],
+          title: p["title"],
+          owner: p["owner"],
+          createdDateTime: p["createdDateTime"],
+        }));
+        return ok(plans);
       } catch (e) {
         return err(e);
       }
@@ -362,7 +436,14 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/planner/tasks/${task_id}/details`);
-        return ok(res.data);
+        const d = res.data as A;
+        return ok({
+          id: d["id"],
+          description: d["description"],
+          checklist: d["checklist"],
+          references: d["references"],
+          etag: d["@odata.etag"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -469,7 +550,12 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/planner/plans/${plan_id}/details`);
-        return ok(res.data);
+        const d = res.data as A;
+        return ok({
+          id: d["id"],
+          categoryDescriptions: d["categoryDescriptions"],
+          etag: d["@odata.etag"],
+        });
       } catch (e) {
         return err(e);
       }
