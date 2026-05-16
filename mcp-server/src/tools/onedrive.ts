@@ -4,6 +4,8 @@ import { getGraphToken } from "../auth/graph.js";
 import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 
+type A = Record<string, unknown>;
+
 export function registerOneDriveTools(server: McpServer, enabled: boolean): void {
   if (!enabled) return;
 
@@ -20,7 +22,17 @@ export function registerOneDriveTools(server: McpServer, enabled: boolean): void
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/users/${user_id}/drive`);
-        return ok(res.data);
+        const d = res.data as A;
+        return ok({
+          id: d["id"],
+          name: d["name"],
+          driveType: d["driveType"],
+          webUrl: d["webUrl"],
+          quota: d["quota"],
+          owner: (d["owner"] as A | undefined)?.["user"],
+          createdDateTime: d["createdDateTime"],
+          lastModifiedDateTime: d["lastModifiedDateTime"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -54,7 +66,18 @@ export function registerOneDriveTools(server: McpServer, enabled: boolean): void
             },
           }
         );
-        return ok(res.data);
+        const items = ((res.data as A)["value"] as A[] ?? []).map((item: A) => ({
+          id: item["id"],
+          name: item["name"],
+          size: item["size"],
+          webUrl: item["webUrl"],
+          lastModifiedDateTime: item["lastModifiedDateTime"],
+          isFolder: item["folder"] != null,
+          isFile: item["file"] != null,
+          mimeType: (item["file"] as A | undefined)?.["mimeType"],
+          childCount: (item["folder"] as A | undefined)?.["childCount"],
+        }));
+        return ok({ count: items.length, items });
       } catch (e) {
         return err(e);
       }
@@ -75,7 +98,25 @@ export function registerOneDriveTools(server: McpServer, enabled: boolean): void
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/drives/${drive_id}/items/${item_id}`);
-        return ok(res.data);
+        const item = res.data as A;
+        return ok({
+          id: item["id"],
+          name: item["name"],
+          size: item["size"],
+          webUrl: item["webUrl"],
+          createdDateTime: item["createdDateTime"],
+          lastModifiedDateTime: item["lastModifiedDateTime"],
+          isFolder: item["folder"] != null,
+          isFile: item["file"] != null,
+          mimeType: (item["file"] as A | undefined)?.["mimeType"],
+          childCount: (item["folder"] as A | undefined)?.["childCount"],
+          parentReference: (item["parentReference"] as A | undefined) ? {
+            driveId: (item["parentReference"] as A)["driveId"],
+            id: (item["parentReference"] as A)["id"],
+            path: (item["parentReference"] as A)["path"],
+          } : undefined,
+          downloadUrl: item["@microsoft.graph.downloadUrl"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -100,7 +141,15 @@ export function registerOneDriveTools(server: McpServer, enabled: boolean): void
           `/drives/${drive_id}/root/search(q='${encodeURIComponent(query)}')`,
           { params: { $top: top, $select: "id,name,size,webUrl,parentReference,lastModifiedDateTime" } }
         );
-        return ok(res.data);
+        const items = ((res.data as A)["value"] as A[] ?? []).map((item: A) => ({
+          id: item["id"],
+          name: item["name"],
+          size: item["size"],
+          webUrl: item["webUrl"],
+          lastModifiedDateTime: item["lastModifiedDateTime"],
+          parentPath: (item["parentReference"] as A | undefined)?.["path"],
+        }));
+        return ok({ count: items.length, items });
       } catch (e) {
         return err(e);
       }
@@ -131,7 +180,13 @@ export function registerOneDriveTools(server: McpServer, enabled: boolean): void
             "@microsoft.graph.conflictBehavior": "rename",
           }
         );
-        return ok(res.data);
+        const item = res.data as A;
+        return ok({
+          id: item["id"],
+          name: item["name"],
+          webUrl: item["webUrl"],
+          createdDateTime: item["createdDateTime"],
+        });
       } catch (e) {
         return err(e);
       }
@@ -226,7 +281,15 @@ export function registerOneDriveTools(server: McpServer, enabled: boolean): void
           `/drives/${drive_id}/items/${item_id}/createLink`,
           body
         );
-        return ok(res.data);
+        const d = res.data as A;
+        const link = d["link"] as A | undefined;
+        return ok({
+          type: link?.["type"],
+          scope: link?.["scope"],
+          webUrl: link?.["webUrl"],
+          expirationDateTime: link?.["expirationDateTime"],
+          id: d["id"],
+        });
       } catch (e) {
         return err(e);
       }
