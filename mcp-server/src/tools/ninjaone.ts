@@ -462,16 +462,21 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         const params: Record<string, string | number> = { pageSize: page_size };
         if (org_id !== undefined) params["organizationId"] = org_id;
         if (after) params["after"] = after;
-        const res = await ninjaClient(token).get("/devices/backup", { params });
-        return ok((res.data as Record<string, unknown>[]).map((b) => ({
-          deviceId: b["deviceId"],
-          deviceName: b["deviceName"],
-          planName: b["planName"],
-          jobName: b["jobName"],
-          status: b["status"],
-          lastRun: b["lastRun"],
-          nextRun: b["nextRun"],
-        })));
+        const res = await ninjaClient(token).get("/queries/backup-usage", { params });
+        const raw = res.data as Record<string, unknown>;
+        const results = (raw["results"] as Record<string, unknown>[] | undefined) ?? [];
+        return ok({
+          count: results.length,
+          cursor: raw["cursor"],
+          backups: results.map((b) => ({
+            deviceId: b["deviceId"],
+            planName: b["name"],
+            jobName: b["jobName"],
+            status: b["status"],
+            lastRun: b["lastRun"],
+            nextRun: b["nextRun"],
+          })),
+        });
       } catch (e) {
         return err(e);
       }

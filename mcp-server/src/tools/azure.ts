@@ -436,7 +436,7 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
     async ({ category }) => {
       try {
         const token = await getArmToken();
-        const params: Record<string, string> = { "api-version": "2023-01-01" };
+        const params: Record<string, string> = { "api-version": "2020-01-01" };
         if (category) params["$filter"] = `category eq '${category}'`;
         const res = await armClient(token).get(
           `/subscriptions/${sub()}/providers/Microsoft.Advisor/recommendations`,
