@@ -66,14 +66,14 @@ Run all six categories in parallel, then synthesise.
 
 Write a timestamped snapshot note (do not overwrite previous ones):
 
-`Briefings/Daily/YYYY-MM-DD-posture.md`
+`Reviews/Posture/YYYY-MM-DD.md`
 
 ```yaml
 ---
 date: YYYY-MM-DD
 skill: Security Posture Snapshot
 status: draft
-tags: [posture, security, briefing]
+tags: [posture, security]
 ---
 ```
 

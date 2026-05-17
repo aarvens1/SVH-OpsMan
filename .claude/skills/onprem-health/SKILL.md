@@ -56,7 +56,7 @@ Get-SVHMABSJobStatus -ComputerName <mabs-host> -Credential $adminCred -Hours 24
 
 If not in an active session, flag these as "requires interactive sa_stevens session" and skip — NinjaOne alerts will have caught any MABS failures.
 
-## Output
+## Step 4 — Output
 
 Write to `Investigations/YYYY-MM-DD-onprem-health.md`:
 
