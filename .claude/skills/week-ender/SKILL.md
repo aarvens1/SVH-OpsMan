@@ -1,8 +1,8 @@
 ---
 name: week-ender
-description: Thursday end-of-day weekly wrap-up. What shipped, what slipped, seeds for next week, and an optional summary draft for a manager or team. Trigger phrases: "week ender", "wrap up the week", "Thursday EOD", "weekly wrap".
-when_to_use: Use at the end of the work week (Thursday) to close out cleanly and set up Monday.
-allowed-tools: "mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__calendar_list_events mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__obsidian__* mcp__time__*"
+description: Thursday pre-meeting wrap-up. What shipped, what slipped, seeds for next week, and an optional summary draft. Run before the Thursday admin meeting so the week's state is visible going in. Trigger phrases: "week ender", "wrap up the week", "weekly wrap".
+when_to_use: Use Thursday morning before the admin meeting. The Day Ender still runs at EOD to capture Thursday afternoon — the weekly note stays as a pre-meeting snapshot.
+allowed-tools: "mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__calendar_list_events mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__obsidian__* mcp__time__*"
 ---
 
 # Week Ender
@@ -41,8 +41,9 @@ Run in parallel:
 - `ninja_list_all_backups` — backup status for the week.
 - `ninja_list_servers` — enumerate all servers, then `ninja_list_device_alerts` in parallel for every returned device ID. Show end-of-week alert state grouped by org in the Infrastructure status section.
 - `unifi_list_sites` — end-of-week site health snapshot.
-- `confluence_search_pages` — pages modified this week in INF, PROC, POL, SITE. CQL: `space.key IN ("INF","PROC","POL","SITE") AND lastModified >= "-7d" ORDER BY lastModified DESC`.
-- `teams_list_messages` — any unread DMs or @mentions from this week still needing a response.
+- `confluence_search_pages` — pages modified since the lookback start in INF, PROC, POL, SITE. CQL: `space.key IN ("INF","PROC","POL","SITE") AND lastModified >= "YYYY-MM-DD" ORDER BY lastModified DESC` (substitute lookback start date from Step 0).
+- **DMs:** `teams_list_my_chats` (top: 50) → filter to threads with activity since lookback start → `teams_get_chat_messages` (top: 10, as a **number not a string**) for active threads.
+- **IT Team channels:** `teams_list_teams` → `teams_list_channels` (team_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) → `teams_list_messages` on General, Changes, Infrastructure, and Alerts channels. Filter to messages since lookback start.
 
 Also read any `Incidents/Active/` notes from Obsidian created this week.
 
@@ -61,15 +62,26 @@ Append a **Week Ender** section to `Briefings/Weekly/YYYY-WW.md` (or create if i
 ### 🔄 Slipped to next week (with reason)
 ### 🌱 Seeds for next week
 ### 📝 Summary draft (optional)
+### 🖥 Infrastructure status
+### 📝 Draft Planner actions
 ```
 
 The **summary draft** (for a manager or team update) goes at the bottom, clearly labelled as a draft, if the user asks for one. Draft it in Aaron's voice following the `aaron-voice` rules — use the register matrix to pick the right tone (internal leadership vs. cross-functional group), pick the right opener/closer from the tables, and run the self-check before presenting. Nothing gets sent without explicit instruction.
 
 Optionally stage as a Confluence draft if the user asks.
 
-### 🖥 Infrastructure status (end of week)
+### 🖥 Infrastructure status
 
-**Always include this section.** NinjaOne: all servers (via `ninja_list_servers`), grouped by org, alert status per device. UniFi: all sites table (site name, ISP, clients, devices, offline, alerts). Confluence: pages modified this week in INF/PROC/POL/SITE worth flagging. Teams: any unread DMs or @mentions still outstanding at end of week. Each subsection gets a ✅ clean or a list of findings.
+**Always include this section.** NinjaOne: all servers (via `ninja_list_servers`), grouped by org, alert status per device. UniFi: all sites table (site name, ISP, clients, devices, offline, alerts). Confluence: pages modified since lookback start in INF/PROC/POL/SITE worth flagging. Teams: any unread DMs or @mentions still outstanding. Each subsection gets a ✅ clean or a list of findings.
+
+### 📝 Draft Planner actions
+
+Always include. Nothing is created or changed until Aaron explicitly confirms. Focus at week-end on:
+- **UPDATE** tasks completed this week (set percentComplete to 100)
+- **UPDATE** slipped tasks (adjust due dates, note reason)
+- **CREATE** tasks for seeds that need a Planner card next week
+
+Use CREATE / UPDATE / REMOVE / TODO format (same as Day Starter). Default plan: IT Sysadmin Tasks (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`). After Aaron confirms any block, remove it with `edit_block`.
 
 ## Step 4 — Update state file
 
@@ -77,3 +89,5 @@ After the Obsidian note is appended, update `System/briefing-state.md` in the Ob
 - Set `last_week_ender` to the current ISO timestamp (with timezone offset, e.g. `2026-05-08T09:55:00-07:00`).
 - Preserve all other fields (`last_day_starter`, `last_day_ender`, `last_week_starter`).
 - Use `mode: rewrite`.
+
+If any Draft Planner action blocks remain in the weekly note at the end of the session (i.e. Aaron did not confirm them), update `has_pending_tasks` to `true` in the weekly note's frontmatter using `edit_block`.

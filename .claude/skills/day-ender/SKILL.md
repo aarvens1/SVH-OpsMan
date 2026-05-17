@@ -76,7 +76,7 @@ The day-ender's job is close-out, not repetition. Do not re-run the infra tables
 
 Keep the Carry Forward section tight — 25 lines max. Only include items that would otherwise fall off between sessions. Skip anything already tracked in Planner.
 
-### 📝 Draft Planner updates
+### 📝 Draft Planner actions
 
 Always include this section. Nothing is created or changed until Aaron explicitly confirms. Format each task as an editable named subsection — Aaron can change any field in place, then say "push these to Planner."
 
@@ -137,11 +137,13 @@ Checklist items are **what** needs to happen, not **how**. Each should be a shor
 
 **Processing and cleanup:**
 
-After Aaron confirms and you execute any block — CREATE pushed to Planner, UPDATE pushed to Planner, TODO pushed to To Do, REMOVE discarded — immediately remove that subsection from the daily note using `edit_block`. When all blocks in the section have been processed, remove the `### 📝 Draft Planner updates` section header as well.
+After Aaron confirms and you execute any block — CREATE pushed to Planner, UPDATE pushed to Planner, TODO pushed to To Do, REMOVE discarded — immediately remove that subsection from the daily note using `edit_block`. When all blocks in the section have been processed, remove the `### 📝 Draft Planner actions` section header as well.
 
-## Step 4 — Update state file
+If any Draft Planner action blocks remain in the daily note at the end of the session (i.e. Aaron did not confirm them), update `has_pending_tasks` to `true` in the daily note's frontmatter using `edit_block`.
+
+## Step 3 — Update state file
 
 After the Obsidian note is appended, update `System/briefing-state.md` in the Obsidian vault:
 - Set `last_day_ender` to the current ISO timestamp (with timezone offset, e.g. `2026-05-12T17:00:00-07:00`).
-- Preserve the existing `last_day_starter` value if present; omit the field if it was never set.
+- Preserve all other fields (`last_day_starter`, `last_week_starter`, `last_week_ender`).
 - Use `mode: rewrite` since this is a state file, not a daily note.
