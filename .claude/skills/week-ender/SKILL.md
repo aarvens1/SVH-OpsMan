@@ -9,7 +9,16 @@ allowed-tools: "mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner
 
 ## Time window
 
-This week (Monday through now).
+### Step 0 — Compute the lookback window
+
+1. Call `mcp__time__get_current_time` to get the current timestamp.
+2. Check whether the user specified an explicit override:
+   - **"reset"** or **"default"**: skip the state file. Use 7 days. Write current timestamp to state after the run.
+   - **"last N days/hours"** / any explicit range: use that window. Write current timestamp to state after the run.
+3. If no override, read `System/briefing-state.md` from the Obsidian vault:
+   - If `last_week_starter` is present and ≤ 10 days ago: set the lookback to `now − last_week_starter`. Log "Anchoring to last Week Starter (TIMESTAMP)" in the note.
+   - If absent or stale: fall back to 7 days. Log "No recent weekly state — using 7-day default" in the note.
+4. Use the computed window as **N days** in all data queries below.
 
 ## Step 1 — What happened this week
 
@@ -61,3 +70,10 @@ Optionally stage as a Confluence draft if the user asks.
 ### 🖥 Infrastructure status (end of week)
 
 **Always include this section.** NinjaOne: all servers (via `ninja_list_servers`), grouped by org, alert status per device. UniFi: all sites table (site name, ISP, clients, devices, offline, alerts). Confluence: pages modified this week in INF/PROC/POL/SITE worth flagging. Teams: any unread DMs or @mentions still outstanding at end of week. Each subsection gets a ✅ clean or a list of findings.
+
+## Step 4 — Update state file
+
+After the Obsidian note is appended, update `System/briefing-state.md` in the Obsidian vault:
+- Set `last_week_ender` to the current ISO timestamp (with timezone offset, e.g. `2026-05-08T09:55:00-07:00`).
+- Preserve all other fields (`last_day_starter`, `last_day_ender`, `last_week_starter`).
+- Use `mode: rewrite`.

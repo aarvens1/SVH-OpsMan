@@ -9,8 +9,17 @@ allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list
 
 ## Time window
 
-- **Last week** (past 7 days): look back for anything unresolved.
-- **This week**: calendar, tasks, and any scheduled maintenance.
+### Step 0 — Compute the lookback window
+
+1. Call `mcp__time__get_current_time` to get the current timestamp.
+2. Check whether the user specified an explicit override:
+   - **"reset"** or **"default"**: skip the state file. Use 7 days. Write current timestamp to state after the run.
+   - **"last N days/hours"** / any explicit range: use that window. Write current timestamp to state after the run.
+3. If no override, read `System/briefing-state.md` from the Obsidian vault:
+   - If `last_week_ender` is present: set the lookback to `now − last_week_ender`. Log "Anchoring to last Week Ender (TIMESTAMP)" in the note.
+   - If `last_week_ender` is absent but `last_week_starter` is present and ≤ 10 days ago: set the lookback to `now − last_week_starter`.
+   - If neither is present or both are stale: fall back to 7 days. Log "No recent weekly state — using 7-day default" in the note.
+4. Use the computed window as **N days** in all data queries below.
 
 ## Step 1 — Last week's state
 
@@ -83,3 +92,10 @@ Sections:
 8. **💬 Teams** — unread DMs and @mentions from the past week needing follow-up. If nothing actionable: "No open threads."
 9. **🖥 Infrastructure status** — Always include. NinjaOne: all servers (discover via `ninja_list_servers`), grouped by org, status per device. UniFi: all sites table (site name, ISP, clients, devices, offline, alerts). Confluence: pages modified this week in INF/PROC/POL/SITE, or "No changes this week."
 10. **💡 Suggested first move** — single most important thing to tackle Monday
+
+## Step 4 — Update state file
+
+After the Obsidian note is written, update `System/briefing-state.md` in the Obsidian vault:
+- Set `last_week_starter` to the current ISO timestamp (with timezone offset, e.g. `2026-05-12T08:45:00-07:00`).
+- Preserve all other fields (`last_day_starter`, `last_day_ender`, `last_week_ender`).
+- Use `mode: rewrite`.

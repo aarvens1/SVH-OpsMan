@@ -1,6 +1,6 @@
 ---
 name: day-starter
-description: Morning briefing. Covers the period since the last briefing ran, with a 72-hour cap. Falls back to 24h (72h on Monday) if no state exists. Override with "last N days/hours" or "reset" to use defaults. Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
+description: Morning briefing. Covers the period since the last Day Ender ran (on Mondays) or since the last Day Starter ran (other days), with a 72-hour cap. Falls back to 24h (72h on Monday) if no state exists. Override with "last N days/hours" or "reset" to use defaults. Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
 when_to_use: Use at the start of each workday to get a prioritized digest of what needs attention.
 allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__*"
 ---
@@ -17,6 +17,7 @@ allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list
    - **"last N days"** / **"last N hours"** / any explicit time range: use that window. Write current timestamp to state after the run.
 3. If no override, read `System/briefing-state.md` from the Obsidian vault:
    - If the file doesn't exist or can't be parsed: treat as no state.
+   - **If today is Monday and `last_day_ender` is present**: set the window to `now − last_day_ender`. This anchors to Thursday's EOD wrap so nothing in the Thu-afternoon → weekend gap falls through. Log "Monday: anchoring to last Day Ender (TIMESTAMP)" in the note. Skip the `last_day_starter` check below.
    - If `last_day_starter` is present and **≤ 72 hours ago**: set the window to `now − last_day_starter`.
    - If `last_day_starter` is missing or **> 72 hours ago**: fall back to defaults — 24h (72h if Monday). Log "No recent state found — using default window" in the note.
 4. Note the computed window (e.g., "14h 22m") — use it consistently as **N hours** in all data queries below.
@@ -29,10 +30,12 @@ allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list
 ---
 last_day_starter: 2026-05-12T08:30:00-07:00
 last_day_ender: 2026-05-12T17:00:00-07:00
+last_week_starter: 2026-05-11T08:45:00-07:00
+last_week_ender: 2026-05-08T09:55:00-07:00
 ---
 ```
 
-Preserve the `last_day_ender` value when updating `last_day_starter`. If the file doesn't exist yet, create it with only the `last_day_starter` field.
+Preserve all other fields when updating `last_day_starter`. If the file doesn't exist yet, create it with only the `last_day_starter` field.
 
 ## Step 1 — Security & monitoring
 
