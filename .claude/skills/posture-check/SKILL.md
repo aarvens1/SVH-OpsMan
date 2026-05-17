@@ -2,7 +2,7 @@
 name: posture-check
 description: Cross-system security posture snapshot, scored Green / Yellow / Red across six categories: Identity, Endpoints, Patching, Infrastructure, SIEM, and Cloud. Trigger phrases: "posture check", "state of the land", "health check", "security posture".
 when_to_use: Use for a broad security health check across all systems — not for investigating a specific alert.
-allowed-tools: "mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_list_expiring_secrets mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_list_devices mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__unifi_get_site_health mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__wazuh_list_agents mcp__svh-opsman__azure_list_advisor_recommendations mcp__svh-opsman__admin_get_service_health mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_list_expiring_secrets mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_list_devices mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__unifi_get_site_health mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__wazuh_list_agents mcp__svh-opsman__azure_list_advisor_recommendations mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__obsidian__* mcp__time__*"
 ---
 
 # Security Posture Snapshot
@@ -54,7 +54,7 @@ Run all six categories in parallel, then synthesise.
 
 ## Cloud
 - `azure_list_advisor_recommendations` — filtered to Security category
-- `admin_get_service_health` — any active M365 incidents
+- `admin_get_service_health` + `admin_list_service_incidents` — any active or recently resolved M365 incidents
 
 🟢 No High/Critical Advisor recommendations, no M365 incidents  
 🟡 1–3 Medium Advisor recommendations  

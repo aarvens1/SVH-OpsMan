@@ -23,11 +23,13 @@ Ask (or infer from context):
 
 ## Step 2 — Check backup state
 
-`ninja_list_all_backups` — confirm recent successful backup for any affected server before proceeding.
+`ninja_list_all_backups` — confirm recent successful backup for any affected server before proceeding. Threshold: production servers require a backup within the last 24 hours; non-production within 7 days. If any affected server is outside that window, surface it as a blocker and recommend running a manual backup before the change window.
 
 `ninja_list_servers` — identify all servers in scope.
 
 `confluence_search_pages` — check if there's existing documentation for this system.
+
+For High-risk changes: recommend running `/onprem-health` first to confirm a clean baseline (no active alerts, no stale patches, no disk warnings) before proceeding.
 
 ## Step 3 — Structure the record
 

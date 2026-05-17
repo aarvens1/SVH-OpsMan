@@ -2,7 +2,7 @@
 name: mailflow-investigation
 description: Email delivery investigation. Traces a message from send to delivery (or failure), checks for Defender flagging, and validates mailbox accessibility. Trigger phrases: "did this email deliver", "why didn't X get my message", "email not received", "mail trace", "delivery bounce".
 when_to_use: Use when email didn't arrive, bounced, was delayed, or was flagged. Works for inbound and outbound.
-allowed-tools: "mcp__svh-opsman__exo_message_trace mcp__svh-opsman__exo_get_mailbox mcp__svh-opsman__exo_get_mailbox_auto_reply mcp__svh-opsman__exo_list_accepted_domains mcp__svh-opsman__mde_list_indicators mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__exo_message_trace mcp__svh-opsman__exo_get_mailbox mcp__svh-opsman__exo_get_mailbox_auto_reply mcp__svh-opsman__mde_list_indicators mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__obsidian__* mcp__time__*"
 ---
 
 # Mailflow Investigation

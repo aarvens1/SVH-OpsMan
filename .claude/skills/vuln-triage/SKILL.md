@@ -9,7 +9,8 @@ allowed-tools: "mcp__svh-opsman__mde_list_devices mcp__svh-opsman__mde_get_devic
 
 ## Step 1 — CVE research
 
-Use Firecrawl to look up the CVE:
+Use Firecrawl to look up the CVE. If Firecrawl is unavailable, skip to Step 2 and note that CVSS/EPSS/KEV data is missing — the scoring in Step 3 will rely on Defender TVM findings only; flag the gap in the output.
+
 - CVSS score and vector (network-accessible? authentication required?)
 - EPSS score (probability of exploitation in the next 30 days)
 - CISA KEV status (is it actively exploited?)
@@ -53,11 +54,13 @@ status: draft
 tags: [vulnerability, patching]
 cve: CVE-YYYY-NNNNN
 priority: emergency|this-week|next-cycle|accept
+has_pending_tasks: true
 ---
 ```
 
 Sections: CVE summary → Exposure in environment → Priority score → Recommended timeline → Remediation steps.
 
-Also produce:
-- **Confluence draft** — `confluence_create_page` in the IT space, titled "CVE-YYYY-NNNNN — [Short Title]"
-- **Planner tickets** — one `planner_create_task` per affected asset group (servers, workstations, specific apps), with due date matching the timeline. Present as drafts for user review.
+Also produce as staged drafts (nothing created until Aaron confirms):
+- **Confluence draft** — `confluence_create_page` in the IT space, titled "CVE-YYYY-NNNNN — [Short Title]". Present for review before creating.
+- **Planner tickets** — write CREATE blocks in the note using the standard draft format (`### 📝 Draft Planner actions`). One task per affected asset group (servers, workstations, specific apps), due date matching the timeline. Remove each block with `edit_block` after confirmation. Set `has_pending_tasks: true` in frontmatter until all blocks are pushed.
+- If multiple CVEs need coordinating across devices: suggest `/patch-campaign` instead of individual vuln tickets.

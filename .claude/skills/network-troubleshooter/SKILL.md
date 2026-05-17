@@ -2,7 +2,7 @@
 name: network-troubleshooter
 description: Network connectivity investigation at a specific site or between a user and a resource. Follows the path from UniFi Cloud through VLANs, firewall rules, switch ports, Wazuh IDS events, and endpoint state. Always produces an Excalidraw topology diagram of the affected path. Trigger phrases: "network issue at [site]", "why can't [users] reach [resource]", "network troubleshooter".
 when_to_use: Use for any network connectivity problem — can't reach file server, VPN issues, inter-VLAN routing, site-to-site, client isolation.
-allowed-tools: "mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__unifi_list_devices mcp__svh-opsman__unifi_get_device mcp__svh-opsman__unifi_get_site_health mcp__svh-opsman__unifi_list_controller_devices mcp__svh-opsman__unifi_list_networks mcp__svh-opsman__unifi_list_firewall_rules mcp__svh-opsman__unifi_list_wlans mcp__svh-opsman__unifi_get_switch_ports mcp__svh-opsman__unifi_list_clients mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__wazuh_list_agents mcp__svh-opsman__ninja_get_server mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_services mcp__obsidian__* mcp__excalidraw__* mcp__desktop-commander__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__unifi_list_devices mcp__svh-opsman__unifi_get_device mcp__svh-opsman__unifi_get_site_health mcp__svh-opsman__unifi_list_controller_devices mcp__svh-opsman__unifi_list_networks mcp__svh-opsman__unifi_list_firewall_rules mcp__svh-opsman__unifi_list_wlans mcp__svh-opsman__unifi_get_switch_ports mcp__svh-opsman__unifi_list_clients mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__wazuh_list_agents mcp__svh-opsman__ninja_get_server mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_services mcp__obsidian__* mcp__excalidraw__* mcp__desktop-commander__* mcp__time__* Read(powershell/**)"
 ---
 
 # Network Troubleshooter
@@ -42,7 +42,9 @@ Before any tools, state:
 
 ## Step 6 — Active tests (Desktop Commander)
 
-Run connectivity tests from the host or MCP server:
+**Before writing PS commands:** read `powershell/README.md` for SVH module functions. Use them over raw cmdlets where they exist. If a useful network test is missing from the modules, note the gap.
+
+Run connectivity tests from WSL (Desktop Commander executes locally, not on the remote host):
 - `ping [destination]`
 - `Test-NetConnection [destination] -Port [port]`
 - `tracert [destination]`
