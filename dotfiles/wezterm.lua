@@ -250,7 +250,7 @@ config.hyperlink_rules = wezterm.default_hyperlink_rules()
 
 -- obsidian:// deep links — click to open note directly in Obsidian
 table.insert(config.hyperlink_rules, {
-  regex  = [[\bobsidian://[^\s'"<>)\]]+]],
+  regex  = [=[\bobsidian://[^\s'"<>)\]]+]=],
   format = '$0',
 })
 
@@ -344,7 +344,7 @@ config.keys = {
   { key = 'o', mods = 'LEADER',
     action = act.QuickSelectArgs {
       label    = 'open obsidian note',
-      patterns = { [[\bobsidian://[^\s'"<>)\]]+]] },
+      patterns = { [=[\bobsidian://[^\s'"<>)\]]+]=] },
       action   = wezterm.action_callback(function(window, pane)
         local uri = window:get_selection_text_for_pane(pane)
         if uri and uri ~= '' then wezterm.open_with(uri) end
