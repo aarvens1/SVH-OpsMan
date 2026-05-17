@@ -110,6 +110,25 @@ Not yet found in BW: WAZUH_*, CONFLUENCE_*, UNIFI_*, PRINTERLOGIC_*. Search BW n
 
 Module coverage, credential tiers, PSRemoting accounts, and authoring conventions are in `.claude/rules/powershell.md` (auto-loaded when working in `powershell/`). Full function reference and examples in `powershell/README.md`.
 
+**PSRemoting quick-reference — from WSL:**
+
+| Task | Account | Auth from WSL |
+|------|---------|---------------|
+| Disk, services, pending reboot, event logs, processes | `ra_stevens` | Non-interactive — BW fields `DC_REMOTE_USER` / `DC_REMOTE_PASSWORD` |
+| Hyper-V, failover cluster, S2D, MABS, SQL config | `sa_stevens` | Interactive `Get-Credential` — no BW password stored |
+| Active Directory, domain health, replication | `da_stevens` | Interactive `Get-Credential` — no BW password stored |
+| DNS / DHCP servers | `da_stevens` | Interactive `Get-Credential` — no BW password stored |
+
+`ra_stevens` non-interactive pattern (Desktop Commander / automated skills):
+```powershell
+$cred = New-Object PSCredential(
+    (Get-SVHTierUsername -Tier ra),
+    (ConvertTo-SecureString $env:DC_REMOTE_PASSWORD -AsPlainText -Force)
+)
+```
+
+`sa_stevens` and `da_stevens` require `Get-Credential` in an active pwsh session. Adding `SA_REMOTE_PASSWORD` / `DA_REMOTE_PASSWORD` to BW would enable non-interactive use for those tiers too.
+
 ### NinjaOne alerting rules
 - **Skip devices in maintenance mode.** Do not surface offline alerts, monitor alerts, or status warnings for any NinjaOne device that is in maintenance mode. Maintenance mode means the offline/alert state is intentional — treat these as non-events in briefings and investigations.
 - ACCOPDXARCHIVE is intentionally offline and in maintenance mode — never flag it.

@@ -121,6 +121,7 @@ Trigger by slash command or by saying any of the listed phrases. Skills load on 
 | Skill | Invoke | What it does | Output |
 |-------|--------|-------------|--------|
 | **Security Posture** | `/posture-check` · "Posture check" · "State of the land" | Green/Yellow/Red across Identity, Endpoints, Patching, Infrastructure, SIEM, and Cloud. | Obsidian snapshot |
+| **On-Prem Health** | `/onprem-health` · "Check the servers" · "Server health" · "How are the servers doing" | NinjaOne inventory + backup + patch sweep, Desktop Commander PSRemoting disk/service checks, Hyper-V/cluster/MABS flagged separately. | `Investigations/YYYY-MM-DD-onprem-health.md` |
 | **Vuln Triage** | `/vuln-triage` · CVE ID · Defender TVM finding | CVE → exposed devices → patch state → timeline: Emergency / This Week / Next Cycle / Accept. | Obsidian note + Confluence draft + Planner tickets |
 | **Asset Investigation** | `/asset-investigation` · "Tell me everything about [server/user]" | Servers/workstations: NinjaOne + Wazuh + Defender + Azure. Users: Entra sign-in history, MFA, roles, groups, CA policies. | `Assets/[name].md` (persistent, updated each run) |
 | **Access Review** | `/access-review` · "Access review for [user/group/role]" | Roles, groups, app registrations, sign-ins, MFA, CA policies. Flags inactive privileged accounts, missing MFA, stale memberships. | Obsidian report + optional Confluence draft |

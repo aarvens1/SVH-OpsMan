@@ -35,19 +35,55 @@ export DC_REMOTE_PASSWORD=$(bw get password "DC Remote Account")
 
 Or retrieve inline from the SVH OpsMan item fields with `bw get item "SVH OpsMan"`.
 
-## Not yet in BW
+## Not yet in BW — add these to enable the remaining MCP tools
 
-These services will fail when BW is locked until credentials are added:
+These services will fail when their tools are called until credentials are added to the "SVH OpsMan" BW item as custom fields:
 
-| Service | Status |
-|---------|--------|
-| WAZUH_URL / WAZUH_USERNAME / WAZUH_PASSWORD | Not found in any BW item |
-| CONFLUENCE_* | Not found in any BW item |
-| UNIFI_* | Not found in any BW item |
-| PRINTERLOGIC_* | Not found in any BW item |
+### Wazuh SIEM
+
+| Env var | What it holds |
+|---------|--------------|
+| `WAZUH_URL` | Wazuh API base URL (e.g. `https://wazuh.internal:55000`) |
+| `WAZUH_USERNAME` | Wazuh API username |
+| `WAZUH_PASSWORD` | Wazuh API password |
+
+### Confluence
+
+| Env var | What it holds |
+|---------|--------------|
+| `CONFLUENCE_DOMAIN` | Atlassian subdomain (e.g. `shoestringvalley` for `shoestringvalley.atlassian.net`) |
+| `CONFLUENCE_EMAIL` | Atlassian account email used to generate the API token |
+| `CONFLUENCE_API_TOKEN` | Atlassian API token (generate at id.atlassian.com → Security → API tokens) |
+
+### UniFi
+
+Two separate clients — UniFi Cloud (UI API key) and UniFi Network controller (username/password):
+
+| Env var | What it holds |
+|---------|--------------|
+| `UNIFI_API_KEY` | UI.com cloud API key (for `unifi_list_hosts`, `unifi_list_sites`) |
+| `UNIFI_CONTROLLER_URL` | Self-hosted controller URL (e.g. `https://unifi.internal:8443`) |
+| `UNIFI_USERNAME` | Controller local admin username |
+| `UNIFI_PASSWORD` | Controller local admin password |
+
+### PrinterLogic
+
+| Env var | What it holds |
+|---------|--------------|
+| `PRINTERLOGIC_URL` | PrinterLogic instance base URL |
+| `PRINTERLOGIC_API_TOKEN` | PrinterLogic API token |
+
+## PSRemoting — sa_stevens / da_stevens (optional BW additions)
+
+These accounts currently require interactive `Get-Credential` when PSRemoting from WSL.
+Adding them to BW would enable non-interactive use in automated skills:
+
+| Env var (proposed) | Account | Used for |
+|--------------------|---------|----------|
+| `SA_REMOTE_PASSWORD` | `sa_stevens@andersen-cost.com` | Hyper-V, failover cluster, S2D, MABS, SQL |
+| `DA_REMOTE_PASSWORD` | `ACCO\da_stevens` | Active Directory, DNS, DHCP |
 
 ## Notes
 
-- A separate "Ninja API Key" BW item (`d3271524...`) previously held old NinjaOne credentials in its notes — deleted by user.
 - When searching BW for missing credentials, check both custom fields and item notes.
 - Credentials live exclusively in Bitwarden. There is no `.env` file.
