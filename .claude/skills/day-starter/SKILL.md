@@ -2,7 +2,7 @@
 name: day-starter
 description: Morning briefing. Covers the period since the last Day Ender ran (on Mondays) or since the last Day Starter ran (other days), with a 72-hour cap. Falls back to 24h (72h on Monday) if no state exists. Override with "last N days/hours" or "reset" to use defaults. Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
 when_to_use: Use at the start of each workday to get a prioritized digest of what needs attention.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__*"
 ---
 
 # Day Starter
@@ -50,6 +50,7 @@ Run these in parallel:
 - `entra_get_sign_in_logs` — last N hours, filter to failed and risky events. Flag: any user with >5 failures in the window, any successful login from a new country, any event marked risky by Identity Protection. If a user appears in both audit logs AND risky sign-ins, that is a priority finding regardless of individual severity.
 - `admin_list_service_incidents` — active M365 service incidents.
 - `unifi_list_sites` — check all sites for offline devices, critical notifications, and WAN issues. Flag any site where `offlineDevice > 0`, `criticalNotification > 0`, or `wanDowntime: true`. Note the ISP name and client counts to help identify the location, since site names come back as "Default" — cross-reference by gateway MAC or IP if needed.
+- `ninja_list_all_backups` — all backup job results. Flag: any job in a `failed` or `unknown` state, any successful job where `lastRunTime` is more than 24 hours ago (stale). A job that has never run is also worth flagging. Note the device name, plan name, and last run time for each flagged job.
 
 ## Step 1b — Compliance gap (Mondays only)
 
@@ -230,6 +231,9 @@ Notes:
 - Use `wans.WAN.externalIp` (not gateway MAC) as the primary lookup key — it's easier to match visually.
 
 Flag any row where offlineDevice > 0, criticalNotification > 0, or wanDowntime: true on the primary WAN. Note: WAN2 showing `wanDowntime` with count=288 is a persistent pattern for offline secondary/failover links — do not flag it as an active incident; note it once at the bottom of the table.
+
+**Backups**
+From `ninja_list_all_backups`: list all backup jobs. Flag any job with status `failed` or `unknown`, and any job where `lastRunTime` > 24h ago (stale). Show a compact table: Device | Plan | Status | Last Run. If all jobs are healthy and recent: ✅ All backup jobs current.
 
 **Confluence — Recent changes**
 List any pages in INF, PROC, POL, SITE modified in the last N hours that look like incident docs, outage notes, policy changes, or runbook updates. If nothing matches: state "No pages modified in the last N hours in INF/PROC/POL/SITE."
