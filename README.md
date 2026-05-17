@@ -232,7 +232,7 @@ This installs and configures:
 - **zsh** as the default shell, with autosuggestions, syntax highlighting, and case-insensitive completion
 - **fzf** — fuzzy history search (`Ctrl+R`), file picker (`Ctrl+T`)
 - **bat**, **eza**, **delta**, **lazygit**, **btop**, **mtr**, **nmap**, **zoxide**, **httpie**
-- **starship** prompt (lean — git branch + exit code; WezTerm status bar does the heavy lifting)
+- **starship** prompt (lean — git branch + exit code only; API status lives in `status-refresh.sh`)
 - **PowerShell 7** (`pwsh`) via snap — available directly in WSL for running SVH modules locally
 - Aliases: `ops`/`vault` dir shortcuts · `lg` for lazygit · `gs`/`gd`/`gl` git shorthands · `cat`→`bat`, `ls`→`eza`
 

@@ -135,7 +135,7 @@ echo "    ~/.zshrc written."
 echo "==> Writing ~/.config/starship.toml..."
 mkdir -p ~/.config
 cat > ~/.config/starship.toml <<'TOML'
-# Lean prompt — WezTerm status bar handles system/git state already
+# Lean prompt — API/git status is handled by status-refresh.sh, not the prompt itself
 format = '$directory$git_branch$git_status$character'
 
 [directory]

@@ -32,14 +32,14 @@ if (Get-Module PSReadLine -ErrorAction SilentlyContinue) {
     Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
     Set-PSReadLineKeyHandler -Key Tab       -Function MenuComplete
     Set-PSReadLineOption -Colors @{
-        Command          = '#89b4fa'   # Catppuccin blue
-        Parameter        = '#cba6f7'   # mauve
-        String           = '#a6e3a1'   # green
-        Comment          = '#6c7086'   # overlay0
-        Keyword          = '#cba6f7'   # mauve
-        Variable         = '#cdd6f4'   # text
-        Error            = '#f38ba8'   # red
-        InlinePrediction = '#585b70'   # surface2
+        Command          = '#83a598'   # Gruvbox bright blue
+        Parameter        = '#d3869b'   # Gruvbox bright purple
+        String           = '#b8bb26'   # Gruvbox bright green
+        Comment          = '#928374'   # Gruvbox gray
+        Keyword          = '#d3869b'   # Gruvbox bright purple
+        Variable         = '#ebdbb2'   # Gruvbox foreground
+        Error            = '#fb4934'   # Gruvbox bright red
+        InlinePrediction = '#504945'   # Gruvbox bg2
     }
 }
 

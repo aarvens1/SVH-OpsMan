@@ -221,6 +221,6 @@ echo -e "  3. ${BOLD}export BW_SESSION=\$(bw unlock --raw)${RESET}  — unlock B
 echo -e "  4. Register any skipped MCPs (github, obsidian, fathom, firecrawl)"
 echo -e "     by setting the env var and re-running, or with: ${BOLD}claude mcp add ...${RESET}"
 echo -e "  5. ${BOLD}cd mcp-server && npm start${RESET}  — verify the server starts cleanly"
-echo -e "  6. On Windows: ${BOLD}dotfiles\\install-windows.ps1${RESET}  — install WezTerm + fonts"
+echo -e "  6. On Windows: ${BOLD}dotfiles\\install-windows.ps1${RESET}  — install font + Windows Terminal settings"
 echo -e "  7. Open the repo in Claude Code: ${BOLD}claude${RESET}  — or type: ${BOLD}opsman${RESET}"
 echo -e "  8. PowerShell TUI: ${BOLD}tui/run-tui.sh${RESET}  — browse and run module functions in terminal"

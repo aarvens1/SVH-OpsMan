@@ -4,7 +4,7 @@ SVH OpsMan is a purpose-built IT operations command station. This repo is its cu
 
 ## Runtime
 
-- **Platform:** WSL 2 (Ubuntu 24.04) on Windows, running in WezTerm
+- **Platform:** WSL 2 (Ubuntu 24.04) on Windows, running in Windows Terminal
 - **Client:** Claude Code CLI — `claude mcp add` registers MCPs, not Claude Desktop
 - **Secrets:** Bitwarden CLI (`bw`) — unlock vault before starting: `export BW_SESSION=$(bw unlock --raw)`. Required — server will not start without an active session.
 
