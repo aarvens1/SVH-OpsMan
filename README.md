@@ -46,7 +46,7 @@ graph LR
 
 **Human-initiated only.** Skills are prompt patterns you trigger. Nothing runs on a schedule. Claude synthesizes — you command.
 
-**PowerShell module suite** lives in `powershell/`. Load with `. ./connect.ps1` from Windows Terminal. The modules cover write operations and on-prem checks — disabling accounts, isolating devices, rebooting servers, querying Hyper-V and MABS via PSRemoting. A **TUI** (`./run-tui.sh`) wraps all module functions in a searchable terminal interface: browse by module, fill parameters in a form, preview the command, confirm before anything destructive runs, and save output to Obsidian or view it inline.
+**PowerShell module suite** lives in `powershell/`. Load with `. ./connect.ps1` from Windows Terminal. The modules cover write operations and on-prem checks — disabling accounts, isolating devices, rebooting servers, querying Hyper-V and MABS via PSRemoting. A **TUI** (`tui/run-tui.sh`) wraps all module functions in a searchable terminal interface: browse by module, fill parameters in a form, preview the command, confirm before anything destructive runs, and save output to Obsidian or view it inline.
 
 ---
 
@@ -288,7 +288,7 @@ Run after the WSL restart from step 2 (systemd must be active):
 
 Authenticate via the URL that appears. In the Tailscale admin console, disable key expiry on this node.
 
-For remote access to all SVH sites without installing Tailscale on every device, deploy a UDM subnet router at each site — see `scripts/tailscale-udm-setup.md`.
+For remote access to all SVH sites without installing Tailscale on every device, deploy a UDM subnet router at each site — see `references/tailscale-udm-setup.md`.
 
 ---
 
@@ -516,10 +516,10 @@ Refreshes every 2 minutes. BW and git check locally; Wazuh/MDE/Entra/NinjaOne/M3
 .\dotfiles\install-windows.ps1
 ```
 
-**WSL (once — included in `setup.sh`):**
+**WSL (once — included in `scripts/setup.sh`):**
 ```bash
 # Copies wezterm.lua to Windows config path, marks status-refresh.sh executable
-bash setup.sh
+bash scripts/setup.sh
 ```
 
 **Daily launch:**

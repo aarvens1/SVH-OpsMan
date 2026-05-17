@@ -41,12 +41,12 @@ if echo "$TOOL_NAME" | grep -qi "execute_command"; then
     # so that destructive commands get the confirmation step
     echo "$VALUE" | grep -qiE \
         'connect\.ps1|rolling-cluster-reboot|Connect-ClusterReboot|run-tui\.sh|python3.*-m\s+tui' \
-        && block "Desktop Commander cannot run SVH scripts directly. Use the TUI (./run-tui.sh) which enforces confirmation for destructive commands."
+        && block "Desktop Commander cannot run SVH scripts directly. Use the TUI (tui/run-tui.sh) which enforces confirmation for destructive commands."
 
     # Block inline module loading
     echo "$VALUE" | grep -qiE \
         'Import-Module\s+SVH|SVH\.[A-Za-z]+\.psm1|\.\s+\./connect\.ps1|dot-source.*connect' \
-        && block "Desktop Commander cannot load SVH modules directly. Use the TUI (./run-tui.sh)."
+        && block "Desktop Commander cannot load SVH modules directly. Use the TUI (tui/run-tui.sh)."
 
     # Block setup scripts (one-time provisioning — never autonomous)
     echo "$VALUE" | grep -qiE 'setup-graph-apps|setup-exchange-policy|setup-azure-arm' \

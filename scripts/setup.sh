@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SVH OpsMan — fresh WSL bootstrap
 # Run once on a new WSL Ubuntu install. Safe to re-run (idempotent checks throughout).
-# Usage: bash setup.sh
+# Usage: bash scripts/setup.sh
 
 set -euo pipefail
 
@@ -203,8 +203,8 @@ if ! python3 -c "import textual" &>/dev/null; then
 else
   ok "textual already installed ($(python3 -c 'import textual; print(textual.__version__)'))"
 fi
-chmod +x "$REPO_DIR/run-tui.sh"
-ok "run-tui.sh marked executable"
+chmod +x "$REPO_DIR/tui/run-tui.sh"
+ok "tui/run-tui.sh marked executable"
 
 # ── 11. WezTerm config ────────────────────────────────────────────────────────
 step "WezTerm config"
@@ -251,4 +251,4 @@ echo -e "     by setting the env var and re-running, or with: ${BOLD}claude mcp 
 echo -e "  5. ${BOLD}cd mcp-server && npm start${RESET}  — verify the server starts cleanly"
 echo -e "  6. On Windows: ${BOLD}dotfiles\\install-windows.ps1${RESET}  — install WezTerm + fonts"
 echo -e "  7. Open the repo in Claude Code: ${BOLD}claude${RESET}  — or type: ${BOLD}opsman${RESET}"
-echo -e "  8. PowerShell TUI: ${BOLD}./run-tui.sh${RESET}  — browse and run module functions in terminal"
+echo -e "  8. PowerShell TUI: ${BOLD}tui/run-tui.sh${RESET}  — browse and run module functions in terminal"
