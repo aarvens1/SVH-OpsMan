@@ -2,7 +2,7 @@
 name: week-starter
 description: Monday morning weekly briefing. Last week's loose ends plus this week's load — what closed, open threads, upcoming calendar and tasks, anything stale that needs a nudge, and a suggested first move. Trigger phrases: "week starter", "what does the week look like", "weekly briefing".
 when_to_use: Use at the start of the work week (Monday) for a broader picture than the daily briefing.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_list_expiring_secrets mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_list_expiring_secrets mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__obsidian__* mcp__time__*"
 ---
 
 # Week Starter
@@ -38,12 +38,12 @@ Run in parallel:
   - CMMC Level 1: `qxQKzAEGd0m3Q6EUysaGVmQADbmg`
   - Copilot Audit for IT team: `wP9PL7YWCEqGbG6o4aYVT2QADaLq`
 - `todo_list_task_lists` then `todo_list_tasks` — any uncompleted personal tasks.
-- `wazuh_search_alerts` / `mde_list_alerts` — unresolved alerts from the past 7 days.
+- `wazuh_search_alerts` / `mde_list_alerts` — unresolved alerts from the last N days.
 - `entra_list_risky_users` — open risky user flags.
-- `ninja_list_all_backups` — any failed backups from last week.
+- `ninja_list_all_backups` — any failed backups in the last N days.
 - `ninja_list_servers` — enumerate all servers across all organizations, then run `ninja_list_device_alerts` in parallel for every returned device ID. Show results grouped by org in the Infrastructure status section.
 - `unifi_list_sites` — full site health snapshot.
-- `confluence_search_pages` — pages modified in the past 7 days in INF, PROC, POL, SITE. CQL: `space.key IN ("INF","PROC","POL","SITE") AND lastModified >= "-7d" ORDER BY lastModified DESC`.
+- `confluence_search_pages` — pages modified since the lookback start in INF, PROC, POL, SITE. CQL: `space.key IN ("INF","PROC","POL","SITE") AND lastModified >= "YYYY-MM-DD" ORDER BY lastModified DESC` (substitute the lookback start date from Step 0).
 
 ### Separating your tasks from team tasks
 
@@ -61,11 +61,12 @@ Include To Do items. Show overdue first, then this week, then upcoming.
 
 Run in parallel:
 - `calendar_list_events` — this week's full calendar. Flag heavy days and anything needing prep.
-- `mail_search` — unread or high-importance messages from the past 7 days needing action. External senders and flagged items first.
+- `mail_search` — unread or high-importance messages from the last N days needing action. External senders and flagged items first.
 - `ninja_list_pending_patches` — patches pending across all devices.
 - `entra_list_expiring_secrets` — app secrets expiring within 30 days.
 - `admin_list_service_incidents` — any active M365 incidents carrying over.
-- `teams_list_messages` — unread DMs and @mentions from the past 7 days needing follow-up.
+- **DMs:** `teams_list_my_chats` (top: 50) → filter to threads with activity since lookback start → `teams_get_chat_messages` (top: 10, as a **number not a string**) for active threads.
+- **IT Team channels:** `teams_list_teams` → `teams_list_channels` (team_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) → `teams_list_messages` on General, Changes, Infrastructure, and Alerts channels. Filter to messages since lookback start.
 
 ## Step 3 — Write to Obsidian
 
@@ -78,20 +79,22 @@ skill: Week Starter
 status: draft
 tags: [briefing, weekly]
 week: YYYY-WW
+has_pending_tasks: false
 ---
 ```
 
 Sections:
 1. **🔴 Needs attention now** — unresolved alerts, risky users, active incidents carrying over from last week
 2. **📅 This week's calendar** — day-by-day summary, heavy days flagged, anything needing prep
-3. **📨 Mail** — unread or high-importance messages from the past week needing action
+3. **📨 Mail** — unread or high-importance messages from the last N days needing action
 4. **📋 Your tasks** — tasks assigned to Aaron (by user ID or Planner label) + To Do items. Overdue first, then due this week, then upcoming
 5. **🗂 Projects** — active project-type Planner boards (e.g. Office Network Standardization). Open milestones or blockers, separate from operational boards
 6. **📋 IT team boards** — open tasks from IT plans Aaron isn't on. Group by plan. Context only
 7. **🟡 Things to watch** — expiring secrets, pending patches, stale alerts, anything that could escalate
-8. **💬 Teams** — unread DMs and @mentions from the past week needing follow-up. If nothing actionable: "No open threads."
-9. **🖥 Infrastructure status** — Always include. NinjaOne: all servers (discover via `ninja_list_servers`), grouped by org, status per device. UniFi: all sites table (site name, ISP, clients, devices, offline, alerts). Confluence: pages modified this week in INF/PROC/POL/SITE, or "No changes this week."
+8. **💬 Teams** — unread DMs and IT Team channel messages from the last N days needing follow-up. If nothing actionable: "No open threads."
+9. **🖥 Infrastructure status** — Always include. NinjaOne: all servers (discover via `ninja_list_servers`), grouped by org, status per device. UniFi: all sites table (site name, ISP, clients, devices, offline, alerts). Confluence: pages modified since lookback start in INF/PROC/POL/SITE, or "No changes this week."
 10. **💡 Suggested first move** — single most important thing to tackle Monday
+11. **📝 Draft Planner actions** — Always include. Nothing is created or changed until Aaron explicitly confirms. Use CREATE / UPDATE / REMOVE / TODO format (same as Day Starter). Default plan: IT Sysadmin Tasks (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`). After Aaron confirms any block, remove it from the note with `edit_block`.
 
 ## Step 4 — Update state file
 
@@ -99,3 +102,5 @@ After the Obsidian note is written, update `System/briefing-state.md` in the Obs
 - Set `last_week_starter` to the current ISO timestamp (with timezone offset, e.g. `2026-05-12T08:45:00-07:00`).
 - Preserve all other fields (`last_day_starter`, `last_day_ender`, `last_week_ender`).
 - Use `mode: rewrite`.
+
+If any Draft Planner action blocks remain in the weekly note at the end of the session (i.e. Aaron did not confirm them), update `has_pending_tasks` to `true` in the weekly note's frontmatter using `edit_block`.

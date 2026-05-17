@@ -188,7 +188,7 @@ Open tasks from IT plans that Aaron isn't assigned to or tagged on. Group by pla
 ### 🟡 Worth watching
 Medium-severity findings, anything that could escalate. No action required yet.
 
-### 🔍 Overnight tenant activity
+### 🔍 Tenant activity
 Sourced from `entra_get_audit_logs` and `entra_get_sign_in_logs` pulled in Step 1. Present as a compact timeline grouped by actor — not a raw dump. Surface: role assignments, MFA resets, app consent grants, policy changes, bulk operations, suspicious sign-in patterns. If an actor appears in both admin audit logs AND risky sign-ins, call it out explicitly (e.g., "⚠️ jsmith made 2 admin changes AND had a risky sign-in at 02:14 from Romania"). If nothing of note: one line — "No admin actions or risky sign-ins in the last N hours." Keep this section tight — it's a trip-wire, not a log dump.
 
 ### 💡 Suggested next moves
@@ -296,7 +296,7 @@ After Aaron confirms and you execute any block — CREATE pushed to Planner, UPD
 
 After the Obsidian briefing note is written, update `System/briefing-state.md` in the Obsidian vault:
 - Set `last_day_starter` to the current ISO timestamp (with timezone offset, e.g. `2026-05-12T08:30:00-07:00`).
-- Preserve the existing `last_day_ender` value if present; omit the field if it was never set.
+- Preserve all other fields (`last_day_ender`, `last_week_starter`, `last_week_ender`).
 - Use `mode: rewrite` since this is a state file, not a daily note.
 
 If any Draft Planner action blocks remain in the daily note at the end of the session (i.e. Aaron did not confirm them), update `has_pending_tasks` to `true` in the daily note's frontmatter using `edit_block`.
