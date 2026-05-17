@@ -2,6 +2,8 @@
 
 PowerShell Core module suite for SVH IT operations. All modules run from WSL 2 using the same Bitwarden credentials as the MCP server.
 
+`pwsh` is installed in WSL via `scripts/wsl-shell-setup.sh` (`sudo snap install powershell --classic`). No need to switch to Windows Terminal for module work — run everything from your zsh session.
+
 ## Quick start
 
 **Option A — TUI (recommended for interactive use)**
@@ -17,7 +19,7 @@ The TUI starts a persistent pwsh session, loads all modules, and shows a searcha
 **Option B — raw pwsh session**
 
 ```powershell
-# 1. Unlock Bitwarden (in WSL bash, not PowerShell)
+# 1. Unlock Bitwarden (in WSL zsh, not PowerShell)
 export BW_SESSION=$(bw unlock --raw)
 
 # 2. Launch PowerShell

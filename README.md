@@ -199,10 +199,11 @@ Incident notes add `incident_id`, `severity`, `status`. Change notes add `change
 
 ### Requirements
 
-The server runs in **WSL 2 (Ubuntu 22.04)** on your workstation. It's a lightweight Node.js process (stdio transport) — no inbound ports, no scheduler.
+The server runs in **WSL 2 (Ubuntu 24.04)** on your workstation. It's a lightweight Node.js process (stdio transport) — no inbound ports, no scheduler.
 
 - **Node.js** 18+
 - **Bitwarden CLI** (`bw`) — unlock before every session
+- **systemd enabled** in WSL (`wsl-shell-setup.sh` handles this — requires one `wsl --shutdown` after first run)
 - Outbound HTTPS to: `graph.microsoft.com`, `login.microsoftonline.com`, `management.azure.com`, `api.securitycenter.microsoft.com`, `app.ninjarmm.com`, your UniFi controller, your Wazuh manager, `vault.bitwarden.com`
 
 ---
@@ -220,11 +221,21 @@ which claude   # → ~/.local/bin/claude
 ### 2. WSL shell environment
 
 ```bash
-echo '[ -f ~/SVH-OpsMan/dotfiles/bashrc.sh ] && . ~/SVH-OpsMan/dotfiles/bashrc.sh' >> ~/.bashrc
-source ~/.bashrc
+chmod +x ~/SVH-OpsMan/scripts/wsl-shell-setup.sh
+~/SVH-OpsMan/scripts/wsl-shell-setup.sh
+# Then from Windows PowerShell (admin): wsl --shutdown
+# Reopen terminal — systemd and zsh are now active
 ```
 
-This adds: BW unlock warning on new shells · `bwu` alias · `ops` alias · git branch in prompt · 10k-line history · `wexp` / `clip` / `wpath` helpers · git shorthand aliases · `opsman` / `wez-sync` / `wez-stop` for WezTerm.
+This installs and configures:
+- **zsh** as the default shell, with autosuggestions, syntax highlighting, and case-insensitive completion
+- **fzf** — fuzzy history search (`Ctrl+R`), file picker (`Ctrl+T`)
+- **bat**, **eza**, **delta**, **lazygit**, **btop**, **mtr**, **nmap**, **zoxide**, **httpie**
+- **starship** prompt (lean — git branch + exit code; WezTerm status bar does the heavy lifting)
+- **PowerShell 7** (`pwsh`) via snap — available directly in WSL for running SVH modules locally
+- Aliases: `ops`/`vault` dir shortcuts · `lg` for lazygit · `gs`/`gd`/`gl` git shorthands · `cat`→`bat`, `ls`→`eza`
+
+After the WSL restart, run `tailscale-wsl-setup.sh` to install Tailscale (see setup step 6 below).
 
 ---
 
@@ -267,7 +278,21 @@ Verify startup:
 
 ---
 
-### 6. Register MCPs with Claude Code
+### 6. Install Tailscale
+
+Run after the WSL restart from step 2 (systemd must be active):
+
+```bash
+~/SVH-OpsMan/scripts/tailscale-wsl-setup.sh
+```
+
+Authenticate via the URL that appears. In the Tailscale admin console, disable key expiry on this node.
+
+For remote access to all SVH sites without installing Tailscale on every device, deploy a UDM subnet router at each site — see `scripts/tailscale-udm-setup.md`.
+
+---
+
+### 7. Register MCPs with Claude Code
 
 ```bash
 # Custom server
@@ -464,7 +489,7 @@ WezTerm replaces Windows Terminal as the ops workspace. Files live in `dotfiles/
 └──────────────────┴─────────────────────────┘
 ```
 
-Tabs are colour-coded: **blue** = Claude Code, **yellow** = PowerShell, **green** = WSL bash.
+Tabs are colour-coded: **blue** = Claude Code, **yellow** = PowerShell, **green** = WSL zsh.
 
 ### Status bar
 

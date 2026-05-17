@@ -64,7 +64,9 @@ External MCP servers (Obsidian, GitHub, Bitwarden, Desktop Commander, etc.) work
 
 ### Layer 3: WSL 2 (where everything runs)
 
-Claude Code and the MCP server run inside **WSL 2 (Ubuntu 22.04)** on your Windows 11 machine. WSL gives you a real Linux environment — bash, npm, Node.js, the `bw` CLI — without a VM. The WSL filesystem lives at `\\wsl$\Ubuntu\` and your Windows drives are mounted at `/mnt/c/`.
+Claude Code and the MCP server run inside **WSL 2 (Ubuntu 24.04)** on your Windows 11 machine. WSL gives you a real Linux environment — zsh, npm, Node.js, PowerShell 7, the `bw` CLI — without a VM. The WSL filesystem lives at `\\wsl$\Ubuntu\` and your Windows drives are mounted at `/mnt/c/`.
+
+systemd is enabled in WSL (configured by `scripts/wsl-shell-setup.sh`), which lets Tailscale run as a proper service and makes the shell environment behave more like a real Linux system.
 
 Obsidian runs natively on Windows, so the MCP server reaches it over `localhost` via the Obsidian Local REST API plugin.
 
@@ -156,7 +158,7 @@ Start here if you're building this on a new Windows 11 machine. Steps are in ord
 
 ```powershell
 # From an elevated PowerShell
-wsl --install -d Ubuntu-22.04
+wsl --install -d Ubuntu-24.04
 # Restart when prompted, then complete Ubuntu first-run setup
 ```
 
@@ -202,19 +204,40 @@ claude login   # opens browser, authenticate with your Anthropic account
 ### 4.6 Set up the WSL shell environment
 
 ```bash
-echo '[ -f ~/SVH-OpsMan/dotfiles/bashrc.sh ] && . ~/SVH-OpsMan/dotfiles/bashrc.sh' >> ~/.bashrc
-source ~/.bashrc
+chmod +x ~/SVH-OpsMan/scripts/wsl-shell-setup.sh
+~/SVH-OpsMan/scripts/wsl-shell-setup.sh
 ```
 
-This adds:
-- `bwu` alias — unlock Bitwarden and export `BW_SESSION` in one command
-- `ops` / `opsman` alias — daily launch sequence (BW check + WezTerm)
-- Git branch in the prompt
-- 10k-line bash history
-- `clip` — pipe to Windows clipboard from WSL
-- `wpath` — convert a WSL path to a Windows path
-- `wexp` — open a WSL path in Windows Explorer
-- Git shorthand aliases (`gs`, `gd`, `gl`, `gco`, etc.)
+Then from Windows PowerShell (admin):
+```powershell
+wsl --shutdown
+```
+
+Reopen your terminal. WSL now runs with systemd, and zsh is your default shell.
+
+What the script installs and configures:
+
+| What | Details |
+|------|---------|
+| **zsh** | Default shell — autosuggestions, syntax highlighting, case-insensitive completion |
+| **fzf** | Fuzzy history search (`Ctrl+R`), file picker (`Ctrl+T`), smart `cd` picker (`Alt+C`) |
+| **bat** | `cat` replacement with syntax highlighting (`cat` and `bat` aliases both work) |
+| **eza** | `ls` replacement with git status and icons (`ls`, `ll`, `lt` aliases) |
+| **delta** | Side-by-side syntax-highlighted git diffs |
+| **lazygit** | Terminal git UI — stage hunks, resolve conflicts, interactive rebase (`lg` alias) |
+| **btop** | System resource monitor |
+| **mtr** | Live ping + traceroute combined — useful in network troubleshooting |
+| **nmap** | Network scanner for authorized recon |
+| **zoxide** | Smart `cd` — learns your most-visited dirs (`z ops`, `z vault`) |
+| **httpie** | Readable HTTP client for testing APIs |
+| **starship** | Minimal prompt showing git branch and exit code |
+| **PowerShell 7** | `pwsh` installed via snap — run SVH modules directly in WSL without PSRemoting |
+
+Aliases carried forward from the old bashrc:
+- `bwu` — unlock Bitwarden, export `BW_SESSION`
+- `ops` / `opsman` — daily launch (BW check + WezTerm)
+- `clip`, `wpath`, `wexp` — Windows interop helpers
+- `gs`, `gd`, `gl`, `gco` — git shorthands
 
 ### 4.7 Set up Obsidian
 
@@ -368,7 +391,23 @@ In Claude's startup output, confirm:
 
 If you see fewer than the expected credential count, check which fields are missing from the Bitwarden item.
 
-### 4.14 WezTerm setup (optional but recommended)
+### 4.14 Install Tailscale
+
+Tailscale is the remote access layer — your WSL box and SVH servers all join a private mesh network. Requires the WSL restart from step 4.6 (systemd must be active).
+
+```bash
+~/SVH-OpsMan/scripts/tailscale-wsl-setup.sh
+```
+
+Authenticate via the browser URL. In the Tailscale admin console:
+- Disable key expiry on this node (it's a workstation, not an ephemeral server)
+- Enable MagicDNS so you can reach other nodes by hostname
+
+**UDM subnet routing** — to reach every device at every SVH site without installing Tailscale on individual machines, deploy a Tailscale subnet router on each UDM Pro/SE. Follow `scripts/tailscale-udm-setup.md`. Once configured, your WSL box can SSH, ping, or PSRemote to any device at any site through the UDM's Tailscale node.
+
+---
+
+### 4.15 WezTerm setup (optional but recommended)
 
 ```powershell
 # From Windows Terminal — install WezTerm, Cascadia Code NF font, create config symlink
@@ -385,7 +424,7 @@ After this, use the `opsman` alias instead of launching Claude Code manually:
 opsman   # checks BW, starts status-refresh daemon, opens WezTerm
 ```
 
-### 4.15 Restrict mail access (important)
+### 4.16 Restrict mail access (important)
 
 The Graph app has `Mail.ReadWrite` which is tenant-wide by default. Lock it to your mailbox:
 
@@ -687,7 +726,7 @@ WezTerm replaces Windows Terminal as the primary ops workspace. It adds a live s
 
 ```
 ┌──────────────────┬─────────────────────────┐
-│                  │  [Claude][pwsh][bash][+] │
+│                  │  [Claude][pwsh][zsh][+]  │
 │    Obsidian      │                          │
 │    ~40%          │       WezTerm            │
 │    (sidebar      │       ~60%               │
@@ -697,7 +736,7 @@ WezTerm replaces Windows Terminal as the primary ops workspace. It adds a live s
 └──────────────────┴─────────────────────────┘
 ```
 
-Tab colors: **blue** = Claude Code · **yellow** = PowerShell · **green** = bash
+Tab colors: **blue** = Claude Code · **yellow** = PowerShell · **green** = zsh
 
 ### Status bar
 
@@ -893,10 +932,8 @@ The command preview input auto-builds from the parameter form. You can edit it d
 #### Requirements
 
 - `BW_SESSION` set (same as for the MCP server)
-- `pwsh` (PowerShell Core) installed in WSL
-- Python 3 + `textual` package (`pip install textual`)
-
-`setup.sh` installs textual automatically.
+- `pwsh` — installed by `scripts/wsl-shell-setup.sh` (`sudo snap install powershell --classic`)
+- Python 3 + `textual` package (`pip install textual`) — `setup.sh` handles this automatically
 
 ---
 
@@ -1071,6 +1108,14 @@ mv .claude/skills/ir-triage/SKILL.md.disabled .claude/skills/ir-triage/SKILL.md
 ```
 
 Enable it only when you're actively working an incident. It's the only skill that can send non-draft Teams messages — keep it off during normal operations to prevent accidental noise in the techs channel.
+
+---
+
+**Q: How do I reach a device at a remote SVH site from WSL?**
+
+If Tailscale is running on your WSL box and the site has a UDM subnet router set up (see `scripts/tailscale-udm-setup.md`), you can reach any device at that site by IP — SSH, PSRemoting, ping — without any extra VPN client or firewall rule. The UDM advertises its local subnets into your tailnet.
+
+If the UDM router isn't set up yet for that site, you need to either be on the local network or use an existing VPN.
 
 ---
 
