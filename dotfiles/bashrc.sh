@@ -66,56 +66,21 @@ alias ops-health='bash "$OPSMANDIR/scripts/health.sh"'
 # Start new shells in OpsMan when opened from the default home directory
 [[ "$PWD" == "$HOME" ]] && cd "$OPSMANDIR"
 
-# ── WezTerm ───────────────────────────────────────────────────────────────────
+# ── OpsMan workspace ──────────────────────────────────────────────────────────
 
-# opsman — launch the full ops workspace:
+# opsman — launch Claude Code in the current terminal:
 #   1. Verifies BW is unlocked
 #   2. Starts status-refresh.sh in background (idempotent)
-#   3. Opens WezTerm with a Claude Code pane in SVH-OpsMan
+#   3. Runs claude in the OpsMan directory
 opsman() {
     if ! bw status 2>/dev/null | grep -q '"status":"unlocked"'; then
         echo "⚠  Bitwarden locked — run: bwu"
         return 1
     fi
-
-    # Start status refresh daemon if not already running
     if ! pgrep -f "dotfiles/status-refresh.sh" >/dev/null 2>&1; then
         nohup bash "$OPSMANDIR/dotfiles/status-refresh.sh" >/dev/null 2>&1 &
         disown
-        echo "✓ Status refresh daemon started (PID $!)"
+        echo "✓ Status refresh daemon started"
     fi
-
-    # Launch WezTerm → WSL login bash → cd OpsMan → start claude
-    # Use the full quoted path — "wezterm.exe" via PATH lookup fails when
-    # binfmt_misc interop is degraded (space in Program Files causes exec error).
-    # If WSL interop is fully unavailable, run install-windows.ps1 and use
-    # the PowerShell `opsman` alias instead.
-    local wez="/mnt/c/Program Files/WezTerm/wezterm.exe"
-    if [[ ! -f "$wez" ]]; then
-        echo "✗ WezTerm not found at $wez — is it installed?"
-        return 1
-    fi
-    "$wez" start --new-window -- wsl.exe --exec bash -l -c 'cd ~/SVH-OpsMan && exec claude' 2>/tmp/wezterm-launch.log &
-    disown
-    echo "✓ WezTerm launching with Claude Code"
-    echo "  Leader key: CTRL+\\  |  Day Starter: LEADER+d  |  All skills: LEADER+?"
-    echo "  Tip: 'opsman' also works from PowerShell after running install-windows.ps1"
-}
-
-# wez-sync — copy wezterm.lua to the Windows config path after editing
-# (run this after editing dotfiles/wezterm.lua if the symlink setup wasn't used)
-wez-sync() {
-    local dest="/mnt/c/Users/astevens/.config/wezterm/wezterm.lua"
-    mkdir -p "$(dirname "$dest")"
-    cp "$OPSMANDIR/dotfiles/wezterm.lua" "$dest"
-    echo "✓ wezterm.lua synced to $(wslpath -w "$dest")"
-}
-
-# wez-stop — stop the background status refresh daemon
-wez-stop() {
-    if pkill -f "dotfiles/status-refresh.sh" 2>/dev/null; then
-        echo "✓ Status refresh daemon stopped"
-    else
-        echo "  Status refresh daemon was not running"
-    fi
+    cd "$OPSMANDIR" && claude
 }

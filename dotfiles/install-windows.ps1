@@ -6,10 +6,9 @@
 #         from the repo root — or double-click in Explorer if PS execution policy allows.
 #
 # What this does:
-#   1. Installs WezTerm (via winget)
-#   2. Installs Cascadia Code NF font (Nerd Fonts — used by the status bar)
-#   3. Creates %USERPROFILE%\.config\wezterm\wezterm.lua → WSL repo symlink
-#      so edits to dotfiles\wezterm.lua take effect on the next WezTerm reload
+#   1. Installs Cascadia Code NF font (used by the terminal status line and icons)
+#   2. Writes a PowerShell profile stub that loads dotfiles/profile.ps1 from the repo
+#   3. Installs Windows Terminal settings (Gruvbox Dark, colour-coded profiles, skill shortcuts)
 
 #Requires -Version 5.1
 Set-StrictMode -Version Latest
@@ -25,31 +24,8 @@ function Ok     { param($msg) Write-Host "  ✓ $msg" -ForegroundColor Green }
 function Warn   { param($msg) Write-Host "  ⚠  $msg" -ForegroundColor Yellow }
 function Bail   { param($msg) Write-Host "  ✗ $msg" -ForegroundColor Red; exit 1 }
 
-function Test-WingetInstalled {
-    param([string]$Id)
-    $out = winget list --id $Id --accept-source-agreements 2>$null
-    return ($out -match [regex]::Escape($Id))
-}
-
-# ── 1. WezTerm ────────────────────────────────────────────────────────────────
-Step "WezTerm"
-$wezId = 'wez.wezterm'
-if (-not (Get-Command 'wezterm.exe' -ErrorAction SilentlyContinue)) {
-    if (Get-Command 'winget' -ErrorAction SilentlyContinue) {
-        Write-Host "  Installing WezTerm via winget…"
-        winget install --id $wezId --accept-package-agreements --accept-source-agreements -e
-        Ok "WezTerm installed"
-    } else {
-        Warn "winget not found — download WezTerm manually from https://wezfurlong.org/wezterm/installation.html"
-        Warn "After installing, re-run this script to complete setup."
-    }
-} else {
-    $wezVer = (Get-Command 'wezterm.exe').Version
-    Ok "WezTerm $wezVer already installed"
-}
-
-# ── 2. Cascadia Code NF font ──────────────────────────────────────────────────
-# Required for Nerd Font glyphs in the status bar (✓, ⚠, etc.)
+# ── 1. Cascadia Code NF font ──────────────────────────────────────────────────
+# Required for Nerd Font glyphs used in the terminal prompt and status line
 Step "Cascadia Code NF font"
 $fontName = 'Cascadia Code NF'
 $fontDir  = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"
@@ -60,7 +36,6 @@ if ($installed) {
     Ok "$fontName already installed"
 } else {
     try {
-        # Download from GitHub releases
         $tag      = 'v2407.24'
         $dlUrl    = "https://github.com/microsoft/cascadia-code/releases/download/$tag/CascadiaCode-$($tag.TrimStart('v')).zip"
         $tmpZip   = "$env:TEMP\CascadiaCode.zip"
@@ -73,11 +48,9 @@ if ($installed) {
         $nfFile = Get-ChildItem -Path $tmpDir -Filter '*NF*.ttf' -Recurse | Select-Object -First 1
         if (-not $nfFile) { Warn "NF variant not found in archive — install font manually"; goto skip_font }
 
-        # Install for current user (no admin needed)
         New-Item -ItemType Directory -Path $fontDir -Force | Out-Null
         Copy-Item -Path $nfFile.FullName -Destination $fontFile -Force
 
-        # Register in user font registry
         $regPath = 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts'
         Set-ItemProperty -Path $regPath -Name "$fontName (TrueType)" -Value $fontFile
 
@@ -86,55 +59,12 @@ if ($installed) {
     } catch {
         Warn "Font download failed: $_"
         Warn "Download manually: https://github.com/microsoft/cascadia-code/releases"
-        Warn "Install the *NF* (Nerd Fonts) variant, then update font_name in dotfiles/wezterm.lua if needed."
+        Warn "Install the *NF* (Nerd Fonts) variant."
     }
 }
 :skip_font
 
-# ── 3. wezterm.lua symlink ────────────────────────────────────────────────────
-Step "wezterm.lua config symlink"
-
-$configDir  = "$env:USERPROFILE\.config\wezterm"
-$configFile = "$configDir\wezterm.lua"
-
-# UNC path into the WSL filesystem so WezTerm (a Windows app) can read it
-$wslUser    = (wsl.exe -e bash -c 'echo $USER' 2>$null).Trim()
-if (-not $wslUser) { $wslUser = 'astevens' }
-$uncTarget  = "\\wsl$\$WslDistro\home\$wslUser\SVH-OpsMan\dotfiles\wezterm.lua"
-
-if (-not (Test-Path $configDir)) {
-    New-Item -ItemType Directory -Path $configDir -Force | Out-Null
-}
-
-if (Test-Path $configFile) {
-    $existing = Get-Item $configFile -ErrorAction SilentlyContinue
-    if ($existing.LinkType -eq 'SymbolicLink') {
-        Ok "Symlink already exists → $($existing.Target)"
-    } else {
-        Warn "$configFile already exists and is not a symlink."
-        Warn "Rename or delete it, then re-run this script."
-    }
-} else {
-    try {
-        # Symlink requires Developer Mode (Windows 11) or elevation
-        New-Item -ItemType SymbolicLink -Path $configFile -Target $uncTarget -Force | Out-Null
-        Ok "Symlink created: $configFile → $uncTarget"
-        Ok "Edits to dotfiles/wezterm.lua reload automatically (CTRL+SHIFT+R in WezTerm)"
-    } catch {
-        # Fall back to copy if symlink is denied
-        $wslLuaPath = "\\wsl$\$WslDistro\home\$wslUser\SVH-OpsMan\dotfiles\wezterm.lua"
-        if (Test-Path $wslLuaPath) {
-            Copy-Item -Path $wslLuaPath -Destination $configFile -Force
-            Ok "wezterm.lua copied (symlink needs Developer Mode or elevation)"
-            Warn "Run 'wez-sync' from WSL after editing dotfiles/wezterm.lua, or re-run this script."
-        } else {
-            Warn "Could not create symlink or locate wezterm.lua in WSL."
-            Warn "Manually copy dotfiles\wezterm.lua to: $configFile"
-        }
-    }
-}
-
-# ── 4. PowerShell profile — dot-source stub ───────────────────────────────────
+# ── 2. PowerShell profile — dot-source stub ───────────────────────────────────
 # $PROFILE becomes a thin stub that loads dotfiles/profile.ps1 from the WSL
 # repo (GitHub-backed). The real content lives in the repo, not OneDrive.
 Step "PowerShell profile stub"
@@ -163,12 +93,35 @@ foreach ($prof in @($PROFILE, ($PROFILE -replace '\\PowerShell\\', '\WindowsPowe
 }
 Ok "Edit dotfiles/profile.ps1 in the repo — changes apply on next PS start"
 
-# ── 5. Verify WezTerm can see the config ──────────────────────────────────────
-Step "Config file check"
-if (Test-Path $configFile) {
-    Ok "WezTerm config readable at $configFile"
+# ── 3. Windows Terminal settings ──────────────────────────────────────────────
+Step "Windows Terminal settings"
+
+$wtDirs = @(
+    "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState",
+    "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState"
+)
+$wtSettingsPath = $null
+foreach ($d in $wtDirs) {
+    if (Test-Path $d) { $wtSettingsPath = "$d\settings.json"; break }
+}
+
+$src = "$PSScriptRoot\windows-terminal-settings.json"
+if (-not (Test-Path $src)) {
+    Warn "windows-terminal-settings.json not found at $src — skipping"
+} elseif (-not $wtSettingsPath) {
+    Warn "Windows Terminal not found — install from the Microsoft Store, then re-run."
+    Warn "Settings file is ready at: $src"
 } else {
-    Warn "Config not found — WezTerm will use defaults until wezterm.lua is in place."
+    if (Test-Path $wtSettingsPath) {
+        $backup = "$wtSettingsPath.bak"
+        Copy-Item -Path $wtSettingsPath -Destination $backup -Force
+        Ok "Existing settings backed up → $backup"
+    }
+    Copy-Item -Path $src -Destination $wtSettingsPath -Force
+    Ok "Windows Terminal settings installed"
+    Ok "Profiles: Claude Code (teal tab), PowerShell OpsMan (yellow), WSL Bash (green)"
+    Ok "Skills: Ctrl+Alt+[D/E/W/P/T/N/C/V/A/X]  |  New Claude tab: Ctrl+Shift+Alt+C"
+    Warn "Restart Windows Terminal for changes to take effect"
 }
 
 # ── Done ──────────────────────────────────────────────────────────────────────
@@ -181,10 +134,11 @@ Write-Host ". `$PROFILE" -ForegroundColor Cyan
 Write-Host "     then run: " -NoNewline
 Write-Host "opsman" -ForegroundColor Cyan
 Write-Host "     (or just open a new PowerShell window and type opsman)"
-Write-Host "  2. Or from WSL, run: " -NoNewline
+Write-Host "  2. Restart Windows Terminal to apply the new settings"
+Write-Host "  3. From WSL, run: " -NoNewline
 Write-Host "opsman" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  Leader key: CTRL+\  |  Day Starter: LEADER+d  |  Skills: LEADER+[d e w p t n c v a x]"
-Write-Host "  New Claude tab: LEADER+C  |  New pwsh tab: LEADER+P  |  Rename tab: LEADER+r"
-Write-Host "  2-pane split: LEADER+2   |  3-pane split: LEADER+3  |  Navigate: LEADER+hjkl"
-Write-Host "  Open Obsidian note: LEADER+o  |  Force status refresh: LEADER+u"
+Write-Host "  Skills: Ctrl+Alt+[D/E/W/P/T/N/C/V/A/X]"
+Write-Host "  New Claude tab: Ctrl+Shift+Alt+C  |  New pwsh tab: Ctrl+Shift+Alt+P"
+Write-Host "  Split pane: Ctrl+Alt+2  |  Navigate: Ctrl+Alt+H/J/K/L"
+Write-Host "  Rename tab: Ctrl+Alt+R"

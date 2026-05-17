@@ -206,39 +206,11 @@ fi
 chmod +x "$REPO_DIR/tui/run-tui.sh"
 ok "tui/run-tui.sh marked executable"
 
-# ── 11. WezTerm config ────────────────────────────────────────────────────────
-step "WezTerm config"
-WEZ_CONFIG_DIR="/mnt/c/Users/astevens/.config/wezterm"
-
-if [ -d "/mnt/c/Users/astevens" ]; then
-  mkdir -p "$WEZ_CONFIG_DIR"
-  WEZ_DEST="$WEZ_CONFIG_DIR/wezterm.lua"
-
-  if [ ! -e "$WEZ_DEST" ]; then
-    # Try a Windows symbolic link via mklink (works when Developer Mode is on)
-    DISTRO=$(wsl.exe -l -q 2>/dev/null | head -1 | tr -d '\r\0' || echo "Ubuntu")
-    DISTRO=${DISTRO:-Ubuntu}
-    UNC_SRC="\\\\wsl\$\\${DISTRO}${REPO_DIR}\\dotfiles\\wezterm.lua"
-    WIN_DEST="C:\\Users\\astevens\\.config\\wezterm\\wezterm.lua"
-    if cmd.exe /c "mklink \"${WIN_DEST}\" \"${UNC_SRC}\"" &>/dev/null; then
-      ok "wezterm.lua symlinked → dotfiles/wezterm.lua (live updates on save)"
-    else
-      cp "$REPO_DIR/dotfiles/wezterm.lua" "$WEZ_DEST"
-      ok "wezterm.lua copied to $WEZ_DEST"
-      warn "Symlink needs Developer Mode — copy is in place. Run 'wez-sync' after editing."
-    fi
-  else
-    ok "WezTerm config already present at $WEZ_DEST"
-  fi
-
-  # Ensure status-refresh.sh is executable
-  chmod +x "$REPO_DIR/dotfiles/status-refresh.sh"
-  ok "status-refresh.sh marked executable"
-
-  warn "Run dotfiles/install-windows.ps1 from Windows Terminal to install WezTerm + fonts"
-else
-  warn "Windows user directory not found — skipping WezTerm config (WSL2 only)"
-fi
+# ── 11. Shell scripts — ensure executable ─────────────────────────────────────
+step "Shell script permissions"
+chmod +x "$REPO_DIR/dotfiles/status-refresh.sh"
+ok "status-refresh.sh marked executable"
+warn "Run dotfiles/install-windows.ps1 from Windows Terminal to install the font and Windows Terminal settings"
 
 # ── done ──────────────────────────────────────────────────────────────────────
 echo -e "\n${GREEN}${BOLD}Setup complete.${RESET}"
@@ -249,6 +221,6 @@ echo -e "  3. ${BOLD}export BW_SESSION=\$(bw unlock --raw)${RESET}  — unlock B
 echo -e "  4. Register any skipped MCPs (github, obsidian, fathom, firecrawl)"
 echo -e "     by setting the env var and re-running, or with: ${BOLD}claude mcp add ...${RESET}"
 echo -e "  5. ${BOLD}cd mcp-server && npm start${RESET}  — verify the server starts cleanly"
-echo -e "  6. On Windows: ${BOLD}dotfiles\\install-windows.ps1${RESET}  — install WezTerm + fonts"
+echo -e "  6. On Windows: ${BOLD}dotfiles\\install-windows.ps1${RESET}  — install font + Windows Terminal settings"
 echo -e "  7. Open the repo in Claude Code: ${BOLD}claude${RESET}  — or type: ${BOLD}opsman${RESET}"
 echo -e "  8. PowerShell TUI: ${BOLD}tui/run-tui.sh${RESET}  — browse and run module functions in terminal"

@@ -13,7 +13,7 @@
 5. [Daily workflow](#5-daily-workflow)
 6. [Skills reference](#6-skills-reference)
 7. [Driving Claude — how to talk to it](#7-driving-claude--how-to-talk-to-it)
-8. [WezTerm environment](#8-wezterm-environment)
+8. [Windows Terminal environment](#8-windows-terminal-environment)
 9. [PowerShell modules](#9-powershell-modules)
    - [9.1 PowerShell TUI](#91-powershell-tui)
 10. [Customization guide](#10-customization-guide)
@@ -137,9 +137,9 @@ Graph permissions are scoped at the app level, not the user level. A single app 
 
 Confluence is for documentation that's finished and meant to be shared. Obsidian is for work in progress. Skills write to Obsidian, you review and edit, then optionally promote to Confluence. This prevents half-formed notes from appearing in shared spaces.
 
-### Why WezTerm instead of Windows Terminal?
+### Why Windows Terminal instead of WezTerm?
 
-WezTerm has a Lua-scriptable status bar, chord keybindings, and built-in hyperlink detection. The status bar shows live Wazuh/MDE/Entra alert counts and Bitwarden unlock state — things you'd otherwise have to query manually. The `obsidian://` URI detection means you can click a note link directly from terminal output. Windows Terminal can't do these things without external tooling.
+WezTerm was the original plan — Lua-scriptable status bar, LEADER-key chords, `obsidian://` URI detection. We got partway through and the config complexity (symlinks, Lua caching layer, `binfmt_misc` interop edge cases) wasn't worth it at this stage. Windows Terminal covers the core workflow with zero overhead. WezTerm is tracked in `roadmap.md` as a future upgrade when the data layer is stable.
 
 ---
 
@@ -151,7 +151,7 @@ Start here if you're building this on a new Windows 11 machine. Steps are in ord
 
 - Windows 11 with WSL 2 enabled
 - Obsidian installed (from obsidian.md)
-- WezTerm installed — or skip Section 8 and use Windows Terminal
+- Windows Terminal installed (from the Microsoft Store)
 - A Bitwarden account with the **SVH OpsMan** vault item populated (see credential reference in README.md)
 
 ### 4.1 Enable WSL 2 and install Ubuntu
@@ -235,7 +235,7 @@ What the script installs and configures:
 
 Aliases carried forward from the old bashrc:
 - `bwu` — unlock Bitwarden, export `BW_SESSION`
-- `ops` / `opsman` — daily launch (BW check + WezTerm)
+- `ops` / `opsman` — daily launch (BW check + starts claude)
 - `clip`, `wpath`, `wexp` — Windows interop helpers
 - `gs`, `gd`, `gl`, `gco` — git shorthands
 
@@ -407,22 +407,19 @@ Authenticate via the browser URL. In the Tailscale admin console:
 
 ---
 
-### 4.15 WezTerm setup (optional but recommended)
+### 4.15 Windows Terminal setup
 
 ```powershell
-# From Windows Terminal — install WezTerm, Cascadia Code NF font, create config symlink
+# From Windows Terminal — installs Cascadia Code NF font, PS profile stub, imports WT settings
 .\dotfiles\install-windows.ps1
 ```
 
+After this, `opsman` is available from both WSL and PowerShell:
 ```bash
-# From WSL — copies wezterm.lua to Windows config path
-bash scripts/setup.sh
+opsman   # checks BW, starts status-refresh daemon, launches claude
 ```
 
-After this, use the `opsman` alias instead of launching Claude Code manually:
-```bash
-opsman   # checks BW, starts status-refresh daemon, opens WezTerm
-```
+From PowerShell, `opsman` opens a new Claude Code tab (blue) in Windows Terminal.
 
 ### 4.16 Restrict mail access (important)
 
@@ -450,7 +447,7 @@ cd ~/SVH-OpsMan && claude
 
 # Option 2: using the alias (after bashrc setup)
 bwu   # unlock vault, export BW_SESSION
-ops   # or opsman — full launch with WezTerm
+opsman   # BW check + start claude (or opens Claude Code tab from PowerShell)
 ```
 
 **You must unlock Bitwarden before starting Claude Code.** The MCP server reads credentials at startup. If `BW_SESSION` isn't set, the server starts but every tool call fails with a Bitwarden error. The session-start hook tells you immediately if BW is locked.
@@ -718,63 +715,40 @@ Claude backtracks and tries again with the corrected context.
 
 ---
 
-## 8. WezTerm environment
+## 8. Windows Terminal environment
 
-WezTerm replaces Windows Terminal as the primary ops workspace. It adds a live status bar, chord keybindings for every skill, and `obsidian://` URI detection.
+Windows Terminal is the ops workspace. `dotfiles/install-windows.ps1` sets it up with Gruvbox Dark, colour-coded profiles, and skill shortcuts.
 
-### Screen layout
+### Profiles
 
-```
-┌──────────────────┬─────────────────────────┐
-│                  │  [Claude][pwsh][zsh][+]  │
-│    Obsidian      │                          │
-│    ~40%          │       WezTerm            │
-│    (sidebar      │       ~60%               │
-│     collapsed)   │                          │
-│                  ├─────────────────────────┤
-│                  │  status bar              │
-└──────────────────┴─────────────────────────┘
-```
-
-Tab colors: **blue** = Claude Code · **yellow** = PowerShell · **green** = zsh
-
-### Status bar
-
-```
-BW ✓ · Wazuh 3 · MDE 1 · Risky 0 · Ninja 34/35 · M365 ✓ · UniFi ✓ · main* · 2m ago
-```
-
-Refreshes every 2 minutes via `dotfiles/status-refresh.sh` running in the background. Shows counts directly — `Wazuh 3` means 3 active level 10+ alerts. `⚠ stale` appears if the refresh daemon isn't running or BW is locked.
+| Profile | Tab colour | What it opens |
+|---------|-----------|--------------|
+| Claude Code | Blue | WSL bash → `cd ~/SVH-OpsMan && exec claude` |
+| PowerShell (OpsMan) | Yellow | pwsh with the OpsMan profile |
+| WSL Bash | Green | WSL zsh in the OpsMan directory |
 
 ### Keybindings
 
-Leader key: **CTRL+\\** (hold CTRL, tap backslash, release both, then tap the action key)
+Skill shortcuts use **Ctrl+Alt+[key]** — type the chord while Claude's prompt is active and it submits the skill command.
 
-| Chord | Action |
-|-------|--------|
-| `LEADER+d` | `/day-starter` |
-| `LEADER+e` | `/day-ender` |
-| `LEADER+w` | `/week-starter` |
-| `LEADER+p` | `/posture-check` |
-| `LEADER+t` | `/troubleshoot` |
-| `LEADER+n` | `/network-troubleshooter` |
-| `LEADER+c` | `/change-record` |
-| `LEADER+v` | `/vuln-triage` |
-| `LEADER+a` | `/asset-investigation` |
-| `LEADER+x` | `/patch-campaign` |
-| `LEADER+C` | New Claude Code tab (blue) |
-| `LEADER+P` | New PowerShell tab (yellow) |
-| `LEADER+B` | New bash tab (green) |
-| `LEADER+r` | Rename current tab |
-| `LEADER+2` | Split pane 2-way horizontal |
-| `LEADER+3` | Split pane 3-way horizontal |
-| `LEADER+h/j/k/l` | Navigate between split panes |
-| `LEADER+o` | Quick-select `obsidian://` URIs from scrollback and open in Obsidian |
-| `LEADER+u` | Force status bar refresh (don't wait for 2-minute interval) |
-
-### obsidian:// deep links
-
-After any skill runs, Claude prints the output note's path as an `obsidian://` URI. WezTerm detects it as a clickable hyperlink. Click it and the note opens directly in Obsidian. Or use `LEADER+o` to quick-select any URI in the terminal scrollback.
+| Keys | Action |
+|------|--------|
+| `Ctrl+Alt+D` | `/day-starter` |
+| `Ctrl+Alt+E` | `/day-ender` |
+| `Ctrl+Alt+W` | `/week-starter` |
+| `Ctrl+Alt+P` | `/posture-check` |
+| `Ctrl+Alt+T` | `/troubleshoot` |
+| `Ctrl+Alt+N` | `/network-troubleshooter` |
+| `Ctrl+Alt+C` | `/change-record` |
+| `Ctrl+Alt+V` | `/vuln-triage` |
+| `Ctrl+Alt+A` | `/asset-investigation` |
+| `Ctrl+Alt+X` | `/patch-campaign` |
+| `Ctrl+Shift+Alt+C` | New Claude Code tab |
+| `Ctrl+Shift+Alt+P` | New PowerShell (OpsMan) tab |
+| `Ctrl+Shift+Alt+B` | New WSL Bash tab |
+| `Ctrl+Alt+2` | Split pane horizontal |
+| `Ctrl+Alt+H/J/K/L` | Navigate between split panes |
+| `Ctrl+Alt+R` | Rename current tab |
 
 ---
 
@@ -865,7 +839,7 @@ The actual script (`rolling-cluster-reboot.ps1`) runs on the cluster server, not
 
 ### 9.1 PowerShell TUI
 
-The TUI is a terminal interface that wraps all 237 SVH module functions. It runs inside WSL on WezTerm. Instead of remembering function names and parameter syntax, you browse by module, fill a form, and the command is built for you. Destructive commands (Remove, Restart, Revoke, Reset, Block, Stop) require an explicit confirmation step before they execute.
+The TUI is a terminal interface that wraps all 237 SVH module functions. It runs inside WSL in Windows Terminal. Instead of remembering function names and parameter syntax, you browse by module, fill a form, and the command is built for you. Destructive commands (Remove, Restart, Revoke, Reset, Block, Stop) require an explicit confirmation step before they execute.
 
 #### Starting the TUI
 
@@ -1068,7 +1042,7 @@ No, by design. The server locks all mail and calendar calls to `GRAPH_USER_ID`. 
 
 **Q: Can I use this on a Mac or Linux workstation?**
 
-Most of it works — Claude Code and the MCP server are Node.js. The PowerShell modules require PowerShell 7 (available on Linux/Mac). The WezTerm environment works on any platform. The main difference is the WSL layer doesn't exist — your paths and some WSL-specific aliases won't apply. Adjust `config.yaml` paths and the session-start hook for your environment.
+Most of it works — Claude Code and the MCP server are Node.js. The PowerShell modules require PowerShell 7 (available on Linux/Mac). The Windows Terminal profiles and `install-windows.ps1` are Windows-only; skip those steps. The main difference is the WSL layer doesn't exist — adjust `config.yaml` paths and the session-start hook for your environment.
 
 ---
 
@@ -1119,20 +1093,20 @@ If the UDM router isn't set up yet for that site, you need to either be on the l
 
 ---
 
-**Q: The status bar shows "⚠ stale".**
+**Q: The status refresh daemon isn't running.**
 
-The `status-refresh.sh` daemon isn't running. Start it:
+Start it manually:
 ```bash
-wez-sync   # alias from bashrc.sh — starts the daemon
+nohup bash ~/SVH-OpsMan/dotfiles/status-refresh.sh &
 ```
 
-Or use `LEADER+u` to force a one-time refresh.
+`opsman` starts it automatically. Running `bwu` also restarts it to pick up the new session token.
 
 ---
 
-**Q: Can I run this without WezTerm?**
+**Q: Can I run this on a non-Windows machine?**
 
-Yes. Everything works in Windows Terminal. You lose the status bar and the chord keybindings, but Claude Code, the MCP server, and all skills work identically. The `opsman` alias falls back gracefully.
+Yes — Claude Code and the MCP server are Node.js and work anywhere. The PowerShell modules require PowerShell 7 (available on Mac/Linux). The Windows Terminal profiles and `install-windows.ps1` are Windows-only; adjust `config.yaml` paths and the session-start hook for your environment.
 
 ---
 

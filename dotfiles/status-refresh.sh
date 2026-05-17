@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# SVH OpsMan — WezTerm status bar refresh daemon
+# SVH OpsMan — status refresh daemon
 # Polls security APIs every 2 minutes and writes /tmp/svh-opsman-status.json.
-# WezTerm's Lua status bar reads this file; shows '?' for any field while this
-# script is not running or BW is locked.
+# Any consumer (shell prompt, status bar, pre-aggregation scripts) can read this
+# file. Shows '?' for any field while this script is not running or BW is locked.
 #
 # Start: launched automatically by the 'opsman' shell function in bashrc.sh.
 # Stop:  kill $(pgrep -f status-refresh.sh)

@@ -32,14 +32,14 @@ if (Get-Module PSReadLine -ErrorAction SilentlyContinue) {
     Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
     Set-PSReadLineKeyHandler -Key Tab       -Function MenuComplete
     Set-PSReadLineOption -Colors @{
-        Command          = '#89b4fa'   # Catppuccin blue
-        Parameter        = '#cba6f7'   # mauve
-        String           = '#a6e3a1'   # green
-        Comment          = '#6c7086'   # overlay0
-        Keyword          = '#cba6f7'   # mauve
-        Variable         = '#cdd6f4'   # text
-        Error            = '#f38ba8'   # red
-        InlinePrediction = '#585b70'   # surface2
+        Command          = '#83a598'   # Gruvbox bright blue
+        Parameter        = '#d3869b'   # Gruvbox bright purple
+        String           = '#b8bb26'   # Gruvbox bright green
+        Comment          = '#928374'   # Gruvbox gray
+        Keyword          = '#d3869b'   # Gruvbox bright purple
+        Variable         = '#ebdbb2'   # Gruvbox foreground
+        Error            = '#fb4934'   # Gruvbox bright red
+        InlinePrediction = '#504945'   # Gruvbox bg2
     }
 }
 
@@ -138,15 +138,9 @@ function Invoke-OpsMan {
         return
     }
     wsl.exe -e bash -c 'pgrep -f "status-refresh.sh" >/dev/null || { nohup bash ~/SVH-OpsMan/dotfiles/status-refresh.sh >/dev/null 2>&1 & disown; }'
-    $wez = "$env:ProgramFiles\WezTerm\wezterm.exe"
-    if (-not (Test-Path $wez)) { Write-Host "WezTerm not found at $wez" -ForegroundColor Red; return }
-    Start-Process -FilePath $wez -ArgumentList @(
-        'start', '--new-window', '--',
-        'wsl.exe', '--exec', 'bash', '-l', '-c',
-        'cd ~/SVH-OpsMan && exec claude'
-    )
-    Write-Host '  WezTerm launching with Claude Code' -ForegroundColor Green
-    Write-Host '  Leader: CTRL+\  |  Day Starter: LEADER+d  |  New Claude tab: LEADER+C'
+    Start-Process 'wt.exe' -ArgumentList 'new-tab', '--profile', 'Claude Code'
+    Write-Host '  Windows Terminal opening Claude Code profile' -ForegroundColor Green
+    Write-Host '  Skills: Ctrl+Alt+[D/E/W/P/T/N/C/V/A/X]  |  New Claude tab: Ctrl+Shift+Alt+C'
 }
 
 # ── Aliases (Set-Alias is idempotent — no errors on re-source) ────────────────
