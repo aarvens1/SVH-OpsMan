@@ -29,7 +29,7 @@ allowed-tools: "mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__nin
 | **Next Cycle** | High CVE, not TVM-recommended, or Medium with broad exposure | Next maintenance window |
 | **Accept** | Low/Medium, no exploit path, internal-only systems | Track and revisit quarterly |
 
-Use Firecrawl to spot-check EPSS and KEV status for any Critical CVEs if not in Defender.
+Use Firecrawl to spot-check EPSS and KEV status for any Critical CVEs if not in Defender. If Firecrawl is unavailable, skip EPSS/KEV enrichment — note it in the output and rely on Defender TVM exposure score as the primary priority signal.
 
 ## Step 3 — Create Planner board
 
@@ -43,7 +43,7 @@ Create tasks: `planner_create_task` per patch group with:
 - Due date: matching timeline
 - Notes: list of affected devices, backup status
 
-Present tasks as drafts for review before creating them.
+Write all CREATE blocks to the Obsidian note using the standard draft format (same as day-starter `### 📝 Draft Planner actions`). Nothing is created until Aaron confirms. After confirmation, execute sequentially — plan first, then buckets, then tasks — and remove each block with `edit_block` after success. Set `has_pending_tasks: true` in the frontmatter until all blocks are pushed.
 
 ## Output
 
@@ -55,7 +55,8 @@ date: YYYY-MM-DD
 skill: Patch Campaign
 status: draft
 tags: [patching, campaign]
+has_pending_tasks: true
 ---
 ```
 
-Sections: Summary (total patches, by tier) → Emergency items → Tier breakdown table → Planner board link → Backup status.
+Sections: Summary (total patches, by tier) → Emergency items → Tier breakdown table → Planner board link → Backup status → Draft Planner actions.

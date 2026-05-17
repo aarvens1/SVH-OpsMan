@@ -2,7 +2,7 @@
 name: onprem-health
 description: On-prem server health check across all managed Windows servers. NinjaOne for inventory and backup status, Desktop Commander PSRemoting for disk/service spot-checks, Hyper-V and cluster state flagged separately. Trigger phrases: "onprem health", "check the servers", "server health", "how are the servers doing".
 when_to_use: Use for a broad on-prem infrastructure health sweep — not for investigating a specific server (use /asset-investigation for that) or a specific incident.
-allowed-tools: "mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_get_server mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_volumes mcp__svh-opsman__ninja_list_services mcp__svh-opsman__ninja_list_processes mcp__desktop-commander__* mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_get_server mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_volumes mcp__svh-opsman__ninja_list_services mcp__svh-opsman__ninja_list_processes mcp__desktop-commander__* mcp__obsidian__* mcp__time__* Read(powershell/**)"
 ---
 
 # On-Prem Server Health
@@ -18,6 +18,8 @@ ACCOPDXARCHIVE is always in maintenance mode — never surface it.
 - `ninja_list_pending_patches` — critical and security patches pending on servers
 
 ## Step 2 — Disk and volume check via PSRemoting
+
+**Before running commands:** read `powershell/README.md` to verify function names and any recent changes. Prefer SVH module functions (`Get-SVHServerDisk`, `Get-SVHServerServices`, `Get-SVHPendingReboot`) over raw cmdlets — they handle credential patterns and output formatting consistently. If a required capability is missing, note the gap and suggest which module it belongs in.
 
 For each online server, use Desktop Commander to run pwsh from `/home/wsl_stevens/SVH-OpsMan/powershell`:
 

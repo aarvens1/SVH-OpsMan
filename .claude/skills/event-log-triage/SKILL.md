@@ -2,7 +2,7 @@
 name: event-log-triage
 description: Live event log investigation on a specific host or time window. Queries Wazuh first for broad correlation, then NinjaOne for anything Wazuh missed, then targeted PowerShell via Desktop Commander for precision. Trigger phrases: "check event logs on X", "what happened on Z around [time]", "event log triage for X".
 when_to_use: Use when you need to investigate what happened on a specific host at a specific time, using live system access.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__wazuh_list_agents mcp__svh-opsman__wazuh_get_fim_events mcp__svh-opsman__wazuh_get_rootcheck mcp__svh-opsman__ninja_get_server mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_processes mcp__svh-opsman__ninja_list_services mcp__obsidian__* mcp__desktop-commander__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__wazuh_list_agents mcp__svh-opsman__wazuh_get_fim_events mcp__svh-opsman__wazuh_get_rootcheck mcp__svh-opsman__ninja_get_server mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_processes mcp__svh-opsman__ninja_list_services mcp__obsidian__* mcp__desktop-commander__* mcp__time__* Read(powershell/**)"
 ---
 
 # Event Log Triage
@@ -38,7 +38,9 @@ Complements **Event Log Analyzer** (`/event-log-analyzer`), which works from an 
 
 ## Step 3 — PowerShell precision (Desktop Commander)
 
-For targeted deep-dives that NinjaOne and Wazuh don't surface, use Desktop Commander to run PowerShell on the host directly. Reference `references/ps-remoting-snippets.md` for ready-to-use snippets.
+**Before writing PS commands:** read `powershell/README.md` and `references/ps-remoting-snippets.md`. Use SVH module functions where they exist. If a required query capability is missing from the modules, note the gap alongside the raw `Get-WinEvent` workaround.
+
+For targeted deep-dives that NinjaOne and Wazuh don't surface, use Desktop Commander to run PowerShell on the host directly:
 
 Common queries:
 - `Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4625; StartTime=(Get-Date).AddHours(-4)}`

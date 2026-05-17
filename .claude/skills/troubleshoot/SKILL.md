@@ -2,7 +2,7 @@
 name: troubleshoot
 description: Systematic IT troubleshooting. Restates the problem, scopes it, inventories what's working, generates ranked hypotheses, and works through them cheapest-first. Trigger phrases: "X is broken", "troubleshoot Y", "why isn't Z working", "users can't reach X".
 when_to_use: Any time something is broken or misbehaving. Works for anything — printers, VPN, login failures, app errors, network issues.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__wazuh_list_agents mcp__svh-opsman__ninja_get_server mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_processes mcp__svh-opsman__ninja_list_services mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__unifi_get_site_health mcp__svh-opsman__unifi_list_networks mcp__svh-opsman__unifi_list_firewall_rules mcp__svh-opsman__unifi_list_clients mcp__obsidian__* mcp__desktop-commander__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__wazuh_list_agents mcp__svh-opsman__ninja_get_server mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_processes mcp__svh-opsman__ninja_list_services mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__unifi_get_site_health mcp__svh-opsman__unifi_list_networks mcp__svh-opsman__unifi_list_firewall_rules mcp__svh-opsman__unifi_list_clients mcp__obsidian__* mcp__desktop-commander__* mcp__time__* Read(powershell/**)"
 ---
 
 # Troubleshoot
@@ -29,6 +29,7 @@ Then ask (or infer from context):
 |--------|------|
 | M365 service outage? | `admin_get_service_health`, `admin_list_service_incidents` |
 | Wazuh alerts on affected host? | `wazuh_search_alerts` (filter by hostname, last 4h) |
+| Wazuh agent connected? | `wazuh_list_agents` — if the agent is disconnected, alerts may be silent |
 | NinjaOne alerts? | `ninja_list_device_alerts` |
 | Defender alerts? | `mde_list_alerts` |
 | Sign-in failures? | `entra_get_sign_in_logs` |
@@ -47,7 +48,7 @@ For each hypothesis, state:
 - Which tool or command to run
 - Result
 
-Use `desktop-commander` for direct shell access when needed (ping, traceroute, Test-NetConnection, netstat, etc.). Document each result before moving to the next hypothesis.
+Use `desktop-commander` for direct shell access when needed (ping, traceroute, Test-NetConnection, netstat, etc.). **Before writing PS commands:** read `powershell/README.md` for SVH module functions — use them over raw cmdlets where they exist. Document each result before moving to the next hypothesis.
 
 ## Step 5 — Write findings to Obsidian
 

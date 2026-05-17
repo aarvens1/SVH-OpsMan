@@ -2,7 +2,7 @@
 name: meeting-prep
 description: Meeting preparation and post-call notes. Before a meeting: pulls calendar event, Fathom history with same attendees, Confluence context, open Planner tasks, and produces a prep brief. After a recorded call: exports Fathom AI notes verbatim into an Obsidian meeting note and appends a line to the daily briefing. Trigger phrases: "prep me for [meeting/time]", "meeting prep for X", "pull notes from my [meeting] call".
 when_to_use: Use before any meeting to prepare, or after a recorded call to file Fathom notes and suggest tasks.
-allowed-tools: "mcp__svh-opsman__calendar_list_events mcp__svh-opsman__calendar_get_event mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_create_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_create_task mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__confluence_get_page mcp__obsidian__* mcp__claude_ai_Fathom__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__calendar_list_events mcp__svh-opsman__calendar_get_event mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_create_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_create_task mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__confluence_get_page mcp__obsidian__* mcp__claude_ai_Fathom__* mcp__time__*"
 ---
 
 # Meeting Prep
@@ -17,7 +17,7 @@ Run in parallel:
 - **Fathom** — use `search_meetings` or `list_meetings` to find past recordings with the same attendees or organisation. Any open action items from the last call?
 - `confluence_search_pages` — any docs related to this meeting's topic or the attendee's org.
 - Obsidian — read any existing meeting notes for this recurring meeting or vendor.
-- `planner_list_tasks` — any open tasks assigned to or from the attendees.
+- `planner_get_user_tasks` (user_id: `astevens@shoestringvalley.com`, open_only: true) — Aaron's open tasks relevant to this meeting's topic. For tasks involving non-Aaron attendees, use `planner_list_tasks` across known operational boards and filter by attendee name in titles or notes — app auth cannot query tasks by arbitrary user ID.
 
 ### Step 3 — Produce prep brief
 

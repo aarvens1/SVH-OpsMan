@@ -17,7 +17,7 @@ Run in parallel:
 - `ninja_get_server` — hardware, OS, uptime, organization
 - `ninja_list_services` — running services, any stopped
 - `ninja_list_volumes` — disk usage
-- `ninja_list_device_backups` — recent backup history and status
+- `ninja_list_device_backups` — recent backup history and status. Flag if no successful backup in the past 7 days.
 - `ninja_get_patch_history` — recent patches, any failures
 - `ninja_list_device_alerts` — active alerts
 - `ninja_get_device_custom_fields` — any custom metadata (owner, role, location)
@@ -55,6 +55,8 @@ Run in parallel:
 - `entra_get_audit_logs` — changes made by or to this account
 - `mde_list_alerts` — any Defender alerts involving this user
 
+For recent activity (last 7–30 days of work output, Teams, mail, tasks): run `/user-report` rather than pulling those sources inline — asset-investigation is for a persistent full profile, not a recent-activity snapshot.
+
 ---
 
 ## Output
@@ -75,6 +77,6 @@ mde_machine_id: <id field from mde_get_device response>
 
 Populate `ninja_device_id` and `mde_machine_id` from the API responses whenever available — leave blank if the asset isn't in that system. These IDs are used by `Get-SVHPatchSurface` and `Invoke-SVHUserLockdown` in the PowerShell module suite, and storing them in the note saves having to look them up each time.
 
-This is a **persistent note** — each investigation appends a dated section rather than overwriting. Structure: Asset summary → Current state → Recent findings → Open items → History (dated sections).
+This is a **persistent note** — each investigation appends a dated section rather than overwriting. When updating an existing note: update the `date` frontmatter to today, then append a `## Investigation — YYYY-MM-DD` section at the bottom with the new findings. Structure: Asset summary → Current state → Recent findings → Open items → History (dated `## Investigation —` sections, newest first).
 
 For servers/workstations: embed the network diagram with `![[name.excalidraw]]`.

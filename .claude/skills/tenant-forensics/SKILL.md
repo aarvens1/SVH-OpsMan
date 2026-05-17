@@ -2,7 +2,7 @@
 name: tenant-forensics
 description: "What broke and who touched it?" forensic pair. Cross-references Azure activity logs + Entra audit logs by timestamp and actor to produce a human-readable change timeline for a given window. Trigger phrases: "who touched it", "what changed before X broke", "tenant forensics", "forensic audit", "what happened in Azure around [time]".
 when_to_use: Use when something broke and you need to know what changed in the 30–60 minutes before it. Also useful for ad-hoc change auditing, compliance checks, or "someone did something they shouldn't have" investigations.
-allowed-tools: "mcp__svh-opsman__azure_get_activity_logs mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_get_role_members mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__ninja_get_patch_history mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__azure_get_activity_logs mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_get_role_members mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__ninja_get_patch_history mcp__obsidian__* mcp__time__*"
 ---
 
 # Tenant Forensics
@@ -30,6 +30,7 @@ Run simultaneously:
 **NinjaOne — if a specific host is named:**
 1. `ninja_list_servers` to find the device ID for the named host.
 2. Run in parallel for that device:
+   - `ninja_list_device_alerts` — active alerts on this device right now. A pre-existing alert correlating with the window is significant.
    - `ninja_get_event_logs` (log_name: System, level: Error/Critical, page_size: 500) — service crashes, driver failures, unexpected restarts, disk errors in the window.
    - `ninja_get_event_logs` (log_name: Application, level: Error/Critical, page_size: 500) — application crashes, .NET exceptions, SQL errors.
    - `ninja_get_event_logs` (log_name: Security, page_size: 500) — account logons, privilege use, audit failures (event IDs 4624, 4625, 4648, 4672, 4698, 4702). **Note:** Security log is often high-volume — filter to error/warning or known-important event IDs when possible.
@@ -123,6 +124,8 @@ For each actor who made changes:
 
 Based on findings:
 - If a causal actor is identified: suggest `entra_get_audit_logs` broader window on that actor, or `/asset-investigation` on the affected resource
+- If a suspicious actor made admin changes: suggest `/access-review` on that account to assess current permissions and whether the account should be suspended
 - If an RBAC change was found: `entra_get_role_members` to check current state of the role
-- If nothing explains the break: suggest `/event-log-triage` on the affected host, or `/network-troubleshooter` if it's connectivity
-- If a suspicious actor is found but no clear break: suggest staging a Planner task to review that actor's recent history
+- If nothing explains the break: suggest `/event-log-triage` on the affected host (covers PowerShell Operational, Task Scheduler, WMI — channels not in NinjaOne), or `/network-troubleshooter` if it's connectivity
+- If a suspicious actor is found but no clear break: suggest `/user-report` for a 7-day activity snapshot, and stage a Planner task to review
+- If findings are serious enough to declare: suggest `/incident-open`

@@ -17,6 +17,8 @@ Gather before writing:
 
 If a file is provided, read it first. If the user describes the process verbally, use that as the source.
 
+**If the procedure involves PowerShell:** read `powershell/README.md` before writing any commands. Use SVH module functions (`Get-SVH*`, `Invoke-SVH*`, `Set-SVH*`) over raw cmdlets where they exist — they handle credential patterns, error formatting, and account tiers consistently. If a step requires a raw cmdlet because no module function covers it, note the gap in the runbook's Notes section and suggest which module it should be added to.
+
 Check `confluence_search_pages` for any existing documentation on this topic — update rather than duplicate if found. Also check Obsidian `Investigations/runbooks/` for any prior version.
 
 ## Step 2 — Structure the runbook

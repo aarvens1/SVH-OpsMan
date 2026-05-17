@@ -2,7 +2,7 @@
 name: license-audit
 description: Unified license + device audit. Cross-joins M365 license assignments, Intune enrollment, and MFA registration to surface orphaned licenses (licensed user, no device, no MFA), over-licensed users, and compliance gaps. Trigger phrases: "license audit", "orphaned licenses", "who has licenses but no device", "license waste", "unified license check".
 when_to_use: Use for periodic license hygiene, cost audits, or when the "licensed but exposed" problem needs a concrete answer. Not for investigating a specific user — use /access-review for that.
-allowed-tools: "mcp__svh-opsman__admin_get_user_licenses mcp__svh-opsman__intune_list_devices mcp__svh-opsman__entra_get_user_mfa_methods mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__exo_get_mailbox mcp__svh-opsman__entra_list_risky_users mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__admin_get_user_licenses mcp__svh-opsman__intune_list_devices mcp__svh-opsman__entra_get_user_mfa_methods mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_list_risky_users mcp__obsidian__* mcp__time__*"
 ---
 
 # License Audit
@@ -63,6 +63,7 @@ date: YYYY-MM-DD
 skill: license-audit
 status: draft
 tags: [audit, licensing, identity]
+has_pending_tasks: true
 ---
 
 # License Audit — YYYY-MM-DD
@@ -128,6 +129,7 @@ Summarize as a count with a representative sample: "12 users have licenses but n
 ## Step 5 — Suggest next moves
 
 - For any 🔴 Exposed user: suggest `/access-review` on that specific account before disabling
-- For ghost accounts: suggest verifying departure status in HR system before reclaiming license
+- For 🔴 Risky + licensed users: suggest `/tenant-forensics` to understand what they've done recently before disabling or investigating
+- For ghost accounts: suggest verifying departure status before reclaiming license — a ghost that's still active is a bigger risk than a wasted license
 - For no-MFA users: suggest staging a Conditional Access enforcement policy draft
-- If cost waste is significant: note that license reclamation can be a Planner campaign with monthly cadence
+- If cost waste is significant: note that license reclamation can be a monthly Planner campaign
