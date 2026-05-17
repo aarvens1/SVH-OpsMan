@@ -26,7 +26,7 @@ Everything here landed after the initial roadmap was written. Not in any prior p
 | Response shaping — Wazuh, Defender, Planner, Teams (read), NinjaOne (partial), Confluence, Entra, Calendar | See open issues for what's left |
 | Day-ender sentinel | `<!-- DAY-STARTER-END -->` in template; day-ender appends without reading first |
 | WSL shell environment — zsh + modern CLI tooling | `scripts/wsl-shell-setup.sh`: zsh, fzf, bat, eza, delta, lazygit, btop, mtr, nmap, zoxide, httpie, starship, PowerShell 7 (pwsh via snap). Enables WSL systemd. Sources dotfiles/bashrc.sh for bwu/opsman/clip/wpath/wexp. |
-| Tailscale remote access | `scripts/tailscale-wsl-setup.sh` for WSL node; `scripts/tailscale-udm-setup.md` for UDM Pro/SE subnet router deployment — exposes all site VLANs to the tailnet without per-device installs. |
+| Tailscale remote access | `scripts/tailscale-wsl-setup.sh` for WSL node; `references/tailscale-udm-setup.md` for UDM Pro/SE subnet router deployment — exposes all site VLANs to the tailnet without per-device installs. |
 
 ---
 

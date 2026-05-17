@@ -31,6 +31,18 @@ powershell/
   Connect-ClusterReboot.ps1   ← WSL/laptop launcher for rolling-cluster-reboot
   setup-*.ps1              ← one-time app registration and policy setup scripts
 references/                ← triage and troubleshooting reference docs (auto-synced to vault on session start)
+scripts/
+  setup.sh                 ← WSL bootstrap (idempotent; run once on fresh install)
+  wsl-shell-setup.sh       ← installs zsh, tools, pwsh, enables systemd
+  tailscale-wsl-setup.sh   ← Tailscale install for WSL node
+dotfiles/
+  bashrc.sh                ← shell aliases/functions (bwu, opsman, clip, wpath, wexp)
+  wezterm.lua              ← WezTerm config (symlinked to Windows config path by setup.sh)
+  install-windows.ps1      ← one-time Windows install: WezTerm + fonts
+  status-refresh.sh        ← background status daemon for WezTerm status bar
+tui/
+  run-tui.sh               ← TUI launcher
+  *.py                     ← Textual app (module browser, parameter forms, Obsidian output)
 ```
 
 ## Key conventions
@@ -119,3 +131,5 @@ Module coverage, credential tiers, PSRemoting accounts, and authoring convention
 | `setup-winrm.md` | Event Log Triage — one-time WinRM trust setup from WSL to Windows targets |
 | `credentials.md` | Credential reference — what's in Bitwarden vs. still missing |
 | `users.md` | Team directory — Entra object IDs and UPNs for IT staff |
+| `tailscale-udm-setup.md` | UDM Pro/SE subnet router deployment guide |
+| `wezterm-plan.md` | WezTerm + Obsidian environment design notes |

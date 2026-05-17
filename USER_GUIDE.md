@@ -403,7 +403,7 @@ Authenticate via the browser URL. In the Tailscale admin console:
 - Disable key expiry on this node (it's a workstation, not an ephemeral server)
 - Enable MagicDNS so you can reach other nodes by hostname
 
-**UDM subnet routing** — to reach every device at every SVH site without installing Tailscale on individual machines, deploy a Tailscale subnet router on each UDM Pro/SE. Follow `scripts/tailscale-udm-setup.md`. Once configured, your WSL box can SSH, ping, or PSRemote to any device at any site through the UDM's Tailscale node.
+**UDM subnet routing** — to reach every device at every SVH site without installing Tailscale on individual machines, deploy a Tailscale subnet router on each UDM Pro/SE. Follow `references/tailscale-udm-setup.md`. Once configured, your WSL box can SSH, ping, or PSRemote to any device at any site through the UDM's Tailscale node.
 
 ---
 
@@ -416,7 +416,7 @@ Authenticate via the browser URL. In the Tailscale admin console:
 
 ```bash
 # From WSL — copies wezterm.lua to Windows config path
-bash setup.sh
+bash scripts/setup.sh
 ```
 
 After this, use the `opsman` alias instead of launching Claude Code manually:
@@ -874,7 +874,7 @@ The TUI is a terminal interface that wraps all 237 SVH module functions. It runs
 export BW_SESSION=$(bw unlock --raw)
 
 # From the repo root in WSL
-./run-tui.sh
+tui/run-tui.sh
 ```
 
 The TUI starts pwsh, dot-sources `connect.ps1`, and loads all SVH modules in the background. While that runs you can already browse functions. The status in the title bar shows when the session is ready.
@@ -933,7 +933,7 @@ The command preview input auto-builds from the parameter form. You can edit it d
 
 - `BW_SESSION` set (same as for the MCP server)
 - `pwsh` — installed by `scripts/wsl-shell-setup.sh` (`sudo snap install powershell --classic`)
-- Python 3 + `textual` package (`pip install textual`) — `setup.sh` handles this automatically
+- Python 3 + `textual` package (`pip install textual`) — `scripts/setup.sh` handles this automatically
 
 ---
 
@@ -1113,7 +1113,7 @@ Enable it only when you're actively working an incident. It's the only skill tha
 
 **Q: How do I reach a device at a remote SVH site from WSL?**
 
-If Tailscale is running on your WSL box and the site has a UDM subnet router set up (see `scripts/tailscale-udm-setup.md`), you can reach any device at that site by IP — SSH, PSRemoting, ping — without any extra VPN client or firewall rule. The UDM advertises its local subnets into your tailnet.
+If Tailscale is running on your WSL box and the site has a UDM subnet router set up (see `references/tailscale-udm-setup.md`), you can reach any device at that site by IP — SSH, PSRemoting, ping — without any extra VPN client or firewall rule. The UDM advertises its local subnets into your tailnet.
 
 If the UDM router isn't set up yet for that site, you need to either be on the local network or use an existing VPN.
 
