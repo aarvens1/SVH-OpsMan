@@ -1,7 +1,7 @@
 ---
 name: scribe
 description: Structures rough technician notes into clean documentation. Accepts pasted text, .txt, .md, .pdf, or screenshots. Five output styles: standard, concise, detailed, incident-report, how-to. Output goes to Obsidian; optionally promoted to Confluence on request. Trigger phrases: "write this up", "document what I did", "make this a how-to", "write the closure notes", "scribe".
-when_to_use: When you have rough notes, shorthand, or out-of-order thoughts that need to become readable documentation.
+when_to_use: When you have rough notes, shorthand, or out-of-order thoughts that need to become readable documentation. For building a clean structured runbook from scratch or a verbal description with no prior notes, use /runbook-gen instead.
 allowed-tools: "mcp__obsidian__* mcp__svh-opsman__confluence_create_page mcp__svh-opsman__confluence_search_pages mcp__time__* Read(*)"
 ---
 

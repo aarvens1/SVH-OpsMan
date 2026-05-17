@@ -11,7 +11,7 @@ allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__wazuh_list
 
 ---
 
-Complements **Event Log Analyzer** (which works from an uploaded export file). Use this skill when you have live system access.
+Complements **Event Log Analyzer** (`/event-log-analyzer`), which works from an uploaded export file without live access. If the user provides an exported .xml, .csv, or .log file rather than a hostname, switch to `/event-log-analyzer` instead. Use this skill when you have live system access.
 
 ## Step 1 — Wazuh first (broad correlation)
 

@@ -63,3 +63,10 @@ tags: [investigation, troubleshoot]
 ```
 
 Sections: Problem statement → Scope → Hypotheses tested → Root cause (or "inconclusive — next steps") → Recommended fix → Follow-up items.
+
+## Escalation paths
+
+- **Network connectivity** (can't reach a resource, VLAN routing, site issues) → `/network-troubleshooter` for a full layer-by-layer investigation and topology diagram
+- **Deep event log analysis on a specific host** → `/event-log-triage` (live) or `/event-log-analyzer` (exported file)
+- **Problem confirmed significant enough to declare** → `/incident-open`
+- **Suspected security event** → `/tenant-forensics` or `/asset-investigation`
