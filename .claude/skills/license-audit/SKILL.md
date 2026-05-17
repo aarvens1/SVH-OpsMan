@@ -112,7 +112,17 @@ Summarize as a count with a representative sample: "12 users have licenses but n
 
 ## Draft Planner actions
 
-[If any findings warrant a task — use CREATE format per Obsidian output conventions. Nothing is created until Aaron confirms.]
+[Draft tasks below for any findings that warrant follow-up. Nothing is created until Aaron confirms. After confirmation, remove the block using `edit_block`.]
+
+#### CREATE — [task title]
+- **Plan:** IT Sysadmin Tasks (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`)
+- **Bucket:** [bucket name or leave blank]
+- **Due:** YYYY-MM-DD
+- **Priority:** [Urgent / Important / Medium / Low]
+- **Assigned:** Aaron Stevens
+- **Notes:** [1–2 sentences of context]
+- **Checklist:**
+  - [ ] [outcome — not steps]
 ```
 
 ## Step 5 — Suggest next moves

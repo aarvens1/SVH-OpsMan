@@ -2,7 +2,7 @@
 name: ticketsmith
 description: Rewrites a raw user complaint, rant, or rough description into a clean, professional IT ticket. Accepts pasted text, .txt, or .pdf. Output lands in Obsidian — nothing is submitted anywhere. Trigger phrases: "write a ticket for this", "clean up this complaint", "turn this into a ticket", "ticketsmith".
 when_to_use: When a user submits a rambling complaint, an email forward, or rough notes that need to become a proper ticket.
-allowed-tools: "mcp__obsidian__* Read(*)"
+allowed-tools: "mcp__obsidian__* mcp__time__* Read(*)"
 ---
 
 # TicketSmith

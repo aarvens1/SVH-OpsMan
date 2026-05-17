@@ -45,7 +45,7 @@ Common queries:
 - `Get-ScheduledTask | Where-Object {$_.State -eq 'Running'}`
 - Recent PowerShell history via `Get-Content $env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt`
 
-## Output
+## Step 4 — Output
 
 Write findings to `Investigations/YYYY-MM-DD-[host]-event-log.md`:
 

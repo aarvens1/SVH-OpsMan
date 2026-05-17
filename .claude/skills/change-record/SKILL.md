@@ -68,4 +68,4 @@ change_date: YYYY-MM-DD
 Also produce (as staged drafts):
 - **Confluence page** — `confluence_create_page` in the IT changes space
 - **Planner card** — `planner_create_task` for tracking
-- **Teams notification draft** — for the techs channel (not sent until user confirms). Draft in Aaron's voice following the `aaron-voice` rules: no greeting, declarative tone, state what's changing, start time, and expected duration. Bold the maintenance window if users need to plan around it (e.g., `**Maintenance window: Sunday 2026-05-10 22:00–00:00 — file server will be offline.**`). Run the self-check before presenting.
+- **Teams notification draft** — for the IT Team Changes channel (team_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`, channel: Changes). Not sent until user confirms. Draft in Aaron's voice following the `aaron-voice` rules: no greeting, declarative tone, state what's changing, start time, and expected duration. Bold the maintenance window if users need to plan around it (e.g., `**Maintenance window: Sunday 2026-05-10 22:00–00:00 — file server will be offline.**`). Run the self-check before presenting.
