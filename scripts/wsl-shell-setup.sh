@@ -21,7 +21,7 @@ else
   echo "    Already enabled, skipping."
 fi
 
-echo "==> Installing packages..."
+echo "==> Installing apt packages..."
 sudo apt-get update -q
 sudo apt-get install -y \
   zsh \
@@ -29,17 +29,13 @@ sudo apt-get install -y \
   zsh-syntax-highlighting \
   fzf \
   bat \
-  eza \
   btop \
   mtr \
   nmap \
   httpie \
-  zoxide \
-  git-delta \
-  lazygit
-
+  zoxide
 # bat is installed as batcat on Ubuntu — alias handled in .zshrc below
-echo "    Packages installed."
+echo "    Apt packages installed."
 
 echo "==> Installing starship prompt..."
 if ! command -v starship &>/dev/null; then
@@ -48,11 +44,28 @@ else
   echo "    Already installed."
 fi
 
-echo "==> Installing PowerShell 7..."
-if ! command -v pwsh &>/dev/null; then
-  sudo snap install powershell --classic
+echo "==> Installing Helix editor..."
+if ! command -v hx &>/dev/null; then
+  # PPA is the most reliable method on Ubuntu; snap has issues in WSL2
+  sudo add-apt-repository -y ppa:maveonair/helix-editor 2>/dev/null
+  sudo apt-get update -q
+  sudo apt-get install -y helix
+  echo "    $(hx --version) installed."
 else
-  echo "    Already installed."
+  echo "    Already installed: $(hx --version)."
+fi
+
+echo "==> Installing PowerShell 7 (Microsoft apt repo — more reliable than snap in WSL2)..."
+if ! command -v pwsh &>/dev/null; then
+  curl -fsSL "https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb" \
+    -o /tmp/packages-microsoft-prod.deb
+  sudo dpkg -i /tmp/packages-microsoft-prod.deb
+  rm -f /tmp/packages-microsoft-prod.deb
+  sudo apt-get update -q
+  sudo apt-get install -y powershell
+  echo "    $(pwsh --version) installed."
+else
+  echo "    Already installed: $(pwsh --version)."
 fi
 
 echo "==> Writing ~/.zshrc..."
@@ -91,9 +104,8 @@ eval "$(zoxide init zsh)"
 # zi           — interactive picker
 
 # ── Aliases ───────────────────────────────────────────────────────────────────
-alias ls='eza --icons --group-directories-first'
-alias ll='eza -la --icons --group-directories-first --git'
-alias lt='eza --tree --icons --level=2'
+alias ls='ls --color=auto --group-directories-first'
+alias ll='ls -lah --color=auto --group-directories-first'
 alias cat='batcat --paging=never'
 alias bat='batcat'
 alias grep='grep --color=auto'
@@ -101,12 +113,15 @@ alias grep='grep --color=auto'
 # OpsMan shortcuts
 alias ops='cd ~/SVH-OpsMan'
 alias vault='cd /mnt/c/Users/astevens/vaults/OpsManVault'
-alias lg='lazygit'
 
 # Git
 alias gs='git status'
 alias gd='git diff'
 alias gl='git log --oneline --graph --decorate -20'
+
+# ── PATH ──────────────────────────────────────────────────────────────────────
+# claude binary and pip-installed tools live here
+[[ ":$PATH:" != *":$HOME/.local/bin:"* ]] && export PATH="$HOME/.local/bin:$PATH"
 
 # ── OpsMan helpers (bwu, opsman, clip, wpath, wexp) ──────────────────────────
 [ -f ~/SVH-OpsMan/dotfiles/bashrc.sh ] && source ~/SVH-OpsMan/dotfiles/bashrc.sh

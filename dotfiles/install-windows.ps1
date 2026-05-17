@@ -134,7 +134,36 @@ if (Test-Path $configFile) {
     }
 }
 
-# ── 4. Verify WezTerm can see the config ──────────────────────────────────────
+# ── 4. PowerShell profile — dot-source stub ───────────────────────────────────
+# $PROFILE becomes a thin stub that loads dotfiles/profile.ps1 from the WSL
+# repo (GitHub-backed). The real content lives in the repo, not OneDrive.
+Step "PowerShell profile stub"
+
+$stub = @'
+# SVH OpsMan — stub: real profile lives in the GitHub repo
+# Edit dotfiles/profile.ps1 in SVH-OpsMan; changes apply on next PS start.
+$_d = (wsl.exe -l -q 2>$null | Where-Object { $_ -match '\S' } | Select-Object -First 1).Trim() -replace '\x00', ''
+$_p = if ($_d) { "\\wsl`$$_d\home\wsl_stevens\SVH-OpsMan\dotfiles\profile.ps1" } else { $null }
+if ($_p -and (Test-Path $_p)) { . $_p }
+else { Write-Warning 'SVH profile not found — is WSL running? (git clone SVH-OpsMan into ~/SVH-OpsMan)' }
+Remove-Variable _d, _p -ErrorAction SilentlyContinue
+'@
+
+foreach ($prof in @($PROFILE, ($PROFILE -replace '\\PowerShell\\', '\WindowsPowerShell\'))) {
+    $dir = Split-Path $prof
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+
+    $existing = Get-Content $prof -Raw -ErrorAction SilentlyContinue
+    if ($existing -match 'dotfiles/profile\.ps1') {
+        Ok "Profile stub already in place: $prof"
+    } else {
+        Set-Content -Path $prof -Value $stub -Encoding UTF8
+        Ok "Profile stub written: $prof"
+    }
+}
+Ok "Edit dotfiles/profile.ps1 in the repo — changes apply on next PS start"
+
+# ── 5. Verify WezTerm can see the config ──────────────────────────────────────
 Step "Config file check"
 if (Test-Path $configFile) {
     Ok "WezTerm config readable at $configFile"
@@ -147,11 +176,13 @@ Write-Host "`n" -NoNewline
 Write-Host "Setup complete." -ForegroundColor Green
 Write-Host ""
 Write-Host "Next steps:"
-Write-Host "  1. Open a new Windows Terminal tab and run: " -NoNewline
-Write-Host "wezterm.exe" -ForegroundColor Cyan
+Write-Host "  1. Reload your PowerShell profile: " -NoNewline
+Write-Host ". `$PROFILE" -ForegroundColor Cyan
+Write-Host "     then run: " -NoNewline
+Write-Host "opsman" -ForegroundColor Cyan
+Write-Host "     (or just open a new PowerShell window and type opsman)"
 Write-Host "  2. Or from WSL, run: " -NoNewline
 Write-Host "opsman" -ForegroundColor Cyan
-Write-Host "     (starts WezTerm with Claude Code and the status refresh daemon)"
 Write-Host ""
 Write-Host "  Leader key: CTRL+\  |  Day Starter: LEADER+d  |  Skills: LEADER+[d e w p t n c v a x]"
 Write-Host "  New Claude tab: LEADER+C  |  New pwsh tab: LEADER+P  |  Rename tab: LEADER+r"

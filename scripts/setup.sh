@@ -18,7 +18,7 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ── 1. system packages ────────────────────────────────────────────────────────
 step "System packages"
-PKGS=(curl git unzip jq build-essential ca-certificates)
+PKGS=(curl git unzip jq build-essential ca-certificates python3-pip)
 MISSING=()
 for pkg in "${PKGS[@]}"; do
   dpkg -s "$pkg" &>/dev/null || MISSING+=("$pkg")
@@ -198,7 +198,7 @@ register_mcp_with_key "firecrawl" FIRECRAWL_API_KEY \
 # ── 10. Python TUI dependencies ───────────────────────────────────────────────
 step "PowerShell TUI — Python dependencies"
 if ! python3 -c "import textual" &>/dev/null; then
-  pip install textual --quiet
+  pip3 install textual --quiet
   ok "textual installed"
 else
   ok "textual already installed ($(python3 -c 'import textual; print(textual.__version__)'))"

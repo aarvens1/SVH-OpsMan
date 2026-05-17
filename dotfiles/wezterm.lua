@@ -282,11 +282,12 @@ config.keys = {
   { key = 'x', mods = 'LEADER', action = skill('/patch-campaign')        },
 
   -- ── Tab management ────────────────────────────────────────────────────────
-  -- New Claude tab (opens WSL bash → navigates to OpsMan → starts claude)
+  -- New Claude tab (opens WSL login bash → navigates to OpsMan → starts claude)
+  -- -l = login shell so PATH/BW_SESSION/nvm are sourced before exec-ing claude
   { key = 'C', mods = 'LEADER',
     action = act.SpawnCommandInNewTab {
       label = 'Claude',
-      args  = { 'wsl.exe', '--exec', 'bash', '-c', 'cd ~/SVH-OpsMan && exec claude' },
+      args  = { 'wsl.exe', '--exec', 'bash', '-l', '-c', 'cd ~/SVH-OpsMan && exec claude' },
     }
   },
   -- New PowerShell tab
@@ -296,11 +297,11 @@ config.keys = {
       args  = { 'pwsh.exe' },
     }
   },
-  -- New bash tab (opens in OpsMan directory)
+  -- New zsh tab (opens in OpsMan directory)
   { key = 'B', mods = 'LEADER',
     action = act.SpawnCommandInNewTab {
-      label = 'bash',
-      args  = { 'wsl.exe', '--exec', 'bash', '-c', 'cd ~/SVH-OpsMan && exec bash' },
+      label = 'zsh',
+      args  = { 'wsl.exe', '--exec', 'bash', '-c', 'cd ~/SVH-OpsMan && exec zsh' },
     }
   },
   -- Rename current tab
@@ -314,17 +315,17 @@ config.keys = {
   },
 
   -- ── Pane splits ───────────────────────────────────────────────────────────
-  -- 2-way: current pane + one bash pane below
+  -- 2-way: current pane + one zsh pane below
   { key = '2', mods = 'LEADER',
     action = wezterm.action_callback(function(_window, pane)
-      pane:split { direction = 'Bottom', args = { 'wsl.exe', '--exec', 'bash' } }
+      pane:split { direction = 'Bottom', args = { 'wsl.exe', '--exec', 'zsh' } }
     end)
   },
   -- 3-way: three equal horizontal bands
   { key = '3', mods = 'LEADER',
     action = wezterm.action_callback(function(_window, pane)
-      local mid = pane:split { direction = 'Bottom', args = { 'wsl.exe', '--exec', 'bash' } }
-      mid:split { direction = 'Bottom', args = { 'wsl.exe', '--exec', 'bash' } }
+      local mid = pane:split { direction = 'Bottom', args = { 'wsl.exe', '--exec', 'zsh' } }
+      mid:split { direction = 'Bottom', args = { 'wsl.exe', '--exec', 'zsh' } }
     end)
   },
 
@@ -372,8 +373,9 @@ config.mouse_bindings = {
 }
 
 -- ── Default shell ─────────────────────────────────────────────────────────────
--- New tabs open a WSL bash shell in OpsMan. Claude tabs are started via LEADER+C.
-config.default_prog = { 'wsl.exe', '--exec', 'bash', '-c', 'cd ~/SVH-OpsMan && exec bash' }
+-- New tabs open a WSL zsh shell in OpsMan. Claude tabs are started via LEADER+C.
+-- bash is used as a launcher only to cd first; exec zsh replaces it.
+config.default_prog = { 'wsl.exe', '--exec', 'bash', '-c', 'cd ~/SVH-OpsMan && exec zsh' }
 
 -- ── WSL domain ────────────────────────────────────────────────────────────────
 -- Makes WSL panes show the Linux process name (not "wsl.exe") so tab colouring works.
