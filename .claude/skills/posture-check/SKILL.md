@@ -78,3 +78,12 @@ tags: [posture, security]
 ```
 
 Format: summary scorecard at the top (all six categories with colour), then findings by category below. No alerts are sent unless the user asks.
+
+## After the scorecard
+
+If any category is 🔴:
+- **Identity 🔴** → suggest `/tenant-forensics` or `/access-review` depending on whether breach is suspected vs. misconfiguration
+- **Endpoints 🔴** → suggest `/asset-investigation` on the flagged device(s)
+- **Infrastructure 🔴** → suggest `/onprem-health` for disk/service detail; if backup failure, suggest a manual restore check
+- **SIEM 🔴** → suggest `/event-log-triage` on the affected host
+- **Any 🔴 with confirmed impact** → suggest `/incident-open`

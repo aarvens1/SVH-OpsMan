@@ -2,7 +2,7 @@
 name: event-log-analyzer
 description: Analyzes an exported Windows event log file (.xml, .csv, .txt, .log) without live system access. Produces a triage report with findings, patterns, probable cause, and next steps. References SVH-specific event signatures. Trigger phrases: "analyze this event log", "triage these Windows events", "look at the event log export from X".
 when_to_use: Use when you have an exported log file rather than live system access. Complements Event Log Triage (which queries Wazuh and NinjaOne live).
-allowed-tools: "mcp__obsidian__* Read(*)"
+allowed-tools: "mcp__obsidian__* mcp__time__* Read(*)"
 ---
 
 # Event Log Analyzer

@@ -43,3 +43,9 @@ tags: [review, access, identity]
 Sections: Subject → Roles/memberships → MFA status → Last active → CA policy coverage → Findings & recommendations.
 
 Optionally draft a Confluence audit page (`confluence_create_page`) if the user asks for a formal record.
+
+## Escalation paths
+
+- **Suspected active breach or account takeover** → `/tenant-forensics` for a full forensic sweep of the tenant
+- **Recent suspicious activity on a specific user** → `/user-report` for a 7-day activity snapshot
+- **Broad security posture concern** → `/posture-check`
