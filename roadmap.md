@@ -12,7 +12,7 @@ Everything here landed after the initial roadmap was written. Not in any prior p
 
 | Item | Notes |
 |------|-------|
-| WezTerm ops workspace | Fully implemented — two-layer cache for status bar (status-refresh.sh + Lua reader), keybindings, Obsidian deep links |
+| Windows Terminal environment | Gruvbox Dark theme, colour-coded profiles (Claude/pwsh/bash), Ctrl+Alt skill shortcuts via `sendInput` — replaces the WezTerm plan |
 | PowerShell TUI | Searchable terminal UI for all 237 PS module functions — parameter forms, command preview, confirmation dialogs, Obsidian output |
 | Desktop Commander guard hook + ra_stevens tier | Read-only PSRemoting account for Desktop Commander access; PreToolUse hook blocks SVH scripts and credential access from non-Claude sessions |
 | PreToolUse / PostToolUse / Stop hooks | Hook infrastructure beyond SessionStart — Bash pre-flight checks, post-flight logging, session cleanup |
@@ -91,6 +91,23 @@ Right now Claude stages everything for explicit confirmation. The right next ste
 
 ### Re-enable IR Triage
 IR Triage (`SKILL.md.disabled`) is the only skill that can send non-draft Teams messages. It stays disabled until the data layer and action staging are solid enough to trust for incident response. That point is close — re-enable when the tiered confirmation model is in place.
+
+---
+
+## Future terminal environment — WezTerm
+
+Pulled back in favour of Windows Terminal for now. Worth revisiting when there's bandwidth. The original design doc has been removed from `references/` but the key ideas are preserved here.
+
+**What it would add over Windows Terminal:**
+- Live status bar at the bottom of the terminal — `BW ✓ · Wazuh 3 · MDE 1 · Risky 0 · Ninja 34/35 · M365 ✓ · UniFi ✓ · main* · 2m ago` — fed by `status-refresh.sh` via a two-layer cache (shell daemon → JSON file → Lua reader every 120s)
+- LEADER-key chord bindings (CTRL+\\) — cleaner than Ctrl+Alt combos, no modifier conflicts
+- Process-aware tab colours — tab turns blue when Claude is the foreground process, yellow for pwsh, green for zsh; reverts on exit
+- `obsidian://` URI detection — skills print the note path as a hyperlink; click opens it directly in Obsidian
+- Keyboard-native pane management with hjkl navigation and 2/3-pane split chords
+
+**Why it was deferred:** Lua config complexity, symlink setup, and `binfmt_misc` interop fragility on WSL made the initial setup too fiddly. Windows Terminal covers 80% of the workflow with zero config overhead.
+
+**When to revisit:** Once the core data layer (Track 1) is stable and the daily workflow is locked in, the terminal environment is a high-value quality-of-life improvement — especially the status bar and `obsidian://` click-to-open.
 
 ---
 
@@ -180,11 +197,9 @@ The gap between permission scope and query scope: `Mail.ReadWrite` is a tenant-w
 
 `ra_stevens` is a read-only PSRemoting account — no admin rights, no write access to managed systems. The Desktop Commander guard hook blocks SVH scripts and Bitwarden credential access from non-Claude sessions. This creates a clean tier: Desktop Commander can run read-only PSRemoting calls for situational awareness without exposing full credentials. Pattern to apply if any other tooling needs scoped read access to managed systems.
 
-### WezTerm status bar cache model
+### status-refresh.sh cache model
 
-WezTerm is a native Windows app running Lua — it can't call MCP tools directly. Two-layer cache:
-- `status-refresh.sh` runs in background (`opsman` starts it). Authenticates to each API via curl/jq, writes `/tmp/svh-opsman-status.json` every 120 seconds. Requires `BW_SESSION`.
-- `wezterm.lua` reads the cache file on the same 120s interval via `wezterm.run_child_process`. Shows `⚠ stale` if the cache file is absent or all security fields are `-1`.
+`status-refresh.sh` runs in the background (`opsman` starts it). Authenticates to each API via curl/jq, writes `/tmp/svh-opsman-status.json` every 120 seconds. Requires `BW_SESSION`. Currently used as a pre-fetch cache; the original consumer (WezTerm status bar) was removed — the file is still written for future consumers.
 
 ### Token overhead
 

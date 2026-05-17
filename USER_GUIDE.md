@@ -13,7 +13,7 @@
 5. [Daily workflow](#5-daily-workflow)
 6. [Skills reference](#6-skills-reference)
 7. [Driving Claude — how to talk to it](#7-driving-claude--how-to-talk-to-it)
-8. [WezTerm environment](#8-wezterm-environment)
+8. [Windows Terminal environment](#8-windows-terminal-environment)
 9. [PowerShell modules](#9-powershell-modules)
    - [9.1 PowerShell TUI](#91-powershell-tui)
 10. [Customization guide](#10-customization-guide)
@@ -407,22 +407,19 @@ Authenticate via the browser URL. In the Tailscale admin console:
 
 ---
 
-### 4.15 WezTerm setup (optional but recommended)
+### 4.15 Windows Terminal setup
 
 ```powershell
-# From Windows Terminal — install WezTerm, Cascadia Code NF font, create config symlink
+# From Windows Terminal — installs Cascadia Code NF font, PS profile stub, imports WT settings
 .\dotfiles\install-windows.ps1
 ```
 
+After this, `opsman` is available from both WSL and PowerShell:
 ```bash
-# From WSL — copies wezterm.lua to Windows config path
-bash scripts/setup.sh
+opsman   # checks BW, starts status-refresh daemon, launches claude
 ```
 
-After this, use the `opsman` alias instead of launching Claude Code manually:
-```bash
-opsman   # checks BW, starts status-refresh daemon, opens WezTerm
-```
+From PowerShell, `opsman` opens a new Claude Code tab (blue) in Windows Terminal.
 
 ### 4.16 Restrict mail access (important)
 
@@ -718,63 +715,40 @@ Claude backtracks and tries again with the corrected context.
 
 ---
 
-## 8. WezTerm environment
+## 8. Windows Terminal environment
 
-WezTerm replaces Windows Terminal as the primary ops workspace. It adds a live status bar, chord keybindings for every skill, and `obsidian://` URI detection.
+Windows Terminal is the ops workspace. `dotfiles/install-windows.ps1` sets it up with Gruvbox Dark, colour-coded profiles, and skill shortcuts.
 
-### Screen layout
+### Profiles
 
-```
-┌──────────────────┬─────────────────────────┐
-│                  │  [Claude][pwsh][zsh][+]  │
-│    Obsidian      │                          │
-│    ~40%          │       WezTerm            │
-│    (sidebar      │       ~60%               │
-│     collapsed)   │                          │
-│                  ├─────────────────────────┤
-│                  │  status bar              │
-└──────────────────┴─────────────────────────┘
-```
-
-Tab colors: **blue** = Claude Code · **yellow** = PowerShell · **green** = zsh
-
-### Status bar
-
-```
-BW ✓ · Wazuh 3 · MDE 1 · Risky 0 · Ninja 34/35 · M365 ✓ · UniFi ✓ · main* · 2m ago
-```
-
-Refreshes every 2 minutes via `dotfiles/status-refresh.sh` running in the background. Shows counts directly — `Wazuh 3` means 3 active level 10+ alerts. `⚠ stale` appears if the refresh daemon isn't running or BW is locked.
+| Profile | Tab colour | What it opens |
+|---------|-----------|--------------|
+| Claude Code | Blue | WSL bash → `cd ~/SVH-OpsMan && exec claude` |
+| PowerShell (OpsMan) | Yellow | pwsh with the OpsMan profile |
+| WSL Bash | Green | WSL zsh in the OpsMan directory |
 
 ### Keybindings
 
-Leader key: **CTRL+\\** (hold CTRL, tap backslash, release both, then tap the action key)
+Skill shortcuts use **Ctrl+Alt+[key]** — type the chord while Claude's prompt is active and it submits the skill command.
 
-| Chord | Action |
-|-------|--------|
-| `LEADER+d` | `/day-starter` |
-| `LEADER+e` | `/day-ender` |
-| `LEADER+w` | `/week-starter` |
-| `LEADER+p` | `/posture-check` |
-| `LEADER+t` | `/troubleshoot` |
-| `LEADER+n` | `/network-troubleshooter` |
-| `LEADER+c` | `/change-record` |
-| `LEADER+v` | `/vuln-triage` |
-| `LEADER+a` | `/asset-investigation` |
-| `LEADER+x` | `/patch-campaign` |
-| `LEADER+C` | New Claude Code tab (blue) |
-| `LEADER+P` | New PowerShell tab (yellow) |
-| `LEADER+B` | New bash tab (green) |
-| `LEADER+r` | Rename current tab |
-| `LEADER+2` | Split pane 2-way horizontal |
-| `LEADER+3` | Split pane 3-way horizontal |
-| `LEADER+h/j/k/l` | Navigate between split panes |
-| `LEADER+o` | Quick-select `obsidian://` URIs from scrollback and open in Obsidian |
-| `LEADER+u` | Force status bar refresh (don't wait for 2-minute interval) |
-
-### obsidian:// deep links
-
-After any skill runs, Claude prints the output note's path as an `obsidian://` URI. WezTerm detects it as a clickable hyperlink. Click it and the note opens directly in Obsidian. Or use `LEADER+o` to quick-select any URI in the terminal scrollback.
+| Keys | Action |
+|------|--------|
+| `Ctrl+Alt+D` | `/day-starter` |
+| `Ctrl+Alt+E` | `/day-ender` |
+| `Ctrl+Alt+W` | `/week-starter` |
+| `Ctrl+Alt+P` | `/posture-check` |
+| `Ctrl+Alt+T` | `/troubleshoot` |
+| `Ctrl+Alt+N` | `/network-troubleshooter` |
+| `Ctrl+Alt+C` | `/change-record` |
+| `Ctrl+Alt+V` | `/vuln-triage` |
+| `Ctrl+Alt+A` | `/asset-investigation` |
+| `Ctrl+Alt+X` | `/patch-campaign` |
+| `Ctrl+Shift+Alt+C` | New Claude Code tab |
+| `Ctrl+Shift+Alt+P` | New PowerShell (OpsMan) tab |
+| `Ctrl+Shift+Alt+B` | New WSL Bash tab |
+| `Ctrl+Alt+2` | Split pane horizontal |
+| `Ctrl+Alt+H/J/K/L` | Navigate between split panes |
+| `Ctrl+Alt+R` | Rename current tab |
 
 ---
 

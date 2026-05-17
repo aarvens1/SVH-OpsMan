@@ -37,9 +37,9 @@ scripts/
   tailscale-wsl-setup.sh   ← Tailscale install for WSL node
 dotfiles/
   bashrc.sh                ← shell aliases/functions (bwu, opsman, clip, wpath, wexp)
-  wezterm.lua              ← WezTerm config (symlinked to Windows config path by setup.sh)
-  install-windows.ps1      ← one-time Windows install: WezTerm + fonts
-  status-refresh.sh        ← background status daemon for WezTerm status bar
+  windows-terminal-settings.json ← Windows Terminal profiles + keybindings (import via install-windows.ps1)
+  install-windows.ps1      ← one-time Windows install: Cascadia Code NF font, PS profile stub, Windows Terminal settings
+  status-refresh.sh        ← background status daemon (writes /tmp/svh-opsman-status.json)
 tui/
   run-tui.sh               ← TUI launcher
   *.py                     ← Textual app (module browser, parameter forms, Obsidian output)
@@ -151,4 +151,3 @@ $cred = New-Object PSCredential(
 | `credentials.md` | Credential reference — what's in Bitwarden vs. still missing |
 | `users.md` | Team directory — Entra object IDs and UPNs for IT staff |
 | `tailscale-udm-setup.md` | UDM Pro/SE subnet router deployment guide |
-| `wezterm-plan.md` | WezTerm + Obsidian environment design notes |

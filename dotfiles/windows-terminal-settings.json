@@ -1,0 +1,116 @@
+{
+    "$help": "https://aka.ms/terminal-documentation",
+    "$schema": "https://aka.ms/terminal-profiles-schema",
+    "defaultProfile": "{a5e8c1d9-4f32-4a8b-9c6e-1b2d3e4f5a6b}",
+    "copyOnSelect": false,
+    "copyFormatting": "none",
+    "tabWidthMode": "compact",
+
+    "profiles": {
+        "defaults": {
+            "font": {
+                "face": "Cascadia Code NF",
+                "size": 12,
+                "ligatures": true
+            },
+            "colorScheme": "Gruvbox Dark",
+            "historySize": 32767,
+            "opacity": 95,
+            "useAcrylic": true,
+            "cursorShape": "bar",
+            "padding": "8",
+            "scrollbarState": "visible"
+        },
+        "list": [
+            {
+                "name": "Claude Code",
+                "guid": "{a5e8c1d9-4f32-4a8b-9c6e-1b2d3e4f5a6b}",
+                "commandline": "wsl.exe -- bash -l -c \"cd ~/SVH-OpsMan && exec claude\"",
+                "startingDirectory": "//wsl$/Ubuntu/home/astevens",
+                "tabColor": "#83a598"
+            },
+            {
+                "name": "PowerShell (OpsMan)",
+                "guid": "{b7d2e3f4-5a6b-7c8d-9e0f-1a2b3c4d5e6f}",
+                "commandline": "pwsh.exe -NoLogo -NoExit -Command \". $env:USERPROFILE\\SVH-OpsMan\\dotfiles\\profile.ps1 -ErrorAction SilentlyContinue\"",
+                "startingDirectory": "%USERPROFILE%",
+                "tabColor": "#fabd2f"
+            },
+            {
+                "name": "WSL Bash",
+                "guid": "{c8d9e0f1-a2b3-4c5d-6e7f-8a9b0c1d2e3f}",
+                "commandline": "wsl.exe -- bash -l -c \"cd ~/SVH-OpsMan && exec zsh\"",
+                "startingDirectory": "//wsl$/Ubuntu/home/astevens/SVH-OpsMan",
+                "tabColor": "#b8bb26"
+            },
+            {
+                "name": "Windows PowerShell",
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "hidden": false
+            },
+            {
+                "name": "Command Prompt",
+                "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                "hidden": true
+            }
+        ]
+    },
+
+    "schemes": [
+        {
+            "name": "Gruvbox Dark",
+            "background": "#282828",
+            "foreground": "#ebdbb2",
+            "black": "#282828",
+            "blue": "#458588",
+            "brightBlack": "#928374",
+            "brightBlue": "#83a598",
+            "brightCyan": "#8ec07c",
+            "brightGreen": "#b8bb26",
+            "brightPurple": "#d3869b",
+            "brightRed": "#fb4934",
+            "brightWhite": "#ebdbb2",
+            "brightYellow": "#fabd2f",
+            "cyan": "#689d6a",
+            "green": "#98971a",
+            "purple": "#b16286",
+            "red": "#cc241d",
+            "selectionBackground": "#504945",
+            "cursorColor": "#ebdbb2",
+            "white": "#a89984",
+            "yellow": "#d79921"
+        }
+    ],
+
+    "actions": [
+        { "command": { "action": "sendInput", "input": "/day-starter\r" },            "keys": "ctrl+alt+d" },
+        { "command": { "action": "sendInput", "input": "/day-ender\r" },              "keys": "ctrl+alt+e" },
+        { "command": { "action": "sendInput", "input": "/week-starter\r" },           "keys": "ctrl+alt+w" },
+        { "command": { "action": "sendInput", "input": "/posture-check\r" },          "keys": "ctrl+alt+p" },
+        { "command": { "action": "sendInput", "input": "/troubleshoot\r" },           "keys": "ctrl+alt+t" },
+        { "command": { "action": "sendInput", "input": "/network-troubleshooter\r" }, "keys": "ctrl+alt+n" },
+        { "command": { "action": "sendInput", "input": "/change-record\r" },          "keys": "ctrl+alt+c" },
+        { "command": { "action": "sendInput", "input": "/vuln-triage\r" },            "keys": "ctrl+alt+v" },
+        { "command": { "action": "sendInput", "input": "/asset-investigation\r" },    "keys": "ctrl+alt+a" },
+        { "command": { "action": "sendInput", "input": "/patch-campaign\r" },         "keys": "ctrl+alt+x" },
+
+        { "command": { "action": "newTab", "profile": "Claude Code" },                "keys": "ctrl+shift+alt+c" },
+        { "command": { "action": "newTab", "profile": "PowerShell (OpsMan)" },        "keys": "ctrl+shift+alt+p" },
+        { "command": { "action": "newTab", "profile": "WSL Bash" },                   "keys": "ctrl+shift+alt+b" },
+
+        { "command": { "action": "splitPane", "split": "horizontal", "profile": "Claude Code" }, "keys": "ctrl+alt+2" },
+        { "command": { "action": "splitPane", "split": "vertical" },                   "keys": "ctrl+alt+minus" },
+
+        { "command": { "action": "moveFocus", "direction": "left" },  "keys": "ctrl+alt+h" },
+        { "command": { "action": "moveFocus", "direction": "down" },  "keys": "ctrl+alt+j" },
+        { "command": { "action": "moveFocus", "direction": "up" },    "keys": "ctrl+alt+k" },
+        { "command": { "action": "moveFocus", "direction": "right" }, "keys": "ctrl+alt+l" },
+
+        { "command": "renameTab",  "keys": "ctrl+alt+r" },
+        { "command": "newTab",     "keys": "ctrl+shift+t" },
+        { "command": "closeTab",   "keys": "ctrl+shift+w" },
+        { "command": "find",       "keys": "ctrl+shift+f" },
+        { "command": "copy",       "keys": "ctrl+shift+c" },
+        { "command": "paste",      "keys": "ctrl+shift+v" }
+    ]
+}

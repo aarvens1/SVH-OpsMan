@@ -138,15 +138,9 @@ function Invoke-OpsMan {
         return
     }
     wsl.exe -e bash -c 'pgrep -f "status-refresh.sh" >/dev/null || { nohup bash ~/SVH-OpsMan/dotfiles/status-refresh.sh >/dev/null 2>&1 & disown; }'
-    $wez = "$env:ProgramFiles\WezTerm\wezterm.exe"
-    if (-not (Test-Path $wez)) { Write-Host "WezTerm not found at $wez" -ForegroundColor Red; return }
-    Start-Process -FilePath $wez -ArgumentList @(
-        'start', '--new-window', '--',
-        'wsl.exe', '--exec', 'bash', '-l', '-c',
-        'cd ~/SVH-OpsMan && exec claude'
-    )
-    Write-Host '  WezTerm launching with Claude Code' -ForegroundColor Green
-    Write-Host '  Leader: CTRL+\  |  Day Starter: LEADER+d  |  New Claude tab: LEADER+C'
+    Start-Process 'wt.exe' -ArgumentList 'new-tab', '--profile', 'Claude Code'
+    Write-Host '  Windows Terminal opening Claude Code profile' -ForegroundColor Green
+    Write-Host '  Skills: Ctrl+Alt+[D/E/W/P/T/N/C/V/A/X]  |  New Claude tab: Ctrl+Shift+Alt+C'
 }
 
 # ── Aliases (Set-Alias is idempotent — no errors on re-source) ────────────────
