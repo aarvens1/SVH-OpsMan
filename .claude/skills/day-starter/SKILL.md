@@ -30,10 +30,12 @@ allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list
 ---
 last_day_starter: 2026-05-12T08:30:00-07:00
 last_day_ender: 2026-05-12T17:00:00-07:00
+last_week_starter: 2026-05-11T08:45:00-07:00
+last_week_ender: 2026-05-08T09:55:00-07:00
 ---
 ```
 
-Preserve the `last_day_ender` value when updating `last_day_starter`. If the file doesn't exist yet, create it with only the `last_day_starter` field.
+Preserve all other fields when updating `last_day_starter`. If the file doesn't exist yet, create it with only the `last_day_starter` field.
 
 ## Step 1 — Security & monitoring
 
