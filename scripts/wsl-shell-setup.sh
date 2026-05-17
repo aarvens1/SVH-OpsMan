@@ -108,6 +108,9 @@ alias gs='git status'
 alias gd='git diff'
 alias gl='git log --oneline --graph --decorate -20'
 
+# ── OpsMan helpers (bwu, opsman, clip, wpath, wexp) ──────────────────────────
+[ -f ~/SVH-OpsMan/dotfiles/bashrc.sh ] && source ~/SVH-OpsMan/dotfiles/bashrc.sh
+
 # ── Starship prompt ───────────────────────────────────────────────────────────
 eval "$(starship init zsh)"
 ZSHRC
