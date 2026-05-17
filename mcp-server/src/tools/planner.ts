@@ -247,7 +247,7 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
         labels: z
           .array(z.enum(CATEGORY_KEYS))
           .optional()
-          .describe("Category labels to apply (e.g. ['category1']). Label names are set per-plan via planner_set_plan_label. Default convention: category1 = 'Aaron'."),
+          .describe("Category labels to apply (e.g. ['category1']). Label names are set per-plan via planner_set_plan_label. Category-to-name mapping is plan-specific — check with planner_get_plan_details before assigning."),
       }),
     },
     async ({ plan_id, bucket_id, title, assigned_to, due_date, checklist_items, labels }) => {
@@ -334,7 +334,7 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
         labels: z
           .array(z.enum(CATEGORY_KEYS))
           .optional()
-          .describe("Replace the task's category labels. Pass an empty array to clear all labels. Default convention: category1 = 'Aaron'."),
+          .describe("Replace the task's category labels. Pass an empty array to clear all labels. Category-to-name mapping is plan-specific — check with planner_get_plan_details before assigning."),
       }),
     },
     async ({ task_id, etag, title, percent_complete, due_date, bucket_id, labels }) => {

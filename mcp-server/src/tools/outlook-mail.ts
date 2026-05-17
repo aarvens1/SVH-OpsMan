@@ -189,18 +189,18 @@ export function registerOutlookMailTools(
     {
       description: "List mail folders in your mailbox (Inbox, Sent Items, custom folders, etc.).",
       inputSchema: z.object({
-        include_child_folders: z
+        include_hidden_folders: z
           .boolean()
           .default(false)
-          .describe("Also return child folders"),
+          .describe("Also return hidden system folders (e.g. Conversation History, Purges)"),
       }),
     },
-    async ({ include_child_folders }) => {
+    async ({ include_hidden_folders }) => {
       if (!userId) return cfgErr(NO_USER_MSG);
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const res = await graphClient(token).get(`/users/${userId}/mailFolders`, {
-          params: { $top: 100, includeHiddenFolders: include_child_folders },
+          params: { $top: 100, includeHiddenFolders: include_hidden_folders },
         });
         const folders = ((res.data as A)["value"] as A[] ?? []).map((f: A) => ({
           id: f["id"],

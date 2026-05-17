@@ -61,19 +61,23 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
       try {
         const params: Record<string, string | number> = { cql, limit };
         if (cursor) params["cursor"] = cursor;
-        const res = await confluenceClient().get("/pages", { params });
+        const res = await confluenceClient().get("/search", { params });
         const raw = res.data as A;
-        const items = (raw["results"] as A[] | undefined) ?? (raw["data"] as A[] | undefined) ?? [];
-        const pages = items.map((p: A) => ({
-          id: p["id"],
-          title: p["title"],
-          status: p["status"],
-          spaceId: p["spaceId"],
-          parentId: p["parentId"],
-          version: (p["version"] as A | undefined)?.["number"],
-          createdAt: p["createdAt"],
-          authorId: p["authorId"],
-        }));
+        const resultItems = (raw["results"] as A[] | undefined) ?? (raw["data"] as A[] | undefined) ?? [];
+        const pages = resultItems.map((r: A) => {
+          const p = (r["content"] as A | undefined) ?? r;
+          return {
+            id: p["id"],
+            title: p["title"],
+            status: p["status"],
+            spaceId: p["spaceId"],
+            parentId: p["parentId"],
+            version: (p["version"] as A | undefined)?.["number"],
+            createdAt: p["createdAt"],
+            authorId: p["authorId"],
+            excerpt: r["excerpt"],
+          };
+        });
         return ok({
           count: pages.length,
           pages,

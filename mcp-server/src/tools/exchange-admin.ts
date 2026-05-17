@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getGraphToken } from "../auth/graph.js";
-import { graphClient, GRAPH_SCOPE, formatError } from "../utils/http.js";
+import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 
 type A = Record<string, unknown>;
@@ -184,40 +184,19 @@ export function registerExchangeAdminTools(server: McpServer, enabled: boolean):
       }),
     },
     async ({ sender_address, recipient_address, start_date, end_date, status, top }) => {
-      try {
-        const token = await getGraphToken(GRAPH_SCOPE);
-        const params: Record<string, string | number> = {
-          startDate: start_date,
-          endDate: end_date,
-          $top: top,
-        };
-        if (sender_address) params.senderAddress = sender_address;
-        if (recipient_address) params.recipientAddress = recipient_address;
-        if (status !== "All") params.status = status;
-
-        // Graph reports endpoint for message trace
-        const res = await graphClient(token).get(
-          "/reports/getEmailActivityUserDetail(period='D7')",
-          { params }
-        );
-        const data = res.data as A;
-        const items = ((data["value"] as A[]) ?? []).map((m: A) => ({
-          receivedDateTime: m["receivedDateTime"] ?? m["lastActivityDate"],
-          senderAddress: m["senderAddress"] ?? m["userPrincipalName"],
-          recipientAddress: m["recipientAddress"],
-          subject: m["subject"],
-          status: m["status"] ?? m["deliveryStatus"],
-          messageSize: m["messageSize"] ?? m["messageSentCount"],
-          messageId: m["messageId"],
-        }));
-        return ok({ count: items.length, messages: items });
-      } catch (e) {
-        // Fallback: note that full message trace requires Exchange Admin permissions
-        return err(
-          `${formatError(e)}\n\nNote: Full message trace requires Reports.Read.All or Exchange Administrator role. ` +
-          `For advanced traces, use Desktop Commander with: Connect-ExchangeOnline; Get-MessageTrace -SenderAddress ... -StartDate ... -EndDate ...`
-        );
-      }
+      // Microsoft Graph v1 does not expose a per-message trace API.
+      // Message trace requires Exchange Online PowerShell (Get-MessageTrace).
+      const parts: string[] = [];
+      if (sender_address) parts.push(`-SenderAddress "${sender_address}"`);
+      if (recipient_address) parts.push(`-RecipientAddress "${recipient_address}"`);
+      parts.push(`-StartDate "${start_date}"`, `-EndDate "${end_date}"`);
+      if (status !== "All") parts.push(`-Status "${status}"`);
+      parts.push(`-PageSize ${top}`);
+      const cmd = `Connect-ExchangeOnline\nGet-MessageTrace ${parts.join(" ")} | Select-Object Received,SenderAddress,RecipientAddress,Subject,Status,MessageSize,MessageId | Format-Table -AutoSize`;
+      return ok({
+        note: "exo_message_trace: Microsoft Graph does not provide a per-message trace API. Use Desktop Commander to run the Exchange Online PowerShell command below.",
+        powershell: cmd,
+      });
     }
   );
 
