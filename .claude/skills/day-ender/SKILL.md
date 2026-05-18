@@ -2,7 +2,7 @@
 name: day-ender
 description: End-of-day wrap-up. Covers the period since the last day-starter or day-ender ran, with a 24-hour cap. Falls back to 12h if no state exists. Override with "last N hours" or "reset" to use defaults. Trigger phrases: "day ender", "wrap up today", "end of day", "EOD".
 when_to_use: Use at the end of each workday to close out the day cleanly.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__obsidian__* mcp__time__*"
 ---
 
 # Day Ender
@@ -31,6 +31,8 @@ Run in parallel:
 - `todo_list_task_lists` then `todo_list_tasks` — unchecked personal To Do items. (If HTTP 400, skip and note "To Do unavailable.")
 - `mde_list_alerts` + `wazuh_search_alerts` — security alerts still active. Compare against morning briefing — note only what's new or still unresolved. (If Wazuh unavailable, skip and note it.)
 - `entra_list_risky_users` — any still-open risky users.
+- `entra_get_sign_in_logs` (risk_only: true, hours: since last_day_starter, top: 500) — risky sign-ins that occurred during the day. Surface only: new accounts not in the morning briefing, or escalation of accounts already flagged this morning. If nothing new: one line. Use hours computed from last_day_starter timestamp, not the full ender lookback window.
+- `entra_get_audit_logs` (security_events_only: true, hours: since last_day_starter, top: 200) — security-category directory changes since morning. Surface only genuinely new events not visible at day-start: role assignments, MFA changes, app consent, policy changes, user creation/deletion.
 - `ninja_list_servers` → `ninja_list_device_alerts` in parallel for all devices — compare against morning alerts. Note only alerts that are new since morning or still active from morning.
 - `unifi_list_sites` — check for active issues only: offlineDevice > 0, criticalNotification > 0, or primary WAN downtime. Compare against morning snapshot.
 - `mail_search` — search for emails received since `last_day_starter` timestamp (from the state file). Focus on external senders, flagged items, and anything needing a reply. This is the explicit EOD mail check — do not skip it.

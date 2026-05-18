@@ -226,8 +226,8 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
     "planner_create_task",
     {
       description:
-        "Create a new Planner task. Optionally assign it, set a due date, and add initial checklist items. " +
-        "If checklist_items are provided, a second API call patches the task details automatically.",
+        "Create a new Planner task. Optionally assign it, set priority, add notes, and add initial checklist items. " +
+        "Notes and checklist items are set via a second API call to task details automatically.",
       inputSchema: z.object({
         plan_id: z.string().describe("The Planner plan ID"),
         bucket_id: z.string().describe("The bucket to place the task in"),
@@ -240,6 +240,15 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
           .string()
           .optional()
           .describe("Due date in ISO 8601 format (e.g. 2025-12-31T23:59:59Z)"),
+        priority: z
+          .number()
+          .int()
+          .optional()
+          .describe("Task priority: 0=Urgent, 1=Important, 3=Medium, 5=Low, 9=No priority"),
+        notes: z
+          .string()
+          .optional()
+          .describe("Task notes/description (plain text). Stored in task details."),
         checklist_items: z
           .array(z.object({ title: z.string() }))
           .optional()
@@ -250,13 +259,14 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
           .describe("Category labels to apply (e.g. ['category1']). Label names are set per-plan via planner_set_plan_label. Category-to-name mapping is plan-specific — check with planner_get_plan_details before assigning."),
       }),
     },
-    async ({ plan_id, bucket_id, title, assigned_to, due_date, checklist_items, labels }) => {
+    async ({ plan_id, bucket_id, title, assigned_to, due_date, priority, notes, checklist_items, labels }) => {
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const client = graphClient(token);
 
         const body: Record<string, unknown> = { planId: plan_id, bucketId: bucket_id, title };
         if (due_date) body["dueDateTime"] = due_date;
+        if (priority !== undefined) body["priority"] = priority;
         if (assigned_to) body["assignments"] = { [assigned_to]: { "@odata.type": "#microsoft.graph.plannerAssignment", orderHint: " !" } };
         if (labels && labels.length > 0) {
           const appliedCategories: Record<string, boolean> = {};
@@ -268,26 +278,31 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
         const task = taskRes.data as Record<string, unknown>;
         const taskId = task["id"] as string;
 
-        if (checklist_items && checklist_items.length > 0) {
+        if (notes || (checklist_items && checklist_items.length > 0)) {
           try {
             const detailsRes = await client.get(`/planner/tasks/${taskId}/details`);
             const detailsEtag = (detailsRes.headers as Record<string, string>)["etag"] ?? detailsRes.data["@odata.etag"] as string;
 
-            const checklist: Record<string, unknown> = {};
-            for (const item of checklist_items) {
-              checklist[randomUUID()] = { "@odata.type": "#microsoft.graph.plannerChecklistItem", title: item.title, isChecked: false };
+            const detailsBody: Record<string, unknown> = {};
+            if (notes) detailsBody["description"] = notes;
+            if (checklist_items && checklist_items.length > 0) {
+              const checklist: Record<string, unknown> = {};
+              for (const item of checklist_items) {
+                checklist[randomUUID()] = { "@odata.type": "#microsoft.graph.plannerChecklistItem", title: item.title, isChecked: false };
+              }
+              detailsBody["checklist"] = checklist;
             }
-            await client.patch(`/planner/tasks/${taskId}/details`, { checklist }, {
+            await client.patch(`/planner/tasks/${taskId}/details`, detailsBody, {
               headers: { "If-Match": detailsEtag },
             });
           } catch (checklistErr) {
-            // Task was created successfully but checklist patching failed.
+            // Task was created successfully but details patching failed.
             // Return the task with a warning so the caller knows the partial state.
             return {
               isError: true as const,
               content: [{
                 type: "text" as const,
-                text: `Task created (id: ${taskId}) but checklist could not be added: ${formatError(checklistErr)}`,
+                text: `Task created (id: ${taskId}) but notes/checklist could not be added: ${formatError(checklistErr)}`,
               }],
             };
           }
@@ -316,7 +331,7 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
     "planner_update_task",
     {
       description:
-        "Update a Planner task's title, due date, percent complete (0–100), or bucket. " +
+        "Update a Planner task's title, due date, percent complete (0–100), priority, or bucket. " +
         "Requires the etag from planner_get_task (@odata.etag field).",
       inputSchema: z.object({
         task_id: z.string().describe("The Planner task ID"),
@@ -329,6 +344,11 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
           .max(100)
           .optional()
           .describe("Completion percentage (0, 50, or 100)"),
+        priority: z
+          .number()
+          .int()
+          .optional()
+          .describe("Task priority: 0=Urgent, 1=Important, 3=Medium, 5=Low, 9=No priority"),
         due_date: z.string().optional().describe("New due date in ISO 8601 format"),
         bucket_id: z.string().optional().describe("Move task to this bucket ID"),
         labels: z
@@ -337,12 +357,13 @@ export function registerPlannerTools(server: McpServer, enabled: boolean): void 
           .describe("Replace the task's category labels. Pass an empty array to clear all labels. Category-to-name mapping is plan-specific — check with planner_get_plan_details before assigning."),
       }),
     },
-    async ({ task_id, etag, title, percent_complete, due_date, bucket_id, labels }) => {
+    async ({ task_id, etag, title, percent_complete, priority, due_date, bucket_id, labels }) => {
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const body: Record<string, unknown> = {};
         if (title !== undefined) body["title"] = title;
         if (percent_complete !== undefined) body["percentComplete"] = percent_complete;
+        if (priority !== undefined) body["priority"] = priority;
         if (due_date !== undefined) body["dueDateTime"] = due_date;
         if (bucket_id !== undefined) body["bucketId"] = bucket_id;
         if (labels !== undefined) {

@@ -121,6 +121,17 @@ Skip items that are already surfacing today via Planner task list or current sec
 
 If yesterday's note doesn't exist or the EOD section is missing (day-ender wasn't run), note it in the section: "*No EOD note found for [date] — open items may need manual review.*"
 
+## Step 2c — Suppress cleared items
+
+Before writing any finding to **🔴 Needs attention now** or **🟡 Worth watching**, read `System/cleared-items.md` from the vault.
+
+For each log entry in that file, check whether any current finding matches by keyword or identifier. If it matches:
+- If the entry has `Expires: never` or no expiry — **omit the item entirely.** Do not surface it.
+- If the entry has a future `Expires: YYYY-MM-DD` — omit and add a footnote under the section: `*[Item identifier] suppressed — previously cleared by Aaron (DATE). Clears: YYYY-MM-DD.*`
+- If the entry's `Expires` date has passed — surface the item normally (the clearing has expired).
+
+If `System/cleared-items.md` doesn't exist, skip this step.
+
 ## Step 3 — Synthesise and write
 
 Write `Briefings/Daily/YYYY-MM-DD.md` to the Obsidian vault at `/mnt/c/Users/astevens/vaults/OpsManVault/`. The note has three top-level sections — create all three in a single write so the structure is visible from the start of the day:
@@ -253,11 +264,9 @@ Default destination for new tasks:
 - **Plan:** [plan name] (`plan_id`)
 - **Bucket:** [bucket name or leave blank]
 - **Due:** YYYY-MM-DD
-- **Start:** [YYYY-MM-DD or leave blank]
-- **Priority:** [Urgent / Important / Medium / Low — or leave blank]
+- **Priority:** [Urgent / Important / Medium / Low]
 - **Assigned:** Aaron Stevens
-- **Labels:** [label names or leave blank]
-- **Attachments:** [filepath or URL — or leave blank]
+- **Tag:** Aaron (category23)
 - **Notes:** [1–2 sentences of context. Include process suggestions or approach notes here — not in the checklist.]
 - **Checklist:**
   - [ ] [what needs to happen — outcome, not steps]
@@ -265,7 +274,13 @@ Default destination for new tasks:
   - [ ] [what needs to happen]
 ```
 
+**Tag field** — always include. Default is `Aaron (category23)` for IT Sysadmin Tasks. When assigned to Sam, use `Sam (category21)`. The category number must match the plan's label mapping — use `planner_get_plan_details` to verify on plans other than IT Sysadmin Tasks.
+
+**Priority field** — always include. Map to Graph API integer when pushing: Urgent=0, Important=1, Medium=3, Low=5.
+
 Checklist items are **what** needs to happen, not **how**. Each should be a short outcome phrase (5–10 words). Keep 3–5 items max. Put process guidance, suggestions, and approach notes in the Notes field.
+
+**When pushing a CREATE block**, pass `priority` (integer), `notes`, `labels` (category key), and `checklist_items` to `planner_create_task` — all in a single call. Do not make a separate `planner_update_task_notes` call unless the create fails.
 
 **UPDATE format** (one subsection per task):
 

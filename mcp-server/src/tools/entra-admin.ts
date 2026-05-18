@@ -325,8 +325,9 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
     "entra_get_sign_in_logs",
     {
       description:
-        "Query Entra ID sign-in logs. Filter by user, app, IP, status, or time window. " +
-        "Returns sign-in time, app, IP, location, device, MFA result, and conditional access outcome. " +
+        "Query Entra ID sign-in logs. Use risk_only:true to surface only anomalous events " +
+        "(risky sign-ins flagged by Identity Protection). Use status:'failure' to find failed " +
+        "logins. Combine both to focus on suspicious failed attempts. " +
         "Requires AuditLog.Read.All.",
       inputSchema: z.object({
         user_id: z
@@ -340,7 +341,15 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
         ip_address: z.string().optional().describe("Filter by client IP address"),
         status: z
           .enum(["success", "failure", "interrupted", "all"])
-          .default("all"),
+          .default("all")
+          .describe("Filter by sign-in outcome. Use 'failure' to find failed logins."),
+        risk_only: z
+          .boolean()
+          .default(false)
+          .describe(
+            "When true, returns only sign-ins where riskLevelDuringSignIn is not 'none'. " +
+            "Use this for anomaly detection — normal successful logins are excluded."
+          ),
         hours: z
           .number()
           .int()
@@ -351,7 +360,7 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
         top: z.number().int().min(1).max(500).default(100),
       }),
     },
-    async ({ user_id, app_display_name, ip_address, status, hours, top }) => {
+    async ({ user_id, app_display_name, ip_address, status, risk_only, hours, top }) => {
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const since = new Date(Date.now() - hours * 3_600_000).toISOString();
@@ -361,13 +370,14 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
         if (ip_address) filters.push(`ipAddress eq '${ip_address}'`);
         if (status === "success") filters.push("status/errorCode eq 0");
         if (status === "failure") filters.push("status/errorCode ne 0");
+        if (risk_only) filters.push("riskLevelDuringSignIn ne 'none'");
         const res = await graphClient(token).get("/auditLogs/signIns", {
+          timeout: 90_000,
           params: {
             $filter: filters.join(" and "),
             $top: top,
-            $orderby: "createdDateTime desc",
             $select:
-              "id,createdDateTime,userDisplayName,userPrincipalName,appDisplayName,ipAddress,location,status,conditionalAccessStatus,mfaDetail,deviceDetail,clientAppUsed,riskLevelDuringSignIn",
+              "id,createdDateTime,userDisplayName,userPrincipalName,appDisplayName,ipAddress,location,status,conditionalAccessStatus,deviceDetail,clientAppUsed,riskLevelDuringSignIn,riskDetail",
           },
         });
         const signIns = ((res.data as A)["value"] as A[] ?? []).map((s: A) => ({
@@ -380,10 +390,10 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
           location: s["location"],
           status: s["status"],
           conditionalAccessStatus: s["conditionalAccessStatus"],
-          mfaDetail: s["mfaDetail"],
           deviceDetail: s["deviceDetail"],
           clientAppUsed: s["clientAppUsed"],
           riskLevelDuringSignIn: s["riskLevelDuringSignIn"],
+          riskDetail: s["riskDetail"],
         }));
         return ok({ count: signIns.length, signIns });
       } catch (e) {
@@ -396,33 +406,47 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
     "entra_get_audit_logs",
     {
       description:
-        "Query Entra ID audit logs — directory changes like user creation/deletion, " +
-        "group membership changes, role assignments, app consent, and policy modifications. " +
+        "Query Entra ID audit logs for anomalous or security-relevant directory changes. " +
+        "Use security_events_only:true to focus on the 'did someone touch the tenant?' signals: " +
+        "role assignments, MFA resets, app consent grants, policy changes, user creation/deletion. " +
+        "Normal day-to-day operations (group syncs, license assignments) are excluded when that flag is set. " +
         "Requires AuditLog.Read.All.",
       inputSchema: z.object({
         category: z
           .string()
           .optional()
           .describe(
-            "Audit log category (e.g. 'UserManagement', 'GroupManagement', 'RoleManagement', 'ApplicationManagement', 'Policy')"
+            "Audit log category (e.g. 'UserManagement', 'GroupManagement', 'RoleManagement', 'ApplicationManagement', 'Policy'). Ignored when security_events_only is true."
+          ),
+        security_events_only: z
+          .boolean()
+          .default(false)
+          .describe(
+            "When true, restricts results to high-value security categories: RoleManagement, UserManagement, ApplicationManagement, Policy. Use this for anomaly detection in briefings."
           ),
         initiated_by: z
           .string()
           .optional()
           .describe("Filter by actor UPN or app display name"),
         hours: z.number().int().min(1).max(168).default(24).describe("Look back this many hours"),
-        top: z.number().int().min(1).max(200).default(50),
+        top: z.number().int().min(1).max(500).default(100),
       }),
     },
-    async ({ category, initiated_by, hours, top }) => {
+    async ({ category, security_events_only, initiated_by, hours, top }) => {
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const since = new Date(Date.now() - hours * 3_600_000).toISOString();
         const filters: string[] = [`activityDateTime ge ${since}`];
-        if (category) filters.push(`category eq '${category}'`);
+        if (security_events_only) {
+          filters.push(
+            "(category eq 'RoleManagement' or category eq 'UserManagement' or category eq 'ApplicationManagement' or category eq 'Policy')"
+          );
+        } else if (category) {
+          filters.push(`category eq '${category}'`);
+        }
         if (initiated_by)
           filters.push(
-            `initiatedBy/user/userPrincipalName eq '${initiated_by}' or initiatedBy/app/displayName eq '${initiated_by}'`
+            `(initiatedBy/user/userPrincipalName eq '${initiated_by}' or initiatedBy/app/displayName eq '${initiated_by}')`
           );
         const res = await graphClient(token).get("/auditLogs/directoryAudits", {
           params: {

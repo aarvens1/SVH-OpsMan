@@ -16,7 +16,7 @@ export async function getNinjaToken(): Promise<string> {
     grant_type: "client_credentials",
     client_id: process.env["NINJA_CLIENT_ID"] ?? "",
     client_secret: process.env["NINJA_CLIENT_SECRET"] ?? "",
-    scope: "monitoring",
+    scope: "monitoring management backup",
   });
 
   const res = await axios.post<{ access_token: string; expires_in: number }>(

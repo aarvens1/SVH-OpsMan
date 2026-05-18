@@ -478,6 +478,13 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
           })),
         });
       } catch (e) {
+        const status = (e as { response?: { status?: number } }).response?.status;
+        if (status === 404) {
+          return err("ninja_list_all_backups: HTTP 404 — backup-usage endpoint not found. " +
+            "Possible causes: (1) NinjaOne app credential does not have the 'backup' scope granted — " +
+            "check the API client in NinjaOne > Administration > Apps; " +
+            "(2) backup module not enabled on this NinjaOne instance.");
+        }
         return err(e);
       }
     }
