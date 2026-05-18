@@ -127,6 +127,7 @@ Trigger by slash command or by saying any of the listed phrases. Skills load on 
 
 | Skill | Invoke | What it does | Output |
 |-------|--------|-------------|--------|
+| **OpsMan Health** | `/opsman-health` · "Test all data points" · "Connectivity check" · "Is OpsMan healthy" | Fires a lightweight probe against every configured integration and reports ✅/❌/⚠️/➖ per service. Use after MCP changes or when a tool call fails unexpectedly. | Console only (no Obsidian unless asked) |
 | **Security Posture** | `/posture-check` · "Posture check" · "State of the land" | Green/Yellow/Red across Identity, Endpoints, Patching, Infrastructure, SIEM, and Cloud. | Obsidian snapshot |
 | **On-Prem Health** | `/onprem-health` · "Check the servers" · "Server health" · "How are the servers doing" | NinjaOne inventory + backup + patch sweep, Desktop Commander PSRemoting disk/service checks, Hyper-V/cluster/MABS flagged separately. | `Investigations/YYYY-MM-DD-onprem-health.md` |
 | **Vuln Triage** | `/vuln-triage` · CVE ID · Defender TVM finding | CVE → exposed devices → patch state → timeline: Emergency / This Week / Next Cycle / Accept. | Obsidian note + Confluence draft + Planner tickets |

@@ -66,6 +66,8 @@ alias gdc='git diff --cached'
 export OPSMANDIR="$HOME/SVH-OpsMan"
 alias ops='cd "$OPSMANDIR"'
 alias ops-health='bash "$OPSMANDIR/scripts/health.sh"'
+# patch-bw — reapply after: sudo npm install -g @bitwarden/cli
+alias patch-bw='bash "$OPSMANDIR/scripts/patch-bw-cli.sh"'
 
 # Start new shells in OpsMan when opened from the default home directory
 [[ "$PWD" == "$HOME" ]] && cd "$OPSMANDIR"
@@ -77,9 +79,10 @@ alias ops-health='bash "$OPSMANDIR/scripts/health.sh"'
 #   2. Starts status-refresh.sh in background (idempotent)
 #   3. Runs claude in the OpsMan directory
 opsman() {
-    if ! bw status 2>/dev/null | grep -q '"status":"unlocked"'; then
-        echo "⚠  Bitwarden locked — run: bwu"
-        return 1
+    # Test actual session validity — bw status only reflects local state, not token expiry
+    if ! bw get item "SVH OpsMan" --session "${BW_SESSION:-}" --nointeraction >/dev/null 2>&1; then
+        echo "⚠  Bitwarden session invalid or expired — unlocking..."
+        bwu || return 1
     fi
     if ! pgrep -f "dotfiles/status-refresh.sh" >/dev/null 2>&1; then
         nohup bash "$OPSMANDIR/dotfiles/status-refresh.sh" >/dev/null 2>&1 &
