@@ -86,7 +86,25 @@ Keep the canvas organized — align nodes to a grid, maintain consistent spacing
 
 Save to the determined path: `Diagrams/<category>/[name].excalidraw`
 
-If there's a related Obsidian note (the user mentioned one, or the diagram category implies one), embed it:
+**File format rule (critical):** Always write raw JSON `.excalidraw` files. Never write `.excalidraw.md`. The Obsidian Excalidraw plugin may convert `.excalidraw` to `.excalidraw.md` when opened — if this happens, the `.md` files must be converted back. To prevent the conversion: tell the user to go to Obsidian Settings → Excalidraw → Saving → enable "Compatibility mode" (keeps files as `.excalidraw`).
+
+If you find `.excalidraw.md` files in the Diagrams folder, convert them back to `.excalidraw` using this Python pattern:
+```python
+import lzstring, re, json
+lz = lzstring.LZString()
+with open("file.excalidraw.md") as f: content = f.read()
+match = re.search(r'```compressed-json\n(.*?)```', content, re.DOTALL)
+if match:
+    compressed = match.group(1).replace('\n','').strip()
+    decompressed = lz.decompressFromBase64(compressed)
+    with open("file.excalidraw", 'w') as f: json.dump(json.loads(decompressed), f, indent=2)
+# For ```json blocks (not compressed): extract directly
+match = re.search(r'```json\n(\{.*?\})\n```', content, re.DOTALL)
+if match: # write as .excalidraw
+```
+Then delete the `.excalidraw.md` file.
+
+Embed in notes using:
 ```markdown
 ![[name.excalidraw]]
 ```
