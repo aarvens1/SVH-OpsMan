@@ -50,16 +50,26 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
       description:
         "Search Confluence pages using CQL (Confluence Query Language). " +
         "Examples: 'title ~ \"incident\"', 'space.key = \"OPS\" AND lastModified >= \"-7d\"', " +
-        "'type = page AND creator = \"user@company.com\"'.",
+        "'type = page AND creator = \"user@company.com\"'. " +
+        "For multi-space searches use the spaces param (preferred) or CQL: space in (\"INF\",\"PROC\",\"POL\").",
       inputSchema: z.object({
         cql: z.string().describe("CQL query string"),
+        spaces: z
+          .array(z.string())
+          .optional()
+          .describe("Space keys to restrict search to (e.g. [\"INF\",\"PROC\",\"POL\"]). Prepends space in (...) AND to cql."),
         limit: z.number().int().min(1).max(250).default(25),
         cursor: z.string().optional().describe("Pagination cursor from a previous response"),
       }),
     },
-    async ({ cql, limit, cursor }) => {
+    async ({ cql, spaces, limit, cursor }) => {
       try {
-        const params: Record<string, string | number> = { cql, limit };
+        let finalCql = cql;
+        if (spaces && spaces.length > 0) {
+          const spaceClause = `space in (${spaces.map((k) => `"${k}"`).join(",")})`;
+          finalCql = cql ? `${spaceClause} AND ${cql}` : spaceClause;
+        }
+        const params: Record<string, string | number> = { cql: finalCql, limit };
         if (cursor) params["cursor"] = cursor;
         const res = await confluenceSearchClient().get("/search", { params });
         const raw = res.data as A;

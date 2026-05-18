@@ -132,8 +132,9 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
     async ({ device_id, filter }) => {
       try {
         const token = await getNinjaToken();
-        const params = filter ? { filter: `name:${filter}` } : {};
-        const res = await ninjaClient(token).get(`/device/${device_id}/windows/services`, {
+        const params: Record<string, string> = {};
+        if (filter) params["name"] = filter;
+        const res = await ninjaClient(token).get(`/device/${device_id}/windows-services`, {
           params,
         });
         return ok((res.data as Record<string, unknown>[]).map((s) => ({
@@ -234,9 +235,9 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
     async ({ device_id, severity }) => {
       try {
         const token = await getNinjaToken();
-        const params: Record<string, string> = { status: "PENDING" };
+        const params: Record<string, string> = {};
         if (severity) params["severity"] = severity.toUpperCase();
-        const res = await ninjaClient(token).get(`/device/${device_id}/patches`, { params });
+        const res = await ninjaClient(token).get(`/device/${device_id}/os-patches`, { params });
         const patches = (res.data as Record<string, unknown>[]).map((p) => ({
           id: p["id"],
           name: p["name"],
@@ -267,8 +268,8 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
     async ({ device_id, page_size }) => {
       try {
         const token = await getNinjaToken();
-        const res = await ninjaClient(token).get(`/device/${device_id}/patches`, {
-          params: { status: "INSTALLED", pageSize: page_size },
+        const res = await ninjaClient(token).get(`/device/${device_id}/os-patch-installs`, {
+          params: { pageSize: page_size },
         });
         const patches = (res.data as Record<string, unknown>[]).map((p) => ({
           id: p["id"],
@@ -327,45 +328,42 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
     "ninja_get_event_logs",
     {
       description:
-        "Query Windows Event Log entries on a NinjaOne-managed server. " +
-        "Supports System, Security, and Application logs with filtering by level and source.",
+        "Returns NinjaOne device activity log — agent events, patch installs, alert triggers, script runs, " +
+        "and other NinjaOne-recorded activity for a device. " +
+        "NOTE: Windows Event Viewer entries (System/Application/Security logs) are not available via the " +
+        "NinjaOne API. For Windows Event Log data use Wazuh or Desktop Commander + PSRemoting.",
       inputSchema: z.object({
         device_id: z.number().int().describe("NinjaOne device ID"),
-        log_name: z
-          .enum(["System", "Security", "Application"])
-          .default("System")
-          .describe("Windows Event Log channel"),
-        level: z
-          .enum(["Error", "Warning", "Information", "Critical"])
+        activity_type: z
+          .string()
           .optional()
-          .describe("Filter by event severity level"),
-        source: z.string().optional().describe("Filter by event source (e.g. MSSQLSERVER)"),
-        event_id: z.number().int().optional().describe("Filter by specific event ID"),
+          .describe("Filter by activity type (e.g. CONDITION, PATCH, SCRIPT, ALERT)"),
+        status: z
+          .string()
+          .optional()
+          .describe("Filter by activity status"),
         page_size: z.number().int().min(1).max(500).default(50),
       }),
     },
-    async ({ device_id, log_name, level, source, event_id, page_size }) => {
+    async ({ device_id, activity_type, status, page_size }) => {
       try {
         const token = await getNinjaToken();
-        const filters: string[] = [];
-        if (level) filters.push(`level:${level}`);
-        if (source) filters.push(`source:${source}`);
-        if (event_id) filters.push(`eventId:${event_id}`);
-        const params: Record<string, string | number> = {
-          logName: log_name,
-          pageSize: page_size,
-        };
-        if (filters.length) params["filter"] = filters.join(",");
-        const res = await ninjaClient(token).get(`/device/${device_id}/windows/eventlogs`, {
-          params,
-        });
-        return ok((res.data as Record<string, unknown>[]).map((e) => ({
-          eventId: e["eventId"],
-          level: e["level"],
-          source: e["source"],
-          message: e["message"],
-          created: e["created"],
-          computer: e["computer"],
+        const params: Record<string, string | number> = { pageSize: page_size };
+        if (activity_type) params["activityType"] = activity_type;
+        if (status) params["status"] = status;
+        const res = await ninjaClient(token).get(`/device/${device_id}/activities`, { params });
+        const raw = res.data as Record<string, unknown>;
+        const items =
+          (raw["activities"] as Record<string, unknown>[] | undefined) ??
+          (res.data as Record<string, unknown>[]);
+        return ok(items.map((a) => ({
+          id: a["id"] ?? a["activityId"],
+          type: a["type"] ?? a["activityType"],
+          status: a["status"],
+          message: a["message"] ?? a["description"],
+          created: a["created"] ?? a["timestamp"],
+          sourceType: a["sourceType"],
+          severity: a["severity"],
         })));
       } catch (e) {
         return err(e);
@@ -419,18 +417,22 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
     async ({ device_id }) => {
       try {
         const token = await getNinjaToken();
-        const res = await ninjaClient(token).get(`/device/${device_id}/backup`);
-        const backups = (res.data as Record<string, unknown>[]).map((b) => ({
+        const res = await ninjaClient(token).get("/backup/jobs", {
+          params: { df: `id = ${device_id}`, pageSize: 50 },
+        });
+        const raw = res.data as Record<string, unknown>;
+        const results = (raw["results"] as Record<string, unknown>[] | undefined) ?? [];
+        return ok(results.map((b) => ({
+          jobId: b["jobId"],
           deviceId: b["deviceId"],
           planName: b["planName"],
-          jobName: b["jobName"],
-          status: b["status"],
-          lastRun: b["lastRun"],
-          nextRun: b["nextRun"],
-          backupSize: b["backupSize"],
-          errorMessage: b["errorMessage"],
-        }));
-        return ok(backups);
+          planType: b["planType"],
+          jobStatus: b["jobStatus"],
+          jobStartTime: b["jobStartTime"],
+          jobEndTime: b["jobEndTime"],
+          totalStoredBytes: b["totalStoredBytes"],
+          filesUploaded: b["filesUploaded"],
+        })));
       } catch (e) {
         return err(e);
       }
@@ -460,27 +462,31 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       try {
         const token = await getNinjaToken();
         const params: Record<string, string | number> = { pageSize: page_size };
-        if (org_id !== undefined) params["organizationId"] = org_id;
-        if (after) params["after"] = after;
-        const res = await ninjaClient(token).get("/queries/backup-usage", { params });
+        if (org_id !== undefined) params["df"] = `organizationId = ${org_id}`;
+        if (after) params["cursor"] = after;
+        const res = await ninjaClient(token).get("/backup/jobs", { params });
         const raw = res.data as Record<string, unknown>;
         const results = (raw["results"] as Record<string, unknown>[] | undefined) ?? [];
         return ok({
           count: results.length,
-          cursor: raw["cursor"],
+          cursor: (raw["cursor"] as Record<string, unknown> | undefined)?.["name"],
           backups: results.map((b) => ({
+            jobId: b["jobId"],
             deviceId: b["deviceId"],
-            planName: b["name"],
-            jobName: b["jobName"],
-            status: b["status"],
-            lastRun: b["lastRun"],
-            nextRun: b["nextRun"],
+            organizationId: b["organizationId"],
+            planName: b["planName"],
+            planType: b["planType"],
+            jobStatus: b["jobStatus"],
+            jobStartTime: b["jobStartTime"],
+            jobEndTime: b["jobEndTime"],
+            totalStoredBytes: b["totalStoredBytes"],
+            filesUploaded: b["filesUploaded"],
           })),
         });
       } catch (e) {
         const status = (e as { response?: { status?: number } }).response?.status;
         if (status === 404) {
-          return err("ninja_list_all_backups: HTTP 404 — backup-usage endpoint not found. " +
+          return err("ninja_list_all_backups: HTTP 404 — /backup/jobs endpoint not found. " +
             "Possible causes: (1) NinjaOne app credential does not have the 'backup' scope granted — " +
             "check the API client in NinjaOne > Administration > Apps; " +
             "(2) backup module not enabled on this NinjaOne instance.");
@@ -598,6 +604,160 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         const res = await ninjaClient(token).get(`/organization/${org_id}/custom-fields`);
         // Custom fields come back as a flat key-value object — pass through as-is (already shaped)
         return ok(res.data as Record<string, unknown>);
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  // ── Fleet queries ─────────────────────────────────────────────────────────
+
+  server.registerTool(
+    "ninja_list_alerts",
+    {
+      description:
+        "List all active alerts across every NinjaOne-managed device in one call — no device " +
+        "enumeration needed. Use this in briefings instead of ninja_list_device_alerts to surface " +
+        "issues on devices not already on the watch list.",
+      inputSchema: z.object({
+        source_type: z
+          .string()
+          .optional()
+          .describe("Filter by alert source type"),
+        org_id: z
+          .number()
+          .int()
+          .optional()
+          .describe("Filter to a specific organization ID"),
+      }),
+    },
+    async ({ source_type, org_id }) => {
+      try {
+        const token = await getNinjaToken();
+        const params: Record<string, string> = {};
+        if (source_type) params["sourceType"] = source_type;
+        if (org_id !== undefined) params["df"] = `organizationId = ${org_id}`;
+        const res = await ninjaClient(token).get("/alerts", { params });
+        const alerts = (res.data as Record<string, unknown>[]).map((a) => ({
+          id: a["id"] ?? a["uid"],
+          deviceId: a["deviceId"],
+          deviceName: a["deviceName"] ?? a["displayName"],
+          organizationId: a["organizationId"],
+          severity: a["severity"],
+          message: a["message"],
+          type: a["type"] ?? a["sourceType"],
+          triggered: a["triggered"] ?? a["created"],
+          status: a["status"],
+        }));
+        return ok({ count: alerts.length, alerts });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "ninja_list_fleet_volumes",
+    {
+      description:
+        "List disk volumes across all NinjaOne-managed devices in one call — no enumeration needed. " +
+        "Use this in briefings instead of per-device ninja_list_volumes to catch disk space issues " +
+        "on every device, including those with no alert fired yet.",
+      inputSchema: z.object({
+        org_id: z
+          .number()
+          .int()
+          .optional()
+          .describe("Filter to a specific organization ID"),
+        cursor: z
+          .string()
+          .optional()
+          .describe("Pagination cursor from a previous response"),
+        page_size: z.number().int().min(1).max(1000).default(500),
+        include_bitlocker: z
+          .boolean()
+          .default(false)
+          .describe("Include BitLocker status for each volume"),
+      }),
+    },
+    async ({ org_id, cursor, page_size, include_bitlocker }) => {
+      try {
+        const token = await getNinjaToken();
+        const params: Record<string, string | number | boolean> = { pageSize: page_size };
+        if (org_id !== undefined) params["df"] = `organizationId = ${org_id}`;
+        if (cursor) params["cursor"] = cursor;
+        if (include_bitlocker) params["include"] = "bl";
+        const res = await ninjaClient(token).get("/queries/volumes", { params });
+        const raw = res.data as Record<string, unknown>;
+        const results = (raw["results"] as Record<string, unknown>[] | undefined) ?? [];
+        return ok({
+          count: results.length,
+          cursor: (raw["cursor"] as Record<string, unknown> | undefined)?.["name"],
+          volumes: results.map((v) => {
+            const cap = v["capacity"] as number | null;
+            const free = v["freeSpace"] as number | null;
+            return {
+              deviceId: v["deviceId"],
+              deviceName: v["deviceName"] ?? v["displayName"],
+              name: v["name"],
+              label: v["label"],
+              capacity: cap,
+              freeSpace: free,
+              percentUsed: cap && free != null
+                ? Math.round((1 - free / cap) * 100)
+                : null,
+              bitlockerStatus: v["bitlockerStatus"],
+            };
+          }),
+        });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "ninja_get_device_health",
+    {
+      description:
+        "Get health status across all NinjaOne-managed devices in one call. " +
+        "Returns HEALTHY / WARNING / CRITICAL per device. " +
+        "Use for a quick fleet health score before diving into per-device tools.",
+      inputSchema: z.object({
+        health: z
+          .enum(["HEALTHY", "WARNING", "CRITICAL", "UNKNOWN"])
+          .optional()
+          .describe("Filter to a specific health status — omit to return all"),
+        org_id: z
+          .number()
+          .int()
+          .optional()
+          .describe("Filter to a specific organization ID"),
+        cursor: z.string().optional().describe("Pagination cursor from a previous response"),
+        page_size: z.number().int().min(1).max(1000).default(500),
+      }),
+    },
+    async ({ health, org_id, cursor, page_size }) => {
+      try {
+        const token = await getNinjaToken();
+        const params: Record<string, string | number> = { pageSize: page_size };
+        if (health) params["health"] = health;
+        if (org_id !== undefined) params["df"] = `organizationId = ${org_id}`;
+        if (cursor) params["cursor"] = cursor;
+        const res = await ninjaClient(token).get("/queries/device-health", { params });
+        const raw = res.data as Record<string, unknown>;
+        const results = (raw["results"] as Record<string, unknown>[] | undefined) ?? [];
+        return ok({
+          count: results.length,
+          cursor: (raw["cursor"] as Record<string, unknown> | undefined)?.["name"],
+          devices: results.map((d) => ({
+            deviceId: d["deviceId"] ?? d["id"],
+            deviceName: d["deviceName"] ?? d["displayName"],
+            organizationId: d["organizationId"],
+            health: d["health"],
+            issues: d["issues"],
+          })),
+        });
       } catch (e) {
         return err(e);
       }
