@@ -2,7 +2,7 @@
 name: day-starter
 description: Morning briefing. Covers the period since the last Day Ender ran (on Mondays) or since the last Day Starter ran (other days), with a 72-hour cap. Falls back to 24h (72h on Monday) if no state exists. Override with "last N days/hours" or "reset" to use defaults. Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
 when_to_use: Use at the start of each workday to get a prioritized digest of what needs attention.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__*"
 ---
 
 # Day Starter
@@ -85,7 +85,7 @@ Run these in parallel:
   - Copilot Audit for IT team: `wP9PL7YWCEqGbG6o4aYVT2QADaLq`
 
   This is the source for **IT team boards** and **Projects**.
-- `todo_list_task_lists` then `todo_list_tasks` — personal To Do task lists, anything open or due today. (If `todo_list_task_lists` returns HTTP 400, delegated auth is unavailable — skip and note "To Do unavailable (service account limitation)" in the note.)
+- `todo_list_task_lists` (user_id: "astevens@shoestringvalley.com") then `todo_list_tasks` (user_id: "astevens@shoestringvalley.com") for each list — personal To Do task lists, anything open or due today. Always pass `user_id` explicitly — the `/me` fallback requires delegated auth and returns HTTP 400 with application credentials.
 - `mail_search` — use the exact `last_day_ender` timestamp from the state file as the lower bound: query `received>={last_day_ender_iso}` (e.g. `received>=2026-05-12T17:11:02Z`). If no day-ender timestamp exists, fall back to `received>={lookback_start_iso}`. Focus on external senders, anything flagged, or subjects suggesting action. Skip routine system notifications (NinjaOne bursts, Planner digests, marketing). Always note how many emails were found and whether there is a `@odata.nextLink` indicating more pages — if there is, fetch the next page until you have all mail in the window.
 - For DMs: call `teams_list_my_chats` (top: 50) to get all recent chat threads. Filter the returned list to threads where `lastMessage.createdDateTime >= lookback_start`. Fetch `teams_get_chat_messages` (top: 10, as a **number not a string**) only for those threads — do not fetch threads with no activity in the window. Note: Teams self-chat (Aaron messaging himself) returns HTTP 404 via application auth — skip it and note the limitation; Aaron's self-notes should be captured via email or a dedicated IT Team channel post instead.
 - For IT Team channels: `teams_list_teams` → `teams_list_channels` (team_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) → `teams_list_messages` on General, Changes, Infrastructure, and Alerts channels. **After fetching, filter messages to only those where `createdDateTime >= lookback_start` before writing to the note.** Do not surface older messages as current activity — if a channel had no posts in the lookback window, write "*No posts since [lookback_start].*" Skip high-volume notification channels (Support).
@@ -105,13 +105,17 @@ Include To Do items alongside Planner tasks. Show due-today and overdue first, t
 
 ## Step 2b — Carry forward open items from yesterday
 
-Read only the `# 🌆 Day Ender` section of the previous business day's briefing note (`Briefings/Daily/YYYY-MM-DD.md`). The Day Ender is always the last top-level section — use `offset` to read from that point rather than loading the full note. Look for:
+Read the previous business day's briefing note (`Briefings/Daily/YYYY-MM-DD.md`). Check two locations:
+- The `# Day Ender` section (last top-level section) for open items
+- The `### Deferred` subsection within `### Draft Planner actions` for explicitly deferred tasks
+
+Look for:
 
 1. **"🔄 Still open"** items in the EOD section — explicitly unresolved items from the day-ender
 2. **"📝 Draft Planner actions"** that were written as CREATE, UPDATE, or TODO but not yet confirmed/pushed — surface them again so Aaron can act on them or discard. Skip any REMOVE blocks — those need no action.
 3. **"🟡 Worth watching"** items that had a clear suggested action and weren't resolved
 
-Write a **"⏮ Carried from yesterday"** section in the new note, placed immediately after **🔴 Needs attention now**. Format each item as:
+Write a **"Carried from yesterday"** section in the new note, placed immediately after **Needs attention now**. Format each item as:
 
 ```
 - **[Item title]** *(→ [[Briefings/Daily/YYYY-MM-DD]])* — [one-sentence status or action needed]
@@ -134,6 +138,21 @@ If `System/cleared-items.md` doesn't exist, skip this step.
 
 ## Step 3 — Synthesise and write
 
+**Prose tone:** One finding per bullet. No filler phrases ("It is worth noting", "At this time", "Please note"). Format: `[subject] — [what's wrong] — [impact or action]`. See `.claude/rules/note-patterns.md` for the full design spec.
+
+**Data gaps:** As you run Steps 1 and 2, track every tool failure (HTTP errors, timeouts, auth errors). Before writing any content section, write a `## Data gaps` section immediately after the lookback window line. Format:
+
+```markdown
+## Data gaps
+
+> [!warning] N data sources unavailable
+> ⛔ **[Tool / system name]** — [error code] | [one-line diagnosis] | Fix: [specific next step]
+```
+
+- One line per failure. Diagnosis must be specific (e.g. "invalid_scope — OAuth scopes not granted in NinjaOne app registration"), not generic ("unavailable").
+- If all tools succeeded: **omit the section entirely.**
+- In the affected section of the note, replace the failure message with a single italicised line: `*[System]: see Data gaps above.*`
+
 Write `Briefings/Daily/YYYY-MM-DD.md` to the Obsidian vault at `/mnt/c/Users/astevens/vaults/OpsManVault/`. The note has three top-level sections — create all three in a single write so the structure is visible from the start of the day:
 
 ```markdown
@@ -145,7 +164,7 @@ tags: [briefing, daily]
 has_pending_tasks: false
 ---
 
-# 🌅 Day Starter — HH:MM
+# Day Starter — HH:MM
 
 [all day-starter content sections]
 
@@ -153,26 +172,34 @@ has_pending_tasks: false
 
 ---
 
-# 📝 Notes
+# Notes
 
 *Links to active investigations, meeting notes, and mid-day findings go here. If it has a note in the vault, link to it — don't duplicate the content.*
 
 ---
 
-# 🌆 Day Ender
+# Day Ender
 
 *To be completed at end of day.*
 ```
 
-All day-starter content (the sections below) goes under the `# 🌅 Day Starter — HH:MM` header.
+All day-starter content (the sections below) goes under the `# Day Starter — HH:MM` header.
 
-### 🔴 Needs attention now
-Any Critical/High alerts, risky users, active M365 incidents, or overdue tasks. One bullet per item with source and recommended action. If an incident note or investigation already exists for a finding, link to it inline (`→ [[Incidents/Active/YYYY-MM-DD-name]]`). If the finding is serious enough to open a new note, do so and link from here.
+### Needs attention now
+Use an Obsidian callout block as the opening summary, then detail below only where needed:
 
-### ⏮ Carried from yesterday
+```
+> [!danger] N items need action today
+> ⛔ [subject] — [impact]
+> ⚠️ [subject] — [action needed]
+```
+
+Any Critical/High alerts, risky users, active M365 incidents, or overdue tasks. One bullet per item with source. If an incident note or investigation already exists for a finding, link to it inline (`→ [[Incidents/Active/YYYY-MM-DD-name]]`). If the finding is serious enough to open a new note, do so and link from here.
+
+### Carried from yesterday
 Items surfaced by Step 2b — open threads, unpushed draft tasks, and unresolved worth-watching items from the previous day's note. Omit this section if there is nothing to carry forward.
 
-### 📅 Today
+### Today
 Calendar events in time order. Flag any meeting that needs prep. If a meeting-prep note already exists (`Meetings/YYYY-MM-DD-name.md`), link to it inline rather than restating the prep details.
 
 For each meeting on today's calendar, check whether a Fathom recording already exists (`list_meetings` filtered to today). If one exists:
@@ -182,38 +209,48 @@ For each meeting on today's calendar, check whether a Fathom recording already e
 
 If no recordings exist for today's meetings, no mention needed.
 
-### 📨 Mail
+### Mail
 Unread or high-importance messages from the last N hours needing action. External senders and flagged items first. Skip routine system notifications.
 
-### 💬 Teams
+### Teams
 Unread DMs (from `teams_list_my_chats` + `teams_get_chat_messages`) and IT Team channel @mentions (from `teams_list_messages`) from the last N hours. Focus on messages directed at Aaron. Skip high-volume notification channels. If nothing actionable: state "No unread DMs or @mentions."
 
-### 📋 Your tasks
-Tasks assigned to Aaron (by user ID or Planner label) across all plans and personal board, plus To Do items. Due today or overdue first, then upcoming.
+### Your tasks
+Tasks assigned to Aaron (by user ID or Planner label) across all plans and personal board, plus To Do items. Use a table for overdue/due-today items, compact list for upcoming. Due today or overdue first, then upcoming.
 
-### 🗂 Projects
+### Projects
 Active project-type Planner boards (e.g. Office Network Standardization). Call out open tasks or milestones — keep separate from operational team boards. Definition TBD.
 
-### 📋 IT team boards
+### IT team boards
 Open tasks from IT plans that Aaron isn't assigned to or tagged on. Group by plan. Overdue items only get a full row; everything else is a one-liner. Context only.
 
-### 🟡 Worth watching
-Medium-severity findings, anything that could escalate. No action required yet.
+### Worth watching
+Use an Obsidian callout block as the opening summary:
 
-### 🔍 Tenant activity
+```
+> [!warning] N items to monitor
+> ⚠️ [subject] — [status or trend]
+```
+
+Medium-severity findings, anything that could escalate. No action required yet. If nothing: state `> [!success] Nothing elevated — all watches clear.`
+
+### Tenant activity
 Sourced from `entra_get_audit_logs` and `entra_get_sign_in_logs` pulled in Step 1. Present as a compact timeline grouped by actor — not a raw dump. Surface: role assignments, MFA resets, app consent grants, policy changes, bulk operations, suspicious sign-in patterns. If an actor appears in both admin audit logs AND risky sign-ins, call it out explicitly (e.g., "⚠️ jsmith made 2 admin changes AND had a risky sign-in at 02:14 from Romania"). If nothing of note: one line — "No admin actions or risky sign-ins in the last N hours." Keep this section tight — it's a trip-wire, not a log dump.
 
-### 💡 Suggested next moves
+### Next moves
 2–3 concrete recommendations (e.g., "Dismiss risky user X after reviewing sign-in logs", "Prep agenda for 2pm call").
 
-### 🖥 Infrastructure status
+### Infrastructure
 
-**Always include this section — even when everything is clean.** A clean result is still useful signal. Do not skip or merge this into other sections.
+**Always include this section — even when clean.** An explicit all-clear is useful signal. Never skip or merge into other sections.
 
-**NinjaOne — All servers**
-1. Call `ninja_list_servers` to get all server device IDs across all organizations.
-2. Run `ninja_list_device_alerts` in parallel for every returned device ID.
-3. Show a table grouped by organization (org name from `ninja_list_servers`). Columns: Device name, NinjaOne status, MDE risk, Intune compliance. If no active alerts: ✅ Clean for that device. For devices with alerts, populate MDE risk and Intune compliance from the cross-reference done in Step 1. If a device is not enrolled in MDE or Intune, show "—". Always show every server regardless of status — a clean result is still useful signal.
+**NinjaOne — Servers**
+1. Call `ninja_list_servers` to enumerate all server device IDs across all organizations.
+2. Run `ninja_list_device_alerts` in parallel for every device ID.
+3. Surface only servers with active alerts or notable conditions. For each flagged device, cross-reference MDE risk and Intune compliance from Step 1.
+4. Run `ninja_get_event_logs` (last N hours) for **every server** — not just flagged ones. This is how issues get caught before they become alerts. Look for: error clusters, service crashes, disk/hardware events, repeated failures, or anything that doesn't fit the normal pattern for that server.
+5. Surface only servers with active alerts OR notable log findings. For clean servers with nothing in either alerts or logs: confirm coverage in one line — `✅ N servers checked — no alerts or notable log events.`
+6. Skip devices in maintenance mode — do not surface them even if offline.
 
 **UniFi — All sites**
 Show a table with one row per site. Columns: **Site name**, ISP, Wifi clients, Wired clients, Total devices, Offline, Alert.
@@ -241,10 +278,10 @@ Notes:
 - PDX Kaiser Suite 230 (10.1.10.179) and NVR appliances (PDX-MAINOFFICE-NVR, SEA-MAIN OFFICE-NVR, SEA-WAREHOUSE-NVR) have internal IPs and will not appear in `unifi_list_sites` results.
 - Use `wans.WAN.externalIp` (not gateway MAC) as the primary lookup key — it's easier to match visually.
 
-Flag any row where offlineDevice > 0, criticalNotification > 0, or wanDowntime: true on the primary WAN. Note: WAN2 showing `wanDowntime` with count=288 is a persistent pattern for offline secondary/failover links — do not flag it as an active incident; note it once at the bottom of the table.
+Flag any row where offlineDevice > 0, criticalNotification > 0, or wanDowntime: true on the primary WAN. Note: WAN2 showing `wanDowntime` with count=288 is a persistent pattern for offline secondary/failover links — do not flag it as an active incident; note it once at the bottom of the table. If all sites are clean: `✅ All sites — no offline devices or WAN issues.`
 
 **Backups**
-From `ninja_list_all_backups`: list all backup jobs. Flag any job with status `failed` or `unknown`, and any job where `lastRunTime` > 24h ago (stale). Show a compact table: Device | Plan | Status | Last Run. If all jobs are healthy and recent: ✅ All backup jobs current.
+From `ninja_list_all_backups`: flag any job with status `failed` or `unknown`, and any job where `lastRunTime` > 24h ago (stale). Show a compact table only for flagged jobs: Device | Plan | Status | Last Run. If all jobs are healthy and recent: `✅ All backup jobs current.`
 
 **Confluence — Recent changes**
 List any pages in INF, PROC, POL, SITE modified in the last N hours that look like incident docs, outage notes, policy changes, or runbook updates. If nothing matches: state "No pages modified in the last N hours in INF/PROC/POL/SITE."
@@ -307,9 +344,32 @@ Checklist items are **what** needs to happen, not **how**. Each should be a shor
 - **Notes:** [1–2 sentences of context]
 ```
 
+**IGNORE format** (discard a draft — no Planner action, remove from note):
+
+```
+#### IGNORE — [task title or brief reason]
+```
+
+Same outcome as REMOVE — remove the block. No entry anywhere. Use when Aaron explicitly dismisses a draft.
+
+**CARRYOVER format** (defer to tomorrow — remove block, add deferred entry):
+
+```
+#### CARRYOVER — [task title]
+- **Reason:** [why it's being deferred]
+```
+
+Remove the full block from the note. Add a one-line entry to a `### Deferred` subsection within `### Draft Planner actions`:
+
+```
+- 📌 **[task title]** — [reason]. Full context in [[Briefings/Daily/YYYY-MM-DD]].
+```
+
+Step 2b (carry forward) reads the `### Deferred` list from yesterday's note alongside the Day Ender section.
+
 **Processing and cleanup:**
 
-After Aaron confirms and you execute any block — CREATE pushed to Planner, UPDATE pushed to Planner, TODO pushed to To Do, REMOVE discarded — immediately remove that subsection from the daily note using `edit_block`. When all blocks in the section have been processed, remove the `### 📝 Draft Planner actions` section header as well.
+After Aaron confirms and you execute any block — CREATE pushed to Planner, UPDATE pushed to Planner, TODO pushed to To Do, REMOVE/IGNORE discarded, CARRYOVER deferred — immediately remove that subsection from the daily note using `edit_block`. When all action blocks in the section have been processed (only the `### Deferred` list may remain), remove the section header if nothing remains.
 
 ## Step 4 — Update state file
 

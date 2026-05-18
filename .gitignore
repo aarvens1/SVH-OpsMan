@@ -1,3 +1,4 @@
 .claude/settings.local.json
 .claude/push-log
+.claude/briefing-state
 __pycache__/
