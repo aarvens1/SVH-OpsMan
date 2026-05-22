@@ -7,7 +7,7 @@ allowed-tools: "mcp__svh-opsman__ninja_get_server mcp__svh-opsman__ninja_list_de
 
 # Asset Investigation
 
-Read any existing `Assets/[name].md` from Obsidian before starting — update in place rather than creating a duplicate.
+Read any existing `SVH/Record/[name].md` from Obsidian before starting — update in place rather than creating a duplicate.
 
 ## Route: Server or Workstation
 
@@ -39,7 +39,7 @@ Run in parallel:
 - `unifi_list_clients` — is this device visible? Which VLAN, switch, AP?
 
 **Diagram:**
-Create `Diagrams/Assets/[name].excalidraw` showing:
+Create `Diagrams/SVH/Record/[name].excalidraw` showing:
 - Host → switch/port → VLAN → upstream firewall → adjacent devices/servers it talks to
 - Active firewall rules that apply to it
 
@@ -61,7 +61,7 @@ For recent activity (last 7–30 days of work output, Teams, mail, tasks): run `
 
 ## Output
 
-Write (or update) `Assets/[name].md`:
+Write (or update) `SVH/Record/[name].md`:
 
 ```yaml
 ---

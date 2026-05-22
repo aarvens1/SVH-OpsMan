@@ -38,11 +38,11 @@ Use these to fill in the "Supporting signals" section and rule out external caus
 
 ## Step 3 — Assign incident ID
 
-Read `Incidents/Active/` from Obsidian to find the highest existing INC-YYYY-NNN for the current year. Assign the next number. If no incidents exist yet this year, start at INC-YYYY-001.
+Read `SVH/Record/` from Obsidian to find the highest existing INC-YYYY-NNN for the current year. Assign the next number. If no incidents exist yet this year, start at INC-YYYY-001.
 
 ## Step 4 — Write incident note
 
-Write `Incidents/Active/YYYY-MM-DD-[name].md`:
+Write `SVH/Record/YYYY-MM-DD-[name].md`:
 
 ```yaml
 ---
@@ -69,7 +69,7 @@ Sections:
 Append a line to today's daily note under `# 📝 Notes` using the edit_block insert-before-Day-Ender pattern:
 
 ```markdown
-→ [[Incidents/Active/YYYY-MM-DD-name]] — [one-sentence summary + severity]
+→ [[SVH/Record/YYYY-MM-DD-name]] — [one-sentence summary + severity]
 ```
 
 ## Step 6 — Staged drafts (nothing sent or created until confirmed)
@@ -83,7 +83,7 @@ Append a line to today's daily note under `# 📝 Notes` using the edit_block in
 - **Due:** YYYY-MM-DD (today)
 - **Priority:** Urgent (Critical/High) | Important (Medium) | Medium (Low)
 - **Assigned:** Aaron Stevens
-- **Notes:** [[Incidents/Active/YYYY-MM-DD-name]]
+- **Notes:** [[SVH/Record/YYYY-MM-DD-name]]
 - **Checklist:**
   - [ ] Contain or mitigate
   - [ ] Identify root cause

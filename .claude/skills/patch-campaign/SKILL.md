@@ -47,7 +47,7 @@ Write all CREATE blocks to the Obsidian note using the standard draft format (sa
 
 ## Output
 
-Write `Reviews/Patches/YYYY-MM-DD-patch-campaign.md`:
+Write `SVH/Record/YYYY-MM-DD-patch-campaign.md`:
 
 ```yaml
 ---

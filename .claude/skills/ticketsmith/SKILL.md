@@ -42,7 +42,7 @@ Calm. Professional. The ticket represents IT, not the frustrated user. Remove bl
 
 ## Output
 
-Write `Investigations/tickets/YYYY-MM-DD-[short-title].md`:
+Write `SVH/Record/tickets/YYYY-MM-DD-[short-title].md`:
 
 ```yaml
 ---

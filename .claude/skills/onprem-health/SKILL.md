@@ -62,7 +62,7 @@ If not in an active session, flag these as "requires interactive sa_stevens sess
 
 ## Step 4 — Output
 
-Write to `Investigations/YYYY-MM-DD-onprem-health.md`:
+Write to `SVH/Record/YYYY-MM-DD-onprem-health.md`:
 
 ```yaml
 ---

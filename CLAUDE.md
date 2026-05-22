@@ -152,6 +152,8 @@ Canonical values (UPNs, group IDs, Planner board IDs, vault path) live in `.clau
 ### Obsidian vault path
 `/mnt/c/Users/astevens/vaults/OpsManVault/`
 
+All OpsMan output lives under `SVH/` in the vault root: `SVH/Daily/`, `SVH/Inbox/`, `SVH/Record/`, `SVH/System/`, `SVH/Archive/`. Excalidraw diagrams go in `Diagrams/<category>/` at the vault root.
+
 ### People
 | Person | UPN | Entra object ID | IT Sysadmin Tasks label |
 |--------|-----|-----------------|-------------------------|

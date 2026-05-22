@@ -42,7 +42,7 @@ Produce:
 
 ## Step 4 — Impact diagram
 
-Create `Diagrams/Changes/CHG-YYYY-NNN.excalidraw` showing:
+Create `Diagrams/SVH/Record/CHG-YYYY-NNN.excalidraw` showing:
 - What's changing (centre)
 - What depends on it (upstream)
 - What it affects (downstream)
@@ -52,7 +52,7 @@ Embed in the note with `![[CHG-YYYY-NNN.excalidraw]]`.
 
 ## Output
 
-Write `Changes/CHG-YYYY-NNN.md`:
+Write `SVH/Record/CHG-YYYY-NNN.md`:
 
 ```yaml
 ---

@@ -15,7 +15,7 @@ allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list
 2. Check whether the user specified an explicit override:
    - **"reset"** or **"default"**: skip the state file. Use 7 days. Write current timestamp to state after the run.
    - **"last N days/hours"** / any explicit range: use that window. Write current timestamp to state after the run.
-3. If no override, read `System/briefing-state.md` from the Obsidian vault:
+3. If no override, read `SVH/System/briefing-state.md` from the Obsidian vault:
    - If `last_week_ender` is present: set the lookback to `now − last_week_ender`. Log "Anchoring to last Week Ender (TIMESTAMP)" in the note.
    - If `last_week_ender` is absent but `last_week_starter` is present and ≤ 10 days ago: set the lookback to `now − last_week_starter`.
    - If neither is present or both are stale: fall back to 7 days. Log "No recent weekly state — using 7-day default" in the note.
@@ -70,7 +70,7 @@ Run in parallel:
 
 ## Step 3 — Write to Obsidian
 
-Write `Briefings/Weekly/YYYY-WW.md`:
+Write `SVH/Record/YYYY-WW.md`:
 
 ```yaml
 ---
@@ -98,7 +98,7 @@ Sections:
 
 ## Step 4 — Update state file
 
-After the Obsidian note is written, update `System/briefing-state.md` in the Obsidian vault:
+After the Obsidian note is written, update `SVH/System/briefing-state.md` in the Obsidian vault:
 - Set `last_week_starter` to the current ISO timestamp (with timezone offset, e.g. `2026-05-12T08:45:00-07:00`).
 - Preserve all other fields (`last_day_starter`, `last_day_ender`, `last_week_ender`).
 - Use `mode: rewrite`.

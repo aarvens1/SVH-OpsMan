@@ -55,7 +55,7 @@ A user can have multiple tags. 🔴 findings always come first.
 
 ## Step 4 — Write the Obsidian note
 
-Write to `Reviews/Access/license-audit-YYYY-MM-DD.md` in the Obsidian vault.
+Write to `SVH/Record/license-audit-YYYY-MM-DD.md` in the Obsidian vault.
 
 ```markdown
 ---

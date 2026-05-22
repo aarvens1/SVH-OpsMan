@@ -21,7 +21,7 @@ Run in parallel:
 
 ### Step 3 — Produce prep brief
 
-Write `Meetings/YYYY-MM-DD-[meeting-name].md`:
+Write `SVH/Record/YYYY-MM-DD-[meeting-name].md`:
 
 ```yaml
 ---
@@ -52,7 +52,7 @@ Call `get_meeting_summary` with the `recording_id`. This returns Fathom's own AI
 
 ### Step 3 — Write the note
 
-Update (or create) `Meetings/YYYY-MM-DD-[meeting-name].md` with a post-call section:
+Update (or create) `SVH/Record/YYYY-MM-DD-[meeting-name].md` with a post-call section:
 
 ```markdown
 ## Post-call notes
@@ -60,10 +60,10 @@ Update (or create) `Meetings/YYYY-MM-DD-[meeting-name].md` with a post-call sect
 [paste Fathom summary/notes here]
 ```
 
-Then append a single line to today's daily note (`Briefings/Daily/YYYY-MM-DD.md`) under `# 📝 Notes`, using the `edit_block` insert-before-Day-Ender pattern from the Obsidian output conventions:
+Then append a single line to today's daily note (`SVH/Daily/YYYY-MM-DD.md`) under `# 📝 Notes`, using the `edit_block` insert-before-Day-Ender pattern from the Obsidian output conventions:
 
 ```markdown
-- [[Meetings/YYYY-MM-DD-meeting-name]] — [one sentence: key topic and outcome]
+- [[SVH/Record/YYYY-MM-DD-meeting-name]] — [one sentence: key topic and outcome]
 ```
 
 If multiple calls are filed in one session, add one line per meeting. Full content stays in the meeting note — the daily note gets only the link. Never rewrite the daily note.

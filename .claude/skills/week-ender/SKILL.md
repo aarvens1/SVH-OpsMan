@@ -15,7 +15,7 @@ allowed-tools: "mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner
 2. Check whether the user specified an explicit override:
    - **"reset"** or **"default"**: skip the state file. Use 7 days. Write current timestamp to state after the run.
    - **"last N days/hours"** / any explicit range: use that window. Write current timestamp to state after the run.
-3. If no override, read `System/briefing-state.md` from the Obsidian vault:
+3. If no override, read `SVH/System/briefing-state.md` from the Obsidian vault:
    - If `last_week_starter` is present and ≤ 10 days ago: set the lookback to `now − last_week_starter`. Log "Anchoring to last Week Starter (TIMESTAMP)" in the note.
    - If absent or stale: fall back to 7 days. Log "No recent weekly state — using 7-day default" in the note.
 4. Use the computed window as **N days** in all data queries below.
@@ -45,7 +45,7 @@ Run in parallel:
 - **DMs:** `teams_list_my_chats` (top: 50) → filter to threads with activity since lookback start → `teams_get_chat_messages` (top: 10, as a **number not a string**) for active threads.
 - **IT Team channels:** `teams_list_teams` → `teams_list_channels` (team_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) → `teams_list_messages` on General, Changes, Infrastructure, and Alerts channels. Filter to messages since lookback start.
 
-Also read any `Incidents/Active/` notes from Obsidian created this week.
+Also read any `SVH/Record/` notes from Obsidian created this week.
 
 ## Step 2 — What slipped
 
@@ -53,7 +53,7 @@ Items that were due this week and are still open. Assess: Is this a priority sli
 
 ## Step 3 — Write retrospective to Obsidian
 
-Append a **Week Ender** section to `Briefings/Weekly/YYYY-WW.md` (or create if it doesn't exist):
+Append a **Week Ender** section to `SVH/Record/YYYY-WW.md` (or create if it doesn't exist):
 
 ```markdown
 ## Week Ender — Thursday
@@ -85,7 +85,7 @@ Use CREATE / UPDATE / REMOVE / TODO format (same as Day Starter). Default plan: 
 
 ## Step 4 — Update state file
 
-After the Obsidian note is appended, update `System/briefing-state.md` in the Obsidian vault:
+After the Obsidian note is appended, update `SVH/System/briefing-state.md` in the Obsidian vault:
 - Set `last_week_ender` to the current ISO timestamp (with timezone offset, e.g. `2026-05-08T09:55:00-07:00`).
 - Preserve all other fields (`last_day_starter`, `last_day_ender`, `last_week_starter`).
 - Use `mode: rewrite`.

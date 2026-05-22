@@ -44,7 +44,7 @@ Score → Timeline:
 
 ## Output
 
-Write `Vulnerabilities/CVE-YYYY-NNNNN.md`:
+Write `SVH/Record/CVE-YYYY-NNNNN.md`:
 
 ```yaml
 ---

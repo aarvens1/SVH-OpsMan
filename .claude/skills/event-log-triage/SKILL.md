@@ -49,7 +49,7 @@ Common queries:
 
 ## Step 4 — Output
 
-Write findings to `Investigations/YYYY-MM-DD-[host]-event-log.md`:
+Write findings to `SVH/Record/YYYY-MM-DD-[host]-event-log.md`:
 
 ```yaml
 ---

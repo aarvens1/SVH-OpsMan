@@ -29,7 +29,7 @@ Flag: stale members (no sign-in > 90 days), missing MFA, unexpected members.
 
 ## Output
 
-Write `Reviews/Access/YYYY-MM-DD-[name].md`:
+Write `SVH/Record/YYYY-MM-DD-[name].md`:
 
 ```yaml
 ---

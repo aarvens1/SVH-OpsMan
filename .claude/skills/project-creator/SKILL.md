@@ -40,7 +40,7 @@ Continue to Step 4.
 ## Step 4 — Draw the WBS diagram
 
 Before writing the Obsidian note, create the Excalidraw diagram:
-- Save to `Diagrams/Projects/[project-name].excalidraw`
+- Save to `Diagrams/SVH/Record/[project-name].excalidraw`
 - Show phases/buckets as swimlane rows or grouped zones
 - Tasks as boxes inside their phase/bucket
 - Dependencies as arrows between tasks
@@ -50,7 +50,7 @@ Embed in the project note with `![[project-name.excalidraw]]`.
 
 ## Step 5 — Write the project note with staged draft
 
-Write `Projects/[project-name].md`:
+Write `SVH/Record/[project-name].md`:
 
 ```yaml
 ---
@@ -139,4 +139,4 @@ If Aaron asks to promote to Confluence:
 - `confluence_search_pages` to find the right parent (IT projects space or INF)
 - `confluence_create_page` with scope, deliverables, WBS table, and a link to the Planner plan
 - Present as a draft block for review before creating
-- Add the Confluence link to the `Projects/[project-name].md` note once published
+- Add the Confluence link to the `SVH/Record/[project-name].md` note once published

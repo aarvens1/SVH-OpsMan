@@ -58,7 +58,7 @@ After cataloguing events, look for:
 
 Write analysis to Obsidian:
 
-`Investigations/YYYY-MM-DD-[hostname]-log-analysis.md`
+`SVH/Record/YYYY-MM-DD-[hostname]-log-analysis.md`
 
 ```yaml
 ---

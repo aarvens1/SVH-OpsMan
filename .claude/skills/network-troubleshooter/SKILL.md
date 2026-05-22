@@ -59,7 +59,7 @@ Create an Excalidraw diagram showing the affected path:
 
 Save to `Diagrams/Network/[site]-YYYY-MM-DD.excalidraw`.
 
-Write `Investigations/YYYY-MM-DD-network-[site]-[topic].md`:
+Write `SVH/Record/YYYY-MM-DD-network-[site]-[topic].md`:
 
 ```yaml
 ---

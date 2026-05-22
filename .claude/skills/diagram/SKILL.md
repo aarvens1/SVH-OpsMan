@@ -19,9 +19,9 @@ Category paths:
 | Type | Path |
 |------|------|
 | Network topology / site layout | `Diagrams/Network/` |
-| Asset position | `Diagrams/Assets/` |
-| Change impact | `Diagrams/Changes/` |
-| Project WBS | `Diagrams/Projects/` |
+| Asset position | `Diagrams/SVH/Record/` |
+| Change impact | `Diagrams/SVH/Record/` |
+| Project WBS | `Diagrams/SVH/Record/` |
 | Process / workflow | `Diagrams/Process/` |
 | Architecture / system design | `Diagrams/Architecture/` |
 | Ad-hoc / general | `Diagrams/General/` |

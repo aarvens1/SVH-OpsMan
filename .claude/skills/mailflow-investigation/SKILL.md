@@ -41,7 +41,7 @@ If status is Filtered or Quarantined, or if the message contained attachments/UR
 
 ## Output
 
-Write `Investigations/YYYY-MM-DD-mailflow-[sender-to-recipient].md`:
+Write `SVH/Record/YYYY-MM-DD-mailflow-[sender-to-recipient].md`:
 
 ```yaml
 ---

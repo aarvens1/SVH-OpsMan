@@ -52,7 +52,7 @@ Use `desktop-commander` for direct shell access when needed (ping, traceroute, T
 
 ## Step 5 — Write findings to Obsidian
 
-Write to `Investigations/YYYY-MM-DD-[topic].md` with:
+Write to `SVH/Record/YYYY-MM-DD-[topic].md` with:
 
 ```yaml
 ---

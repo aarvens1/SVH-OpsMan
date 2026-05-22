@@ -68,7 +68,7 @@ If the user named a specific broken resource: check whether any actor touched th
 
 ## Step 4 — Write the Obsidian note
 
-Write to `Investigations/YYYY-MM-DD-tenant-forensics-HHmm.md` in the Obsidian vault.
+Write to `SVH/Record/YYYY-MM-DD-tenant-forensics-HHmm.md` in the Obsidian vault.
 
 ```markdown
 ---

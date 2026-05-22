@@ -4,11 +4,16 @@ These apply whenever Claude writes a note to the Obsidian vault.
 
 ## Vault structure
 
+All OpsMan output lives under `SVH/` in the vault root.
+
 ```
-Inbox/      ← staged items awaiting Execute — the only folder that empties
-Daily/      ← one note per day, operational log and reactive hub
-Record/     ← everything permanent
-Archive/    ← manually moved when truly done
+SVH/
+  Inbox/      ← staged items awaiting Execute — the only folder that empties
+  Daily/      ← one note per day, operational log and reactive hub
+  Record/     ← everything permanent
+  System/     ← state files (briefing-state.md, cleared-items.md)
+  Archive/    ← manually moved when truly done
+Diagrams/     ← Excalidraw files (vault root, shared with other vault content)
 ```
 
 Obsidian is the operational intelligence layer and drafting table. Confluence holds authoritative official documentation. When a note graduates to Confluence, it does so via Execute — never autonomously.
@@ -28,9 +33,9 @@ entities: []
 **Types:** `daily | incident | change | meeting | research | plan | session | draft | vuln`
 
 **Status lifecycle:**
-- `Inbox/` notes: `staged` → `pushed` or `discarded`
-- `Record/` notes: `active` → `closed` or `filed`
-- `Daily/` notes: always `active`
+- `SVH/Inbox/` notes: `staged` → `pushed` or `discarded`
+- `SVH/Record/` notes: `active` → `closed` or `filed`
+- `SVH/Daily/` notes: always `active`
 
 **Extra fields by type:**
 - **Incidents:** `incident_id: INC-YYYY-NNN`, `severity: critical|high|medium|low`
@@ -40,29 +45,30 @@ entities: []
 - **Weekly sessions:** `week: YYYY-WW`
 - **Meetings:** `attendees: [Name, Name]`
 
-**`entities:`** — list every server, site, system, or person the note is about using consistent names (e.g. `SVH-SQL01`, `Site B`, `Sam Maxon`). This is what makes backlink search useful. No wikilinks needed — consistent naming is enough.
+**`entities:`** — list every server, site, system, or person the note is about using consistent names (e.g. `SVH-SQL01`, `Site B`, `Sam Maxon`). Consistent naming drives backlink search — no wikilinks required.
 
 ## Vault paths
 
 | Content | Path |
 |---------|------|
-| Daily notes | `Daily/YYYY-MM-DD.md` |
-| Staged items (Inbox) | `Inbox/YYYY-MM-DD-slug.md` |
-| Incidents | `Record/YYYY-MM-DD-incident-name.md` |
-| Changes | `Record/CHG-YYYY-NNN.md` |
-| Meetings | `Record/YYYY-MM-DD-meeting-name.md` |
-| Investigations | `Record/YYYY-MM-DD-investigation-topic.md` |
-| Research | `Record/YYYY-MM-DD-research-topic.md` |
-| Plans | `Record/YYYY-MM-DD-plan-name.md` |
-| Vulnerabilities | `Record/CVE-YYYY-NNNNN.md` or `Record/YYYY-MM-DD-vuln-name.md` |
-| Sessions (scribe/wrap) | `Record/YYYY-MM-DD-session-name.md` |
+| Daily notes | `SVH/Daily/YYYY-MM-DD.md` |
+| Staged items (Inbox) | `SVH/Inbox/YYYY-MM-DD-slug.md` |
+| Incidents | `SVH/Record/YYYY-MM-DD-incident-name.md` |
+| Changes | `SVH/Record/CHG-YYYY-NNN.md` |
+| Meetings | `SVH/Record/YYYY-MM-DD-meeting-name.md` |
+| Investigations | `SVH/Record/YYYY-MM-DD-investigation-topic.md` |
+| Research | `SVH/Record/YYYY-MM-DD-research-topic.md` |
+| Plans | `SVH/Record/YYYY-MM-DD-plan-name.md` |
+| Vulnerabilities | `SVH/Record/CVE-YYYY-NNNNN.md` |
+| Sessions (scribe/wrap) | `SVH/Record/YYYY-MM-DD-session-name.md` |
+| State files | `SVH/System/briefing-state.md`, `SVH/System/cleared-items.md` |
 | Excalidraw diagrams | `Diagrams/<category>/[name].excalidraw` |
 
-Everything permanent goes in `Record/`. Frontmatter `type:` is what distinguishes them — not subfolders. Dataview queries on `type` and `entities` replace manual folder navigation.
+Everything permanent goes in `SVH/Record/`. Frontmatter `type:` distinguishes content — not subfolders. Dataview queries on `type` and `entities` replace manual folder navigation.
 
-## Staged note format (Inbox/)
+## Staged note format (SVH/Inbox/)
 
-Every item written to `Inbox/` must include destination and type in frontmatter:
+Every item written to `SVH/Inbox/` must include destination and type in frontmatter:
 
 ```yaml
 ---
@@ -75,7 +81,7 @@ tags: []
 ---
 ```
 
-Nothing in `Inbox/` gets pushed without Aaron initiating Execute. Status moves to `pushed` or `discarded` — nothing else.
+Nothing in `SVH/Inbox/` gets pushed without Aaron initiating Execute. Status moves to `pushed` or `discarded` — nothing else.
 
 ## Diagrams
 
@@ -111,12 +117,12 @@ The daily note links to content — it doesn't contain it. If a dedicated Record
 
 | Situation | Daily note entry |
 |-----------|-----------------|
-| Open incident | `→ [[Record/YYYY-MM-DD-incident-name]]` |
-| Active investigation | `→ [[Record/YYYY-MM-DD-investigation-topic]]` |
-| Change record | `→ [[Record/CHG-YYYY-NNN]]` |
-| Meeting | `- [[Record/YYYY-MM-DD-meeting-name]] — one sentence` |
-| Staged item in Inbox | `→ [[Inbox/YYYY-MM-DD-slug]] — what it is` |
-| Carry-forward | `→ [[Daily/YYYY-MM-DD]]` |
+| Open incident | `→ [[SVH/Record/YYYY-MM-DD-incident-name]]` |
+| Active investigation | `→ [[SVH/Record/YYYY-MM-DD-investigation-topic]]` |
+| Change record | `→ [[SVH/Record/CHG-YYYY-NNN]]` |
+| Meeting | `- [[SVH/Record/YYYY-MM-DD-meeting-name]] — one sentence` |
+| Staged item in Inbox | `→ [[SVH/Inbox/YYYY-MM-DD-slug]] — what it is` |
+| Carry-forward | `→ [[SVH/Daily/YYYY-MM-DD]]` |
 
 ## Nothing leaves Obsidian without explicit user instruction
 

@@ -56,7 +56,7 @@ Work through these in order, stopping when the picture is clear:
 
 ## Output
 
-Write `Incidents/Active/YYYY-MM-DD-[short-name].md` with frontmatter:
+Write `SVH/Record/YYYY-MM-DD-[short-name].md` with frontmatter:
 
 ```yaml
 ---

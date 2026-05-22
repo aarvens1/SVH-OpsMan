@@ -56,7 +56,7 @@ Keep it tight — this is a quick read, not a log dump.
 
 ## Output
 
-Write `Investigations/user-report-YYYY-MM-DD-[name].md`:
+Write `SVH/Record/user-report-YYYY-MM-DD-[name].md`:
 
 ```yaml
 ---

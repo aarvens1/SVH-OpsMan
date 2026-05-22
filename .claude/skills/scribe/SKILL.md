@@ -36,8 +36,8 @@ If the user doesn't specify a style, default to **standard**. Ask only if the in
 
 Determine the right Obsidian path based on content:
 - Incident closure → `Incidents/Archive/YYYY-MM-DD-[name].md`
-- How-to / runbook → `Investigations/runbooks/[topic].md`
-- General investigation notes → `Investigations/YYYY-MM-DD-[topic].md`
+- How-to / runbook → `SVH/Record/runbooks/[topic].md`
+- General investigation notes → `SVH/Record/YYYY-MM-DD-[topic].md`
 
 ```yaml
 ---
