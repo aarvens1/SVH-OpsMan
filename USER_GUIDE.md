@@ -35,52 +35,56 @@ SVH OpsMan is a purpose-built IT operations command station. You talk to it in p
 "Did this email from finance@vendor.com actually deliver to Sarah?"
 ```
 
-Claude is the intelligence layer — it reads your prompts, picks the right tools, and synthesizes answers. The command station is the product: 23 pre-wired investigation workflows, a live status dashboard, a PowerShell module suite, and Obsidian as the staging area. You're at the helm.
+Claude is the intelligence layer — it reads your prompts, picks the right tools, and synthesizes answers. The command station is the product: pre-wired investigation workflows, a live status dashboard, a PowerShell module suite, and Obsidian as the staging area. You're at the helm.
 
 It is not:
 - A chatbot you visit in a browser tab
-- A scheduled job or monitoring daemon
+- An autonomous monitoring daemon
 - Something that acts without you asking
 
-Everything is human-initiated. Nothing runs autonomously. Nothing leaves Obsidian without you explicitly saying so.
+Everything is human-initiated. Nothing leaves Obsidian without you explicitly saying so.
 
 ---
 
 ## 2. How it works — the technology stack
 
-Understanding these five layers makes the setup steps and the failure modes obvious.
+Understanding these layers makes the setup steps and the failure modes obvious.
 
 ### Layer 1: Claude (the AI)
 
-Claude is the reasoning engine made by Anthropic. You interact with it through **Claude Code**, a CLI that runs in your terminal. Claude reads your prompts, decides which tools to call, and synthesizes a response. It does not have internet access by default — all its knowledge of your environment comes from the tools it's given.
+Claude is the reasoning engine made by Anthropic. You interact with it through **Claude Code**, a CLI that runs in your terminal. Claude reads your prompts, decides which tools to call, and synthesizes a response. All its knowledge of your environment comes from the tools it's given.
 
 ### Layer 2: MCP — the plugin system
 
-**MCP (Model Context Protocol)** is an open protocol that gives Claude access to external tools. Each MCP server is a separate process that Claude Code talks to over stdio (standard input/output). Claude sees the tools a server exposes the same way a developer sees an API — it calls them by name with parameters.
+**MCP (Model Context Protocol)** is an open protocol that gives Claude access to external tools. Each MCP server is a separate process that Claude Code talks to over stdio. Claude sees the tools a server exposes the same way a developer sees an API — it calls them by name with parameters.
 
-This repo *is* a custom MCP server. When Claude Code starts, it launches `mcp-server/dist/index.js` as a child process and discovers the tools it exposes (Graph queries, NinjaOne lookups, Wazuh searches, etc.). Claude then has those tools available as if they were built in.
+This repo contains a custom MCP server. When Claude Code starts, it launches `mcp-server/dist/index.js` as a child process and discovers the tools it exposes (Graph queries, NinjaOne lookups, Wazuh searches, staging reads, etc.). Claude then has those tools available as if they were built in.
 
 External MCP servers (Obsidian, GitHub, Bitwarden, Desktop Commander, etc.) work the same way — separate processes, registered separately.
 
-### Layer 3: WSL 2 (where everything runs)
+### Layer 3: Collector (the data pre-fetcher)
 
-Claude Code and the MCP server run inside **WSL 2 (Ubuntu 24.04)** on your Windows 11 machine. WSL gives you a real Linux environment — zsh, npm, Node.js, PowerShell 7, the `bw` CLI — without a VM. The WSL filesystem lives at `\\wsl$\Ubuntu\` and your Windows drives are mounted at `/mnt/c/`.
+The **collector** is a standalone service that runs separately from the MCP server. It wakes at 6:45 am on weekdays (systemd timer), calls NinjaOne, Graph, Planner, Wazuh, and UniFi APIs in bulk, and writes results to `staging/{date}/` as JSON files. It also maintains SQLite databases in `db/` for time-series metrics (disk trends, alert counts, patch lag).
 
-systemd is enabled in WSL (configured by `scripts/wsl-shell-setup.sh`), which lets Tailscale run as a proper service and makes the shell environment behave more like a real Linux system.
+When you say "day starter," Claude doesn't call NinjaOne directly — it reads the staging file the collector already wrote. This makes the morning briefing fast (no bulk API calls during the session) and gives Claude accurate time-series data it couldn't get by polling.
+
+The MCP server exposes staging tools (`staging_status`, `staging_read`, `collector_run`, `metrics_disk_over_threshold`, etc.) so Claude can check freshness, read files, and trigger a fresh collection if needed.
+
+### Layer 4: WSL 2 (where everything runs)
+
+Claude Code and the MCP server run inside **WSL 2 (Ubuntu 24.04)** on your Windows 11 machine. WSL gives you a real Linux environment without a VM. The WSL filesystem lives at `\\wsl$\Ubuntu\` and your Windows drives are mounted at `/mnt/c/`.
+
+In production, the collector and MCP server can also run on a dedicated Ubuntu VM on Hyper-V — the interface plane (Claude Code, PowerShell) stays in WSL while the service plane runs on the VM.
 
 Obsidian runs natively on Windows, so the MCP server reaches it over `localhost` via the Obsidian Local REST API plugin.
 
-### Layer 4: Bitwarden (credential store)
+### Layer 5: Bitwarden (credential store)
 
-All API credentials — Microsoft Graph secrets, NinjaOne client IDs, UniFi passwords — live in a single Bitwarden vault item named **SVH OpsMan**. The MCP server reads them at startup using the `bw` CLI. This means:
+All API credentials live in a single Bitwarden vault item named **SVH OpsMan**. The MCP server reads them at startup using the `bw` CLI — credentials never touch the filesystem in interactive sessions. The collector uses a `collector/.env` file populated by `scripts/sync-creds.sh`, which reads from Bitwarden and writes the file at mode 600. Bitwarden remains the single source of truth; `collector/.env` is a derived artifact regenerated when credentials change.
 
-- No credentials are stored in files that could be committed to git
-- Rotating a credential means updating Bitwarden, not editing a `.env` file
-- The server refuses to start if `BW_SESSION` isn't set (vault is locked)
+### Layer 6: Obsidian (the output layer)
 
-### Layer 5: Obsidian (the output layer)
-
-Obsidian is a local markdown editor with a plugin ecosystem. OpsMan uses it as a staging area — every skill writes its output there as a markdown note. You read it, edit it, decide whether to promote it (push to Confluence, create a Planner task, send a Teams message). The **Obsidian Local REST API** plugin exposes the vault over `localhost:27123` so the MCP server can read and write notes.
+Obsidian is a local markdown editor. OpsMan uses it as a staging area — every skill writes its output to `SVH/` in the vault as a markdown note. You read it, edit it, decide whether to promote it (push to Confluence, create a Planner task, send a Teams message). The **Obsidian Local REST API** plugin exposes the vault over `localhost:27123` so the MCP server can read and write notes.
 
 ### How a request flows
 
@@ -88,38 +92,43 @@ Obsidian is a local markdown editor with a plugin ecosystem. OpsMan uses it as a
 You type "day starter"
   → Claude Code reads the prompt
   → Matches /day-starter skill from .claude/skills/day-starter/SKILL.md
-  → Calls MCP tools: NinjaOne alerts, Wazuh alerts, Defender incidents,
-    Planner tasks, Entra risky users, MS Admin health, ...
+  → Calls staging_status — confirms collector ran this morning
+  → Calls staging_read for ninja-devices, ninja-alerts, wazuh-alerts, etc.
+  → Calls live APIs for real-time data (Entra risky users, Defender alerts, M365 health)
+  → Calls planner_get_user_tasks, mail_search, teams channels
   → Synthesizes results
-  → Writes Briefings/Daily/YYYY-MM-DD.md to Obsidian via Obsidian MCP
-  → Prints obsidian://open?vault=OpsManVault&file=... URI in terminal
-  → You click the link → note opens in Obsidian
+  → Writes SVH/Daily/YYYY-MM-DD.md to Obsidian via Obsidian MCP
+  → Note opens in Obsidian
 ```
 
 ---
 
 ## 3. Design decisions
 
-These are the "why" answers for the choices that might otherwise seem arbitrary.
-
 ### Why Claude Code CLI, not Claude Desktop?
 
-Claude Desktop wraps Claude in a GUI and registers MCPs globally. Claude Code is a terminal CLI — it registers MCPs per-project, supports hooks (scripts that run at session start), and has a proper permission model. For ops work, you want the per-project isolation and the hooks. The session-start hook is what injects Bitwarden status, git state, and today's ops context into every session without you having to say anything.
+Claude Desktop wraps Claude in a GUI and registers MCPs globally. Claude Code is a terminal CLI — it registers MCPs per-project, supports hooks (scripts that run at session start), and has a per-project permission model. The session-start hook is what injects Bitwarden status, git state, and today's ops context into every session without you having to say anything.
 
-### Why a custom MCP server instead of using Claude Desktop plugins?
+### Why a collector service in addition to the MCP server?
 
-The custom server lets you control exactly what Claude can and cannot do. All tool logic lives in `mcp-server/src/tools/` — you can audit it, version-control it, add logging, gate write operations behind confirmation. It also lets you pull credentials from Bitwarden rather than hardcoding them in config files.
+Before the collector, Claude called NinjaOne and Graph APIs directly every morning — 10–15 tool calls adding latency and consuming session context. The collector moves bulk reads off the session thread: data is ready before you open Claude, and time-series metrics (disk trends, alert history) are only possible because the collector runs repeatedly and writes to SQLite.
 
-### Why Bitwarden instead of a .env file?
+The MCP server remains for interactive, targeted queries — mail search, task updates, live security data — where freshness matters more than pre-aggregation.
 
-`.env` files get accidentally committed. They sit on disk in plaintext. Bitwarden gives you a vault with unlock state — the server gets credentials at runtime from an unlocked session, and the credentials never touch the filesystem. The `mcp-server/.env` file that exists is a last-resort fallback (populated once on 2026-05-11) and is gitignored.
+### Why Bitwarden instead of .env files everywhere?
+
+`.env` files get accidentally committed. Bitwarden gives you a vault with unlock state — the MCP server gets credentials at runtime from an unlocked session, and the credentials never touch the filesystem in interactive use. The collector's `collector/.env` is a derived artifact written by `scripts/sync-creds.sh` — still sourced from Bitwarden, still regenerated when credentials change, never committed.
 
 ### Why Obsidian as the output layer?
 
 Three reasons:
 1. **Staging.** Nothing goes to Teams or Planner until you review it. Obsidian is the buffer between Claude's output and your production systems.
-2. **Persistence.** Asset notes, incident records, change records accumulate over time and are updated in place. Obsidian's wikilink graph connects them.
+2. **Persistence.** Incident records, change records, meeting notes accumulate over time. Dataview queries on `type:` and `entities:` frontmatter replace manual folder navigation.
 3. **Local.** The vault is on your machine. It works offline. You own the data.
+
+### Why Confluence as the documentation layer, not Obsidian?
+
+Confluence holds authoritative, shareable official documentation — server pages, runbooks, published change records. Obsidian is the operational intelligence layer — where Claude drafts and where you do your thinking. When a note is ready to publish, you promote it to Confluence via Execute. Obsidian never autonomously pushes to Confluence.
 
 ### Why WSL 2 instead of native Windows?
 
@@ -127,19 +136,7 @@ The Claude Code CLI is a Node.js binary that runs cleanest on Linux. WSL 2 gives
 
 ### Why PowerShell modules alongside the MCP server?
 
-The MCP server is Claude's read-only window into your environment. PowerShell is for write operations that need human eyes on the command before it runs — disabling an account, isolating a device, rebooting a cluster node. The modules load from `connect.ps1`, which handles credential injection, so you never have to type a password into a terminal.
-
-### Why one Graph app registration for all Microsoft services?
-
-Graph permissions are scoped at the app level, not the user level. A single app registration with all required permissions is simpler to maintain than five separate registrations for Mail, Planner, Entra, Exchange, and Intune. The one exception is Defender for Endpoint and Azure ARM — those use different APIs that require their own service principals.
-
-### Why is Obsidian the single source of truth for output, not Confluence?
-
-Confluence is for documentation that's finished and meant to be shared. Obsidian is for work in progress. Skills write to Obsidian, you review and edit, then optionally promote to Confluence. This prevents half-formed notes from appearing in shared spaces.
-
-### Why Windows Terminal instead of WezTerm?
-
-WezTerm was the original plan — Lua-scriptable status bar, LEADER-key chords, `obsidian://` URI detection. We got partway through and the config complexity (symlinks, Lua caching layer, `binfmt_misc` interop edge cases) wasn't worth it at this stage. Windows Terminal covers the core workflow with zero overhead. WezTerm is tracked in `roadmap.md` as a future upgrade when the data layer is stable.
+The MCP server is Claude's read-mostly window into your environment. PowerShell is for write operations that need human eyes on the command before it runs — disabling an account, isolating a device, rebooting a cluster node. The modules load from `connect.ps1`, which handles credential injection, so you never have to type a password into a terminal.
 
 ---
 
@@ -215,29 +212,23 @@ wsl --shutdown
 
 Reopen your terminal. WSL now runs with systemd, and zsh is your default shell.
 
-What the script installs and configures:
-
 | What | Details |
 |------|---------|
 | **zsh** | Default shell — autosuggestions, syntax highlighting, case-insensitive completion |
-| **fzf** | Fuzzy history search (`Ctrl+R`), file picker (`Ctrl+T`), smart `cd` picker (`Alt+C`) |
-| **bat** | `cat` replacement with syntax highlighting (`cat` and `bat` aliases both work) |
-| **eza** | `ls` replacement with git status and icons (`ls`, `ll`, `lt` aliases) |
+| **fzf** | Fuzzy history search (`Ctrl+R`), file picker (`Ctrl+T`) |
+| **bat** | `cat` replacement with syntax highlighting |
+| **eza** | `ls` replacement with git status and icons |
 | **delta** | Side-by-side syntax-highlighted git diffs |
-| **lazygit** | Terminal git UI — stage hunks, resolve conflicts, interactive rebase (`lg` alias) |
+| **lazygit** | Terminal git UI (`lg` alias) |
 | **btop** | System resource monitor |
-| **mtr** | Live ping + traceroute combined — useful in network troubleshooting |
-| **nmap** | Network scanner for authorized recon |
-| **zoxide** | Smart `cd` — learns your most-visited dirs (`z ops`, `z vault`) |
+| **mtr** | Live ping + traceroute combined |
+| **nmap** | Network scanner |
+| **zoxide** | Smart `cd` — learns your most-visited dirs |
 | **httpie** | Readable HTTP client for testing APIs |
 | **starship** | Minimal prompt showing git branch and exit code |
-| **PowerShell 7** | `pwsh` installed via snap — run SVH modules directly in WSL without PSRemoting |
+| **PowerShell 7** | `pwsh` installed via snap |
 
-Aliases carried forward from the old bashrc:
-- `bwu` — unlock Bitwarden, export `BW_SESSION`
-- `ops` / `opsman` — daily launch (BW check + starts claude)
-- `clip`, `wpath`, `wexp` — Windows interop helpers
-- `gs`, `gd`, `gl`, `gco` — git shorthands
+Aliases: `bwu` (unlock BW) · `ops`/`opsman` (daily launch) · `clip`/`wpath`/`wexp` (Windows interop) · `gs`/`gd`/`gl`/`gco` (git shorthands)
 
 ### 4.7 Set up Obsidian
 
@@ -256,9 +247,28 @@ npm run build
 # Output: dist/index.js
 ```
 
-### 4.9 Populate Bitwarden credentials
+### 4.9 Build the collector
 
-In the Bitwarden web vault, find or create the **SVH OpsMan** item. Add custom fields with these exact names (the server reads them by name):
+```bash
+cd ~/SVH-OpsMan/collector
+npm install
+# No compile step — runs via tsx
+```
+
+### 4.10 Sync credentials to collector/.env
+
+```bash
+export BW_SESSION=$(bw unlock --raw)
+chmod +x ~/SVH-OpsMan/scripts/sync-creds.sh
+~/SVH-OpsMan/scripts/sync-creds.sh
+# Writes collector/.env at mode 600 — never committed to git
+```
+
+Run this again whenever you rotate a credential in Bitwarden.
+
+### 4.11 Populate Bitwarden credentials
+
+In the Bitwarden web vault, find or create the **SVH OpsMan** item. Add custom fields with these exact names (the server reads them by name at startup; `sync-creds.sh` reads them for the collector):
 
 | Field | Service |
 |-------|---------|
@@ -276,19 +286,19 @@ In the Bitwarden web vault, find or create the **SVH OpsMan** item. Add custom f
 | `NINJA_CLIENT_ID` | NinjaOne |
 | `NINJA_CLIENT_SECRET` | NinjaOne |
 | `OBSIDIAN_API_KEY` | Obsidian Local REST API |
+| `UNIFI_API_KEY` | UniFi Cloud |
+| `UNIFI_SVH_URL` | UniFi Network controller URL |
+| `UNIFI_SVH_KEY` | UniFi Network API key |
 
-Services not yet wired: `WAZUH_URL/USERNAME/PASSWORD`, `CONFLUENCE_DOMAIN/EMAIL/API_TOKEN`, `UNIFI_*`, `PRINTERLOGIC_URL/API_TOKEN` — add these when you have the credentials.
+Services not yet wired: `WAZUH_URL/USERNAME/PASSWORD`, `CONFLUENCE_DOMAIN/EMAIL/API_TOKEN`, `PRINTERLOGIC_URL/API_TOKEN` — add these when you have the credentials.
 
-### 4.10 Update config.yaml for your environment
+### 4.12 Update config.yaml for your environment
 
 ```yaml
 # .claude/config.yaml
 user:
   upn: yourname@yourdomain.com
   entra_id: <your-entra-object-id>  # Get from: az ad user show --id you@domain.com --query id
-
-groups:
-  it_team: <entra-group-object-id>
 
 obsidian:
   vault: /mnt/c/Users/<yourname>/vaults/OpsManVault
@@ -298,13 +308,7 @@ planner:
   # Add other plan IDs as needed
 ```
 
-Get your Entra object ID:
-```bash
-# After registering the Graph app, use the Graph Explorer or:
-curl -H "Authorization: Bearer <token>" https://graph.microsoft.com/v1.0/me | jq .id
-```
-
-### 4.11 Register app registrations in Azure
+### 4.13 Register app registrations in Azure
 
 **Microsoft Graph (one registration for all M365 services):**
 
@@ -330,7 +334,7 @@ az ad sp create-for-rbac --name "Claude OpsMan ARM" --role Reader --scopes /subs
 az role assignment create --assignee <client-id> --role "Cost Management Reader" --scope /subscriptions/<id>
 ```
 
-### 4.12 Register MCPs with Claude Code
+### 4.14 Register MCPs with Claude Code
 
 Unlock Bitwarden first, then:
 
@@ -374,7 +378,7 @@ Verify:
 claude mcp list
 ```
 
-### 4.13 Verify the server starts
+### 4.15 Verify the server starts
 
 ```bash
 export BW_SESSION=$(bw unlock --raw)
@@ -384,16 +388,31 @@ claude   # opens Claude Code in this project
 
 In Claude's startup output, confirm:
 ```
-[svh-opsman] Loaded 20 credential(s) from Bitwarden vault
-[svh-opsman] Starting — 9/9 service groups configured
+[svh-opsman] Starting — N/N service groups configured
 [svh-opsman] Ready — listening on stdio
 ```
 
-If you see fewer than the expected credential count, check which fields are missing from the Bitwarden item.
+If you see fewer service groups than expected, check which fields are missing from the Bitwarden item.
 
-### 4.14 Install Tailscale
+### 4.16 Run the collector for the first time
 
-Tailscale is the remote access layer — your WSL box and SVH servers all join a private mesh network. Requires the WSL restart from step 4.6 (systemd must be active).
+```bash
+export BW_SESSION=$(bw unlock --raw)
+# Collector reads from collector/.env (populated in step 4.10)
+cd ~/SVH-OpsMan
+npx tsx collector/src/index.ts gather
+```
+
+On success, `staging/{today}/manifest.json` appears with per-job status. Check it:
+```bash
+cat staging/$(date +%Y-%m-%d)/manifest.json | python3 -m json.tool
+```
+
+In subsequent days, the systemd timer handles this automatically.
+
+### 4.17 Install Tailscale
+
+Tailscale is the remote access layer. Requires the WSL restart from step 4.6 (systemd must be active).
 
 ```bash
 ~/SVH-OpsMan/scripts/tailscale-wsl-setup.sh
@@ -403,11 +422,9 @@ Authenticate via the browser URL. In the Tailscale admin console:
 - Disable key expiry on this node (it's a workstation, not an ephemeral server)
 - Enable MagicDNS so you can reach other nodes by hostname
 
-**UDM subnet routing** — to reach every device at every SVH site without installing Tailscale on individual machines, deploy a Tailscale subnet router on each UDM Pro/SE. Follow `references/tailscale-udm-setup.md`. Once configured, your WSL box can SSH, ping, or PSRemote to any device at any site through the UDM's Tailscale node.
+**UDM subnet routing** — to reach every device at every SVH site without installing Tailscale on individual machines, deploy a Tailscale subnet router on each UDM Pro/SE. Follow `references/tailscale-udm-setup.md`.
 
----
-
-### 4.15 Windows Terminal setup
+### 4.18 Windows Terminal setup
 
 ```powershell
 # From Windows Terminal — installs Cascadia Code NF font, PS profile stub, imports WT settings
@@ -419,9 +436,7 @@ After this, `opsman` is available from both WSL and PowerShell:
 opsman   # checks BW, starts status-refresh daemon, launches claude
 ```
 
-From PowerShell, `opsman` opens a new Claude Code tab (blue) in Windows Terminal.
-
-### 4.16 Restrict mail access (important)
+### 4.19 Restrict mail access (important)
 
 The Graph app has `Mail.ReadWrite` which is tenant-wide by default. Lock it to your mailbox:
 
@@ -447,21 +462,21 @@ cd ~/SVH-OpsMan && claude
 
 # Option 2: using the alias (after bashrc setup)
 bwu   # unlock vault, export BW_SESSION
-opsman   # BW check + start claude (or opens Claude Code tab from PowerShell)
+opsman   # BW check + start claude
 ```
 
-**You must unlock Bitwarden before starting Claude Code.** The MCP server reads credentials at startup. If `BW_SESSION` isn't set, the server starts but every tool call fails with a Bitwarden error. The session-start hook tells you immediately if BW is locked.
+**You must unlock Bitwarden before starting Claude Code.** The MCP server reads credentials at startup. If `BW_SESSION` isn't set, the server starts but every tool call fails. The session-start hook tells you immediately if BW is locked.
 
 ### The session-start hook
 
-Every time you open Claude Code in this project, `.claude/hooks/session-start.sh` runs automatically and injects context into Claude's system prompt:
+Every time you open Claude Code in this project, `.claude/hooks/session-start.sh` runs automatically and injects context:
 
 ```
 Branch: main | Uncommitted: 0 | Ahead: 0 | Bitwarden: BW_SESSION active |
-Day: Monday (2026-05-16) | Briefing today: no | Open incidents: 2 | Last briefing: 2026-05-15
+Day: Monday (2026-05-19) | Briefing today: no | Open incidents: 2 | Last briefing: 2026-05-15
 ```
 
-Claude sees this before your first message. You don't have to tell it what day it is or whether a briefing exists.
+Claude sees this before your first message.
 
 The hook also syncs `references/` to `OpsManVault/References/` so Obsidian always has the latest triage guides.
 
@@ -469,17 +484,17 @@ The hook also syncs `references/` to `OpsManVault/References/` so Obsidian alway
 
 | Time | What to do |
 |------|-----------|
-| Morning | `bwu && ops` → Claude opens → say "day starter" or hit `CTRL+\ d` |
+| Morning | The collector already ran at 6:45 am. `bwu && ops` → say "day starter" |
 | During day | Talk to Claude as issues come up — no slash commands needed for most things |
 | When something breaks | "X is broken" or `/troubleshoot` → systematic isolation |
 | Writing something up | "Write this up" or `/scribe` after you've resolved something |
-| End of day | "Day ender" or hit `CTRL+\ e` |
+| End of day | "Day ender" or hit `Ctrl+Alt+E` |
 
 ---
 
 ## 6. Skills reference
 
-Skills are prompt patterns — markdown templates in `.claude/skills/<name>/SKILL.md` that Claude loads on demand. They define the investigation sequence, which tools to call, and what format the output should take. They have zero context cost until triggered.
+Skills are prompt patterns — markdown templates in `.claude/skills/<name>/SKILL.md` that Claude loads on demand. They define the investigation sequence, which tools to call, and what format the output should take.
 
 ### How to trigger a skill
 
@@ -491,139 +506,147 @@ Two ways work equally well:
 
 ### Daily rhythm
 
-**Day Starter** — `CTRL+\ d` · `/day-starter` · "morning briefing" · "day starter" · "what's on my plate"
+**Day Starter** — `Ctrl+Alt+D` · `/day-starter` · "morning briefing" · "day starter" · "what's on my plate"
 
-Covers the last 24 hours (72 hours on Mondays, since work week is M–Thursday). Queries all monitoring sources, synthesizes a prioritized digest, and includes a "Draft Planner actions" section at the bottom with suggested tasks staged for review — nothing is created until you say "push it."
+Checks that the collector ran and staging is fresh. Reads staging files for infra summary (NinjaOne, Wazuh, UniFi, tenant audit). Runs live queries for real-time security data (Entra risky users, Defender alerts, M365 health). Synthesizes a prioritized digest with a "Draft Planner actions" section — nothing created until you say "push it."
 
-Output: `Briefings/Daily/YYYY-MM-DD.md`
+Output: `SVH/Daily/YYYY-MM-DD.md`
 
 ---
 
-**Day Ender** — `CTRL+\ e` · `/day-ender` · "day ender" · "end of day"
+**Day Ender** — `Ctrl+Alt+E` · `/day-ender` · "day ender" · "end of day"
 
-Covers the last 12 hours. What got done, what's still open, carry-forward notes for tomorrow. Appends to today's daily note — does not overwrite it.
+What got done, what's still open, carry-forward notes for tomorrow. Appends to today's daily note — does not overwrite it.
 
 ---
 
 **Week Starter** — `/week-starter` · "week starter" · "what does the week look like"
 
-Run on Monday. Covers the full weekend plus this week's calendar, open tasks, and a suggested first move. Output: `Briefings/Weekly/YYYY-WW.md`
+Run on Monday. Covers the full weekend plus this week's calendar, open tasks, and a suggested first move.
+
+Output: `SVH/Record/YYYY-WW-week-starter.md`
 
 ---
 
-**Week Ender** — `/week-ender` · "week ender" · "wrap up the week" · "Thursday EOD"
+**Week Ender** — `/week-ender` · "week ender" · "wrap up the week"
 
-Run on Thursday. What shipped, what slipped, seeds for next week. Optionally drafts a team summary for your manager — staged in Obsidian first.
+Run on Thursday. What shipped, what slipped, seeds for next week. Optionally drafts a team summary — staged in Obsidian first.
+
+Output: `SVH/Record/YYYY-WW-week-wrap.md`
 
 ---
 
 ### When things go wrong
 
-**Troubleshoot** — `CTRL+\ t` · `/troubleshoot` · "X is broken" · "troubleshoot Y" · "why is Z not working"
+**Troubleshoot** — `Ctrl+Alt+T` · `/troubleshoot` · "X is broken" · "troubleshoot Y" · "why is Z not working"
 
-Systematic isolation: expected vs. actual behavior, one user or many, ranked hypotheses from cheapest-to-disprove to most expensive. References SVH-specific failure patterns in `references/common-failure-modes.md` — Hyper-V cluster issues, MABS/SQL memory pressure, CMiC/Kemp load balancer, UniFi connectivity, WSUS approval backlogs, PrinterLogic problems.
+Systematic isolation: expected vs. actual behavior, one user or many, ranked hypotheses from cheapest-to-disprove to most expensive. References SVH-specific failure patterns in `references/common-failure-modes.md`.
 
 ---
 
 **Event Log Triage** — `/event-log-triage` · "check event logs on X" · "what happened on Z around [time]"
 
-For live log queries. Sequence: Wazuh first (for correlation across hosts), NinjaOne second (for gaps), Desktop Commander for PowerShell deep-dives when needed. Output: `Investigations/` note with timeline.
+For live log queries. Wazuh first (for correlation across hosts), NinjaOne second, Desktop Commander for PowerShell deep-dives when needed.
 
 ---
 
 **Event Log Analyzer** — `/event-log-analyzer` · "analyze this log" · "look at this log export"
 
-For exported log files you paste in or reference — `.xml`, `.csv`, `.txt`, `.log`. Parses patterns from the export rather than querying live systems.
+For exported log files you paste in or reference — `.xml`, `.csv`, `.txt`, `.log`.
 
 ---
 
-**Network Troubleshooter** — `CTRL+\ n` · `/network-troubleshooter` · "network issue at [site]" · "why can't [users] reach [resource]"
+**Network Troubleshooter** — `Ctrl+Alt+N` · `/network-troubleshooter` · "network issue at [site]" · "why can't [users] reach [resource]"
 
-Follows the path: UniFi Cloud (site status) → UniFi Network (VLANs, firewall rules, switch port profiles) → Wazuh (IDS events) → NinjaOne (endpoint state) → Desktop Commander (ping, traceroute). Always produces an Excalidraw topology diagram of the affected path.
+Follows the path: UniFi Cloud (site status) → UniFi Network (VLANs, firewall rules, switch port profiles) → Wazuh (IDS events) → NinjaOne (endpoint state) → Desktop Commander. Produces an Excalidraw topology diagram of the affected path.
 
 ---
 
 **Mailflow Investigation** — `/mailflow-investigation` · "did this email deliver" · "why didn't X get my message"
 
-Exchange message trace → Defender (attachment/URL sandboxing flags) → Entra (sender sign-in state) → diagnostic timeline with root cause. Useful for "did this phishing email reach users" as well as delivery failures.
+Exchange message trace → Defender (attachment/URL sandboxing flags) → Entra (sender sign-in state) → diagnostic timeline with root cause.
 
 ---
 
 **Tenant Forensics** — `/tenant-forensics` · "who touched it" · "what changed before X broke" · "forensic audit"
 
-Merges Azure Activity Logs + Entra Audit Logs + NinjaOne event logs into a single actor-grouped timeline. Flags RBAC changes, MFA resets, app consent grants, NSG edits, policy changes. Use this when something broke and you need to know what changed and who did it.
+Merges Azure Activity Logs + Entra Audit Logs + NinjaOne event logs into a single actor-grouped timeline. Flags RBAC changes, MFA resets, app consent grants, NSG edits, policy changes.
 
-Output: `Investigations/YYYY-MM-DD-tenant-forensics-HHmm.md`
+Output: `SVH/Record/YYYY-MM-DD-tenant-forensics.md`
 
 ---
 
 **IR Triage** — currently disabled (`.claude/skills/ir-triage/SKILL.md.disabled`)
 
-The only skill that can send non-draft Teams messages. Runs a triage gate to classify alerts: 🔥 Burning Building (active compromise, immediate notification) · 🔎 Active Investigation (confirmed suspicious, draft notification) · 🔍 Background Enrichment (no action). Enable when you need it by renaming the file to `SKILL.md`.
+The only skill that can send non-draft Teams messages. Runs a triage gate: Burning Building / Active Investigation / Background Enrichment. Enable when actively working an incident.
 
 ---
 
 ### Posture & review
 
-**Security Posture** — `CTRL+\ p` · `/posture-check` · "posture check" · "state of the land"
+**Security Posture** — `Ctrl+Alt+P` · `/posture-check` · "posture check" · "state of the land"
 
-Green/Yellow/Red scorecard across six categories: Identity, Endpoints, Patching, Infrastructure, SIEM, and Cloud. Point-in-time snapshot from all monitoring sources.
-
----
-
-**Vuln Triage** — `CTRL+\ v` · `/vuln-triage` · CVE ID · Defender TVM finding
-
-Takes a CVE or a Defender TVM recommendation. Maps it to exposed devices, checks patch state, assigns a priority tier (Emergency / This Week / Next Cycle / Accept). Output: Obsidian note + optional Confluence draft + Planner tickets.
+Green/Yellow/Red scorecard across six categories: Identity, Endpoints, Patching, Infrastructure, SIEM, Cloud.
 
 ---
 
-**Asset Investigation** — `CTRL+\ a` · `/asset-investigation` · "tell me everything about [server/user]"
+**Vuln Triage** — `Ctrl+Alt+V` · `/vuln-triage` · CVE ID · Defender TVM finding
 
-For servers and workstations: NinjaOne (services, disk, patches, backups, alerts) + Wazuh (recent alerts, FIM events) + Defender (software vulnerabilities) + Azure (if cloud VM). For users: Entra sign-in history, MFA registration, assigned roles, group memberships, CA policy coverage.
+Takes a CVE or Defender TVM recommendation. Maps to exposed devices, checks patch state, assigns priority tier.
 
-Output: `Assets/[name].md` — persistent note, updated in place each run so history accumulates.
+Output: `SVH/Record/CVE-YYYY-NNNNN.md`
 
 ---
 
-**Access Review** — `/access-review` · "access review for [user/group/role]" · "audit permissions for X"
+**Asset Investigation** — `Ctrl+Alt+A` · `/asset-investigation` · "tell me everything about [server/user]"
 
-Roles, groups, app registrations, sign-ins, MFA, CA policy coverage. Flags: inactive privileged accounts, missing MFA in sensitive roles, stale memberships (no sign-in in 90+ days). Use for quarterly access reviews or when investigating over-permissioned accounts.
+Servers/workstations: NinjaOne + Wazuh + Defender + Azure. Users: Entra sign-in history, MFA registration, assigned roles, group memberships, CA policy coverage.
+
+Output: `SVH/Record/YYYY-MM-DD-asset-name.md`
+
+---
+
+**Access Review** — `/access-review` · "access review for [user/group/role]"
+
+Roles, groups, app registrations, sign-ins, MFA, CA policy coverage. Flags inactive privileged accounts, missing MFA in sensitive roles, stale memberships.
 
 ---
 
 **License Audit** — `/license-audit` · "license audit" · "license waste"
 
-M365 licenses × Intune enrollment × MFA registration → three categories: Exposed (licensed but no device enrolled and no MFA), Ghost (licensed but inactive 30+ days), Gaps (enrolled but incomplete licensing). Includes a monthly waste estimate in dollars.
-
-Output: `Reviews/Access/license-audit-YYYY-MM-DD.md`
+M365 licenses × Intune enrollment × MFA registration → Exposed, Ghost, Gaps categories. Monthly waste estimate.
 
 ---
 
 ### Planning & coordination
 
-**Patch Campaign** — `CTRL+\ x` · `/patch-campaign` · "what needs patching" · "plan patching"
+**Patch Campaign** — `Ctrl+Alt+X` · `/patch-campaign` · "what needs patching" · "plan patching"
 
-NinjaOne pending patches → cross-referenced against Defender TVM priority → grouped into tiers → creates a Planner board for tracking. The Planner cards are staged for your review before creation.
+NinjaOne pending patches → cross-referenced against Defender TVM priority → grouped into tiers → staged Planner cards for review.
 
 ---
 
-**Change Record** — `CTRL+\ c` · `/change-record` · "change record for X" · "document this rollout"
+**Change Record** — `Ctrl+Alt+C` · `/change-record` · "change record for X" · "document this rollout"
 
-Captures: scope, risk classification, test plan, rollback procedure, comms plan, schedule. Produces an Excalidraw impact-scope diagram. Everything staged in Obsidian; Confluence draft and Planner card created only when you say so.
+Captures: scope, risk classification, test plan, rollback procedure, comms plan, schedule. Produces an Excalidraw impact-scope diagram. Everything staged in Obsidian.
+
+Output: `SVH/Record/CHG-YYYY-NNN.md`
 
 ---
 
 **Project Creator** — `/project-creator` · "turn this into a project" · "help me plan X"
 
-Breaks a large task into scope, deliverables, WBS, dependencies, and effort estimate. Small projects (≤8 items): single Planner card. Larger: full Planner plan with buckets + Confluence project page + Excalidraw WBS diagram.
+Breaks a large task into scope, deliverables, WBS, dependencies, and effort estimate. Small projects (≤8 items): single Planner card. Larger: full Planner plan + Confluence project page + Excalidraw WBS diagram.
 
 ---
 
 **Meeting Prep** — `/meeting-prep` · "prep me for [meeting/time]" · "pull notes from my [call]"
 
-Before a meeting: pulls the calendar event, Fathom history with the same attendees, Confluence and Obsidian context, open Planner tasks → brief + agenda template.
+Before a meeting: pulls the calendar event, Fathom history with same attendees, Confluence and Obsidian context, open Planner tasks → brief + agenda template.
 
-After a recorded call: exports Fathom AI notes verbatim into a structured Obsidian meeting note and appends a summary line to today's daily note.
+After a recorded call: exports Fathom AI notes into a structured Obsidian meeting note.
+
+Output: `SVH/Record/YYYY-MM-DD-meeting-name.md`
 
 ---
 
@@ -631,13 +654,13 @@ After a recorded call: exports Fathom AI notes verbatim into a structured Obsidi
 
 **Draft** — `/draft` · "draft an email" · "write a message to"
 
-Takes rough notes or bullet points, drafts an email or Teams message in your voice. Nothing is sent — lands in `Drafts/` in Obsidian for your review and editing.
+Takes rough notes or bullet points, drafts an email or Teams message in your voice. Nothing is sent — staged in `SVH/Inbox/` for your review.
 
 ---
 
-**TicketSmith** — `/ticketsmith` · "write a ticket for this" · "clean up this complaint" · "turn this into a ticket"
+**TicketSmith** — `/ticketsmith` · "write a ticket for this" · "clean up this complaint"
 
-Takes a rambling user complaint, an email forward, or rough notes → professional IT ticket with title, problem statement, impact, steps to reproduce, suggested priority. Accepts pasted text, `.txt`, or `.pdf`. Output to Obsidian — nothing submitted anywhere automatically.
+Raw user complaint → professional IT ticket with title, problem statement, impact, steps to reproduce, suggested priority. Output to Obsidian — nothing submitted anywhere automatically.
 
 ---
 
@@ -658,11 +681,11 @@ Claude does not send messages, create tasks, or push changes unless you explicit
 All output goes there first. You review it. Then you decide what to promote.
 
 **3. Explicit confirmation for write operations.**
-Planner tasks, Teams messages, emails, Confluence pages — Claude will always show you the draft and wait. Never say "go ahead and do it all" unless you're comfortable with every staged action.
+Planner tasks, Teams messages, emails, Confluence pages — Claude will always show you the draft and wait.
 
 ### Trigger phrases vs. slash commands
 
-Slash commands are exact: `/day-starter` loads exactly that skill. Trigger phrases are fuzzy — Claude recognizes "what happened on ACOPSHV01 around 3am" and loads Event Log Triage without you needing to know the command name. Both work; use whichever is faster.
+Slash commands are exact: `/day-starter` loads exactly that skill. Trigger phrases are fuzzy — Claude recognizes "what happened on ACOPSHV01 around 3am" and loads Event Log Triage without you needing to know the command name.
 
 ### Giving context
 
@@ -673,7 +696,7 @@ Claude remembers the current conversation but not previous sessions. If you're c
 Can you pull what we know and continue?"
 ```
 
-Asset notes in Obsidian help with this — they persist across sessions and are updated each time you run `/asset-investigation`. Claude can read them via the Obsidian MCP.
+Record/ notes in Obsidian persist across sessions. Claude can read them via the Obsidian MCP.
 
 ### Asking about a specific system
 
@@ -686,11 +709,9 @@ You can address any system directly without invoking a skill:
 "Show me open Defender incidents."
 ```
 
-Claude picks the right tool and returns the data.
-
 ### Stating intent explicitly
 
-Don't make Claude guess. If you want a draft before anything happens:
+Don't make Claude guess. If you want a draft:
 
 ```
 "Draft a Teams message to the techs channel about the maintenance window tonight.
@@ -701,17 +722,6 @@ If you're ready to act:
 ```
 "The draft looks good. Create the Planner task and send that Teams message."
 ```
-
-### Corrections during a conversation
-
-If Claude misunderstands or goes in the wrong direction, just correct it:
-
-```
-"No — I meant the Site B UniFi controller, not the UniFi Cloud account."
-"Stop. That's the wrong server. I meant SVH-APP02, not SVH-APP01."
-```
-
-Claude backtracks and tries again with the corrected context.
 
 ---
 
@@ -728,8 +738,6 @@ Windows Terminal is the ops workspace. `dotfiles/install-windows.ps1` sets it up
 | WSL Bash | Green | WSL zsh in the OpsMan directory |
 
 ### Keybindings
-
-Skill shortcuts use **Ctrl+Alt+[key]** — type the chord while Claude's prompt is active and it submits the skill command.
 
 | Keys | Action |
 |------|--------|
@@ -754,18 +762,16 @@ Skill shortcuts use **Ctrl+Alt+[key]** — type the chord while Claude's prompt 
 
 ## 9. PowerShell modules
 
-The PowerShell module suite handles write operations and on-prem systems. Claude's MCP tools are read-only by design. When you need to act — disable an account, isolate a device, reboot a cluster node — you load the modules in Windows Terminal and run the commands yourself.
+The PowerShell module suite handles write operations and on-prem systems. Claude's MCP tools are read-mostly by design. When you need to act — disable an account, isolate a device, reboot a cluster node — you load the modules in Windows Terminal.
 
 ### Loading
-
-From Windows Terminal (requires `BW_SESSION` from Windows side, or separate `bw unlock`):
 
 ```powershell
 cd C:\path\to\SVH-OpsMan\powershell
 . ./connect.ps1
 ```
 
-This dot-sources `connect.ps1`, which loads `SVH.Core` first (credential store and auth cache), then all other modules.
+Dot-sources `connect.ps1`, which loads `SVH.Core` first (credential store and auth cache), then all other modules.
 
 ### Module reference
 
@@ -788,8 +794,6 @@ This dot-sources `connect.ps1`, which loads `SVH.Core` first (credential store a
 
 ### Credential tiers
 
-Each module uses one of these credential tiers — the tier determines which account gets used:
-
 | Tier | Account | Auth method | Used for |
 |------|---------|------------|---------|
 | `standard` | `astevens@shoestringvalley.com` | Passkey (BW) — interactive browser | General M365 |
@@ -799,59 +803,31 @@ Each module uses one of these credential tiers — the tier determines which acc
 | `domain` | `ACCO\da_stevens` | Password — unattended | Active Directory |
 | `ra` | `ra_stevens@andersen-cost.com` | Password (BW: `DC_REMOTE_PASSWORD`) | Desktop Commander read-only PSRemoting |
 
-```powershell
-Get-SVHTierUsername -Tier server   # returns the correct username for that tier
-Get-SVHTierUsername -Tier ra       # → ra_stevens@andersen-cost.com
-```
-
 ### PSRemoting setup (one-time)
 
-The on-prem modules reach Windows servers via PSRemoting from WSL. This requires a one-time trust setup — see `references/setup-winrm.md` for the exact steps.
+The on-prem modules reach Windows servers via PSRemoting from WSL. This requires a one-time trust setup — see `references/setup-winrm.md`.
 
 ### Desktop Commander PSRemoting account (ra_stevens)
 
-Desktop Commander uses a separate minimal-privilege account (`ra_stevens`) for diagnostic PSRemoting — read event logs, query processes/services/network state, and read DHCP leases. It cannot modify anything. The account exists in AD and optionally as a local user on non-domain servers.
+Desktop Commander uses a minimal-privilege account (`ra_stevens`) for diagnostic PSRemoting — read event logs, query processes/services/network state, read DHCP leases. Cannot modify anything.
 
 Create it with:
-
 ```powershell
 .\setup-dc-remote-account.ps1 -DomainController ACCODC01 -DhcpServer ACCODHCP01
 ```
 
-Store the generated password in the **SVH OpsMan** BW item (`DC_REMOTE_USER` / `DC_REMOTE_PASSWORD`), then export it in your WSL session:
-
-```bash
-export DC_REMOTE_PASSWORD=$(bw get password "DC Remote Account")
-```
-
-See `powershell/README.md` for full parameter reference and non-domain server setup.
-
-### Cluster reboot orchestration
-
-For rolling cluster reboots (draining nodes, rebooting one at a time, waiting for VMs to migrate back):
-
-```powershell
-# From Windows Terminal — connects to the cluster and runs the orchestration remotely
-. ./Connect-ClusterReboot.ps1
-```
-
-The actual script (`rolling-cluster-reboot.ps1`) runs on the cluster server, not your workstation.
+Store the generated password in the **SVH OpsMan** BW item (`DC_REMOTE_USER` / `DC_REMOTE_PASSWORD`).
 
 ### 9.1 PowerShell TUI
 
-The TUI is a terminal interface that wraps all 237 SVH module functions. It runs inside WSL in Windows Terminal. Instead of remembering function names and parameter syntax, you browse by module, fill a form, and the command is built for you. Destructive commands (Remove, Restart, Revoke, Reset, Block, Stop) require an explicit confirmation step before they execute.
+The TUI is a terminal interface that wraps all SVH module functions. Instead of remembering function names and parameter syntax, you browse by module, fill a form, and the command is built for you.
 
 #### Starting the TUI
 
 ```bash
-# BW_SESSION must be set (same requirement as the MCP server)
 export BW_SESSION=$(bw unlock --raw)
-
-# From the repo root in WSL
 tui/run-tui.sh
 ```
-
-The TUI starts pwsh, dot-sources `connect.ps1`, and loads all SVH modules in the background. While that runs you can already browse functions. The status in the title bar shows when the session is ready.
 
 #### Layout
 
@@ -863,18 +839,9 @@ The TUI starts pwsh, dot-sources `connect.ps1`, and loads all SVH modules in the
 │  ▼ SVH.Entra         │  Identity *  [string]    ________________________     │
 │      Get-SVHUser  ●  │──────────────────────────────────────────────────────│
 │      Get-GuestUsers  │  Get-SVHUser -Identity "jdoe@shoestringvalley.com"   │
-│      Get-UserMFA     │  [● Console] [○ Obsidian]          [▶ Run]           │
-│  ▶ SVH.Exchange      │──────────────────────────────────────────────────────│
-│  ▶ SVH.Azure         │  ❯ Get-SVHUser -Identity "jdoe@shoestringvalley.com" │
-│  ▶ SVH.NinjaOne      │  displayName       : John Doe                        │
-│  ▶ SVH.OnPrem        │  accountEnabled    : True                             │
-│  ▶ SVH.UniFi         │  ...                                                 │
+│  ▶ SVH.Exchange      │  [● Console] [○ Obsidian]          [▶ Run]           │
 └──────────────────────┴──────────────────────────────────────────────────────┘
 ```
-
-- **Sidebar** — all 14 modules, collapsible. Search filters live as you type.
-- **Detail panel** — synopsis, parameter form, editable command preview.
-- **Output panel** — full command output. `Ctrl+L` clears it.
 
 #### Risk colour coding
 
@@ -887,7 +854,7 @@ The TUI starts pwsh, dot-sources `connect.ps1`, and loads all SVH modules in the
 #### Output destinations
 
 - **Console** — output stays in the TUI output panel.
-- **Obsidian** — output is saved to `OpsManVault/Investigations/YYYY-MM-DD-FunctionName-HHMMSS.md` with proper frontmatter. The file name appears in the output panel when the save completes.
+- **Obsidian** — output is saved to `SVH/Record/YYYY-MM-DD-FunctionName-HHMMSS.md` with frontmatter.
 
 #### Keyboard shortcuts
 
@@ -899,33 +866,21 @@ The TUI starts pwsh, dot-sources `connect.ps1`, and loads all SVH modules in the
 | `Escape` | Blur the focused input |
 | `Ctrl+Q` | Quit |
 
-#### Command preview (editable)
-
-The command preview input auto-builds from the parameter form. You can edit it directly before running — the form and preview are independent once you start typing in the preview box. This lets you add flags the form doesn't cover or paste a command from Claude's output.
-
-#### Requirements
-
-- `BW_SESSION` set (same as for the MCP server)
-- `pwsh` — installed by `scripts/wsl-shell-setup.sh` (`sudo snap install powershell --classic`)
-- Python 3 + `textual` package (`pip install textual`) — `scripts/setup.sh` handles this automatically
-
 ---
 
 ## 10. Customization guide
 
 ### Changing your identity / org
 
-Edit `.claude/config.yaml`. This is the single source of truth for UPNs, group IDs, Planner plan IDs, and the Obsidian vault path. Skill files do not need to be touched when you change these values — they read from config at runtime.
+Edit `.claude/config.yaml`. This is the single source of truth for UPNs, group IDs, Planner plan IDs, and the Obsidian vault path.
 
-```yaml
-user:
-  upn: you@yourdomain.com
-  entra_id: <your-object-id>
-  display_name: Your Name
+### Adding a new collector job
 
-planner:
-  sysadmin: "<plan-id>"   # IT Sysadmin Tasks
-```
+1. Create `collector/src/jobs/<service>.ts` — implement the `Job` interface
+2. Import and add to `ALL_JOBS` in `collector/src/index.ts`
+3. Add watch-phase metrics extraction in `collector/src/watch/index.ts` if the job produces metrics data
+4. Add credentials to `collector/.env.example` and the Bitwarden SVH OpsMan item
+5. Re-run `sync-creds.sh` to pick up new credential fields
 
 ### Adding a new MCP tool
 
@@ -934,29 +889,22 @@ planner:
 3. Add credentials to the **SVH OpsMan** Bitwarden item
 4. Run `npm run build` in `mcp-server/`
 5. Add the tool name(s) to the `allowed-tools` frontmatter of any skill that should use it
-6. Document in README.md
 
 ### Adding a new skill
 
-Skills are markdown files. Create `.claude/skills/<name>/SKILL.md`. The frontmatter structure:
+Create `.claude/skills/<name>/SKILL.md`:
 
 ```yaml
 ---
 name: my-skill
-description: What this skill does in one sentence
-allowed-tools:
-  - mcp__svh-opsman__ninjaone_get_devices
-  - mcp__obsidian__write_note
-triggers:
-  - "do the thing"
-  - "run my skill"
+description: What this skill does. Trigger phrases: "do the thing", "run my skill".
+when_to_use: When to invoke this vs. alternatives.
+allowed-tools: "mcp__svh-opsman__staging_read mcp__obsidian__* mcp__time__*"
 ---
 # My Skill
 
-[Skill instructions here — how Claude should approach the task, what tools to call, what format the output should take]
+[Skill instructions — how Claude should approach the task, which tools to call, what format the output should take]
 ```
-
-Claude loads skills on demand when a trigger phrase is matched. They cost no context until triggered.
 
 ### Disabling a skill
 
@@ -964,7 +912,7 @@ Rename `SKILL.md` to `SKILL.md.disabled`. Claude won't load it. IR Triage ships 
 
 ### Personal overrides
 
-`.claude/settings.local.json` is gitignored. Use it to add personal permissions or override project settings without affecting the shared config:
+`.claude/settings.local.json` is gitignored:
 
 ```json
 {
@@ -980,15 +928,7 @@ Rename `SKILL.md` to `SKILL.md.disabled`. Claude won't load it. IR Triage ships 
 2. Export public functions with `Export-ModuleMember -Function *`
 3. Add a `Connect-SVH<Service>` call to `connect.ps1`
 4. Add credentials to the **SVH OpsMan** Bitwarden item
-5. Document the module and its functions in `powershell/README.md`
-
-### Adding a reference document
-
-Reference docs in `references/` are auto-synced to `OpsManVault/References/` on every session start. Skills can read them via the Obsidian MCP. To add a new one:
-
-1. Create the file in `references/`
-2. Add it to the table in both `CLAUDE.md` and `README.md`
-3. Add it to the `allowed-tools` or prompt of any skill that uses it
+5. Document in `powershell/README.md`
 
 ---
 
@@ -996,64 +936,49 @@ Reference docs in `references/` are auto-synced to `OpsManVault/References/` on 
 
 **Q: The server isn't finding my credentials.**
 
-`bw unlock` exports `BW_SESSION` in that shell only. If you opened a new terminal after unlocking, the new shell doesn't have it. Run `bwu` (the alias) or `export BW_SESSION=$(bw unlock --raw)` again. The session-start hook tells you if BW is locked.
+`bw unlock` exports `BW_SESSION` in that shell only. If you opened a new terminal after unlocking, the new shell doesn't have it. Run `export BW_SESSION=$(bw unlock --raw)` again. The session-start hook tells you if BW is locked.
+
+---
+
+**Q: The day starter says staging is stale.**
+
+The collector didn't run this morning. Either run it manually (`npx tsx collector/src/index.ts gather` from the repo root) or say "run the collector" — Claude will call `collector_run` for you. Check `staging/{today}/manifest.json` for per-job status after it completes.
 
 ---
 
 **Q: Claude is calling tools but getting no data back.**
 
 Check which service is failing. Common causes:
-- Token expired — the MCP server caches OAuth tokens, but they expire. Restart the Claude Code session (which restarts the MCP server and triggers a fresh token fetch).
-- Credentials not in Bitwarden — check `references/credentials.md` for which fields are still missing.
-- Service is actually down — check M365 Admin → Service Health, or NinjaOne's status.
+- Token expired — restart the Claude Code session to trigger a fresh token fetch.
+- Credentials not in Bitwarden — check `references/credentials.md`.
+- Service is actually down — check M365 Admin → Service Health.
 
 ---
 
 **Q: "BW_SESSION not set" in the status bar but I unlocked Bitwarden.**
 
-The `BW_SESSION` variable must be exported in the shell that launched Claude Code. If you unlocked in a different terminal or set it without `export`, it won't be visible to child processes. Restart from a shell where you ran `export BW_SESSION=$(bw unlock --raw)`.
+The `BW_SESSION` variable must be exported in the shell that launched Claude Code. Restart from a shell where you ran `export BW_SESSION=$(bw unlock --raw)`.
 
 ---
 
 **Q: A Planner task got created when I just wanted a draft.**
 
-This happens if Claude misread the request. The system is configured to require explicit confirmation ("push it", "go ahead", "create it") before writing to Planner. If this happened, it's likely you used phrasing that sounded like confirmation. For safety: always use "draft" explicitly when you want staging only.
+The system requires explicit confirmation ("push it", "go ahead", "create it") before writing to Planner. Use "draft" explicitly when you want staging only.
 
 ---
 
 **Q: The Obsidian MCP isn't finding my vault.**
 
-Check two things:
 1. The Local REST API plugin is enabled in Obsidian and the vault is open.
-2. The API key in the `claude mcp add obsidian` command matches the key in the plugin settings. API keys regenerate each time you re-enable the plugin.
+2. The API key matches the key in the plugin settings (regenerates when you re-enable the plugin).
 
-Verify:
-```bash
-curl -H "Authorization: ApiKey <your-key>" http://127.0.0.1:27123/
-```
+Verify: `curl -H "Authorization: ApiKey <your-key>" http://127.0.0.1:27123/`
 
 ---
 
 **Q: Can Claude access other people's mailboxes?**
 
-No, by design. The server locks all mail and calendar calls to `GRAPH_USER_ID`. The ApplicationAccessPolicy on the app registration enforces this at Exchange level as well. Claude cannot read or send mail as another user.
-
----
-
-**Q: Can I use this on a Mac or Linux workstation?**
-
-Most of it works — Claude Code and the MCP server are Node.js. The PowerShell modules require PowerShell 7 (available on Linux/Mac). The Windows Terminal profiles and `install-windows.ps1` are Windows-only; skip those steps. The main difference is the WSL layer doesn't exist — adjust `config.yaml` paths and the session-start hook for your environment.
-
----
-
-**Q: The session-start hook is failing.**
-
-Check `.claude/hooks/session-start.sh` is executable:
-```bash
-chmod +x .claude/hooks/session-start.sh
-```
-
-If the Obsidian vault path in the hook doesn't exist (e.g., you're not on the usual machine), the hook falls back to the cached state in `.claude/briefing-state`. This is expected — the hook is non-fatal.
+No. The server locks all mail and calendar calls to `GRAPH_USER_ID`. The ApplicationAccessPolicy on the app registration enforces this at Exchange level as well.
 
 ---
 
@@ -1063,15 +988,16 @@ Pull the repo and rebuild if the server changed:
 ```bash
 git pull origin main
 cd mcp-server && npm run build
+cd ../collector && npm install
 ```
 
-Skills in `.claude/skills/` are just markdown files — changes are picked up immediately on the next session. No rebuild needed for skill-only changes.
+Skills in `.claude/skills/` are markdown files — changes are picked up immediately on the next session.
 
 ---
 
-**Q: Can I add my own trigger phrases?**
+**Q: Can I run this on a Mac or Linux workstation?**
 
-Yes — edit the skill's `SKILL.md` frontmatter to add phrases to the `triggers` list. Claude matches these fuzzy, so you don't need exact wording.
+Most of it works — Claude Code and the MCP server are Node.js. The PowerShell modules require PowerShell 7 (available on Linux/Mac). The Windows Terminal profiles and `install-windows.ps1` are Windows-only. Adjust `config.yaml` paths and the session-start hook for your environment.
 
 ---
 
@@ -1081,53 +1007,13 @@ Yes — edit the skill's `SKILL.md` frontmatter to add phrases to the `triggers`
 mv .claude/skills/ir-triage/SKILL.md.disabled .claude/skills/ir-triage/SKILL.md
 ```
 
-Enable it only when you're actively working an incident. It's the only skill that can send non-draft Teams messages — keep it off during normal operations to prevent accidental noise in the techs channel.
-
----
-
-**Q: How do I reach a device at a remote SVH site from WSL?**
-
-If Tailscale is running on your WSL box and the site has a UDM subnet router set up (see `references/tailscale-udm-setup.md`), you can reach any device at that site by IP — SSH, PSRemoting, ping — without any extra VPN client or firewall rule. The UDM advertises its local subnets into your tailnet.
-
-If the UDM router isn't set up yet for that site, you need to either be on the local network or use an existing VPN.
-
----
-
-**Q: The status refresh daemon isn't running.**
-
-Start it manually:
-```bash
-nohup bash ~/SVH-OpsMan/dotfiles/status-refresh.sh &
-```
-
-`opsman` starts it automatically. Running `bwu` also restarts it to pick up the new session token.
-
----
-
-**Q: Can I run this on a non-Windows machine?**
-
-Yes — Claude Code and the MCP server are Node.js and work anywhere. The PowerShell modules require PowerShell 7 (available on Mac/Linux). The Windows Terminal profiles and `install-windows.ps1` are Windows-only; adjust `config.yaml` paths and the session-start hook for your environment.
-
----
-
-**Q: Where do I find Planner plan IDs?**
-
-```bash
-# Ask Claude:
-"What's the plan ID for IT Sysadmin Tasks?"
-# Claude calls planner_list_plans and returns the IDs
-
-# Or from the Planner URL:
-# tasks.office.com/... — the plan ID is in the URL
-```
-
-Add new plan IDs to `.claude/config.yaml` under `planner:`.
+Enable only when actively working an incident. It's the only skill that can send non-draft Teams messages.
 
 ---
 
 **Q: Can Claude delete Planner tasks?**
 
-No. `planner_delete_task` does not exist in the tool set. Mark tasks complete at 100% instead. This is intentional — deletion is irreversible and too easy to trigger accidentally.
+No. `planner_delete_task` does not exist in the tool set. Mark tasks complete at 100% instead.
 
 ---
 
@@ -1138,14 +1024,14 @@ No. `planner_delete_task` does not exist in the tool set. Mark tasks complete at
 ```
 You: day starter
 
-Claude: [calls NinjaOne for offline/alert summary, Wazuh for overnight alerts,
-        Defender for open incidents, Planner for open tasks, Entra for risky users,
-        MS Admin for service health]
+Claude: [calls staging_status — confirms staging is fresh from 6:45 am]
+        [calls staging_read for ninja-devices, ninja-alerts, wazuh-alerts,
+         unifi-alerts, graph-audit, graph-calendar, planner-tasks]
+        [calls entra_list_risky_users, mde_list_alerts, admin_list_service_incidents]
+        [calls mail_search, teams channels]
 
-        Writes Briefings/Daily/2026-05-16.md to Obsidian
-        Prints: obsidian://open?vault=OpsManVault&file=Briefings%2FDaily%2F2026-05-16.md
-
-You: [click the link → note opens in Obsidian]
+        Writes SVH/Daily/2026-05-22.md to Obsidian
+        Note opens in Obsidian
 ```
 
 ---
@@ -1156,31 +1042,21 @@ You: [click the link → note opens in Obsidian]
 You: SVH-SQL01 is throwing disk errors, NinjaOne has alerts
 
 Claude: [/troubleshoot loads automatically]
-        Expected behavior: no disk errors
-        Current behavior: NinjaOne disk alerts on SVH-SQL01
-
-        Ranked hypotheses:
-        1. Volume approaching capacity (cheapest to check — NinjaOne disk usage)
-        2. S.M.A.R.T. failure on a physical drive (NinjaOne health status)
-        3. CSV corruption if this is a Hyper-V host (Event Log 157, MPIO driver)
-
-        [Calls NinjaOne, returns disk usage: C:\ 94% full]
+        [calls metrics_disk_over_threshold — SVH-SQL01: C:\ at 94%]
 
         Root cause: C:\ is 94% full. Likely candidate: MABS temp files or SQL log growth.
-        Next step: check what's consuming the space...
 
-You: check what's using the space, specifically look for SQL logs and MABS
+You: check what's using the space
 
 Claude: [Desktop Commander → PowerShell on SVH-SQL01 via PSRemoting]
         SQL log files: 48GB in D:\SQLLogs\ (TempDB log not auto-shrinking)
         MABS temp: 12GB in C:\Windows\Temp\
 
-You: ok let's shrink that SQL log. what's the right command?
+You: draft me a change record for shrinking the SQL log
 
-Claude: [drafts the DBCC SHRINKFILE command with the correct parameters]
-        Here's the command — run it from SSMS or Desktop Commander:
-        DBCC SHRINKFILE ('TempDB_log', 1024)
-        ...
+Claude: [/change-record loads]
+        [drafts SVH/Record/CHG-2026-042.md with scope, risk (low), test plan,
+         rollback procedure, and timeline]
 ```
 
 ---
@@ -1192,57 +1068,21 @@ You: nobody at Site B can reach the file server
 
 Claude: [/network-troubleshooter loads]
         [checks UniFi Cloud → Site B status: online]
-        [checks UniFi Network → VLANs, inter-VLAN routing rules]
-        [checks firewall rules for traffic from Site B VLAN to file server VLAN]
-        
-        Found: firewall rule "Block Site B to Server VLAN" is enabled — was
-        it intentional? Last modified 2 hours ago by admin account.
+        [checks UniFi Network → firewall rules]
+
+        Found: firewall rule "Block Site B to Server VLAN" is enabled — last
+        modified 2 hours ago by admin account.
 
 You: definitely not intentional, who changed that?
 
-Claude: [/tenant-forensics → Azure Activity Logs → Entra Audit]
-        Rule modified at 14:32 by ma_stevens (from IP 192.168.10.45 — internal).
-        No other suspicious activity around that time.
+Claude: [staging_read graph-audit]
+        Rule modified at 14:32 by ma_stevens (internal IP). No other suspicious activity.
 
-You: ok disable that rule and I'll deal with the account audit separately
+You: ok disable that rule
 
-Claude: I can't modify UniFi firewall rules directly — the UniFi tools are read-only.
-        Here's the rule ID you need: rule_id=1047, name="Block Site B to Server VLAN"
+Claude: I can't modify UniFi firewall rules — the UniFi tools are read-only.
+        Rule ID: rule_id=1047, name="Block Site B to Server VLAN"
         Disable it from the UniFi Network console at Settings → Firewall → LAN Rules.
-```
-
----
-
-### Investigating an alert
-
-```
-You: Wazuh just fired a level 12 alert on ACOPDXAPP01, authentication_failures
-
-Claude: [pulls Wazuh alert details]
-        Alert: 847 failed authentication attempts in 5 minutes on ACOPDXAPP01
-        Source IPs: 203.0.113.47 (external) — all targeting Administrator account
-        
-        This looks like an RDP brute force. The Administrator account should be
-        disabled — let me check...
-        
-        [checks NinjaOne → service state → RDP enabled, Administrator account active]
-        
-        Concern: Administrator is enabled on this host. Even if the password is strong,
-        this is a higher-risk posture.
-
-You: can you check if any of those attempts succeeded?
-
-Claude: [Wazuh: checks for authentication_success events from same IPs in same window]
-        No successful authentications from 203.0.113.47 in the last 30 minutes.
-        The attempts stopped 3 minutes ago.
-
-You: ok, let me disable the Administrator account and add a firewall rule. draft me
-     a change record for this
-
-Claude: [/change-record loads]
-        [drafts CHG-2026-042 in Changes/ with scope, risk (low), test plan,
-         rollback procedure, and timeline]
-        obsidian://open?vault=OpsManVault&file=Changes%2FCHG-2026-042.md
 ```
 
 ---
@@ -1253,48 +1093,15 @@ Claude: [/change-record loads]
 You: prep me for my 2pm with the network vendor
 
 Claude: [/meeting-prep loads]
-        [pulls calendar event: "Network vendor Q2 review — 2:00 PM, 1 hour, Brian Bates + vendor contacts"]
-        [checks Fathom for previous calls with these attendees]
-        [checks Confluence for open network documentation]
-        [checks Planner for open tasks tagged to network/vendor]
-        
+        [pulls calendar event, Fathom history, Confluence docs, open Planner tasks]
+
         Brief:
-        - Last call: 2026-03-14 — discussed ISP failover and VLAN segmentation at Site C
-        - Open from that call: Fathom noted "vendor to send BGP config by end of March" — not found in email
-        - Planner: 2 open tasks in Office Network Standardization board related to Site C
-        - Suggested agenda: ISP failover status, BGP config follow-up, Site C VLAN rollout timeline
-        
-        [writes Meetings/2026-05-16-network-vendor-q2.md]
-```
+        - Last call 2026-03-14 — discussed ISP failover and VLAN segmentation at Site C
+        - Open: "vendor to send BGP config by end of March" — not found in email
+        - 2 open tasks in Office Network Standardization related to Site C
+        - Suggested agenda: ISP failover status, BGP config follow-up, Site C timeline
 
----
-
-### Cleaning up a user complaint
-
-```
-You: /ticketsmith
-[paste]
-so basically sarah has been trying to print since tuesday and nothing works she said
-she reinstalled the printer but still doesnt work and her manager is getting annoyed
-she's in the portland office and uses the big HP on the second floor
-
-Claude: 
-Title: User unable to print to HP printer — Portland office, 2nd floor
-
-Problem: User Sarah [last name needed] in the Portland office has been unable to print
-since Tuesday, May 12. The issue persists after reinstalling the printer driver.
-
-Printer: HP [model needed] — 2nd floor, Portland office
-
-Impact: Individual user; manager escalating. Business impact: moderate.
-
-Steps to reproduce:
-1. Attempt to print any document from Sarah's workstation
-2. Printer does not respond; no print job appears in queue
-
-Suggested priority: Medium (3 business days elapsed, manager escalation)
-
-Notes: Confirm printer model and Sarah's last name before filing.
+        Writes SVH/Record/2026-05-22-network-vendor-q2.md
 ```
 
 ---

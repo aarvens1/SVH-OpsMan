@@ -2,112 +2,89 @@
 
 Architecture decisions, open issues, and the evolution plan. Review before making changes to the server or skills.
 
-**Last audited:** 2026-05-17
+**Last audited:** 2026-05-22
 
 ---
 
 ## What's shipped
 
-Everything here landed after the initial roadmap was written. Not in any prior planning doc.
-
 | Item | Notes |
 |------|-------|
-| Windows Terminal environment | Gruvbox Dark theme, colour-coded profiles (Claude/pwsh/bash), Ctrl+Alt skill shortcuts via `sendInput` — replaces the WezTerm plan |
-| PowerShell TUI | Searchable terminal UI for all 237 PS module functions — parameter forms, command preview, confirmation dialogs, Obsidian output |
-| Desktop Commander guard hook + ra_stevens tier | Read-only PSRemoting account for Desktop Commander access; PreToolUse hook blocks SVH scripts and credential access from non-Claude sessions |
-| PreToolUse / PostToolUse / Stop hooks | Hook infrastructure beyond SessionStart — Bash pre-flight checks, post-flight logging, session cleanup |
-| SVH.AD and SVH.Network PS modules | Active Directory via PSRemoting, AD DNS and Windows DHCP cross-platform validation |
-| Tenant Forensics and License Audit skills | Two new investigation skills shipped |
-| Reference auto-sync | session-start.sh rsync to vault on every session — repo is source of truth |
-| Centralized config | config.yaml fully populated; session-start injects it at the top of every session |
-| LAST_BRIEFING fallback | Hook writes briefing-state on WSL, reads it as fallback in remote sessions |
-| USER_GUIDE.md | Full fresh Win11 + WSL setup guide |
-
-| Response shaping — Wazuh, Defender, Planner, Teams (read), NinjaOne (partial), Confluence, Entra, Calendar | See open issues for what's left |
-| Day-ender sentinel | `<!-- DAY-STARTER-END -->` in template; day-ender appends without reading first |
-| WSL shell environment — zsh + modern CLI tooling | `scripts/wsl-shell-setup.sh`: zsh, fzf, bat, eza, delta, lazygit, btop, mtr, nmap, zoxide, httpie, starship, PowerShell 7 (pwsh via snap). Enables WSL systemd. Sources dotfiles/bashrc.sh for bwu/opsman/clip/wpath/wexp. |
-| Tailscale remote access | `scripts/tailscale-wsl-setup.sh` for WSL node; `references/tailscale-udm-setup.md` for UDM Pro/SE subnet router deployment — exposes all site VLANs to the tailnet without per-device installs. |
+| **Collector service** | Standalone TypeScript ESM process. systemd timer at 6:45 am weekdays (Persistent=true). Jobs: Graph (mail, calendar, audit), NinjaOne (devices, alerts), Planner (IT Sysadmin Tasks), Wazuh (stub), UniFi (stub). Writes `staging/{date}/` + `manifest.json`. |
+| **SQLite metrics DB** | `db/runs.db` (run log) + `db/metrics.db` (time-series: disk_usage, alert_counts, compliance, patch_lag, auth_failures). Populated by watch phase after each gather. |
+| **Staging MCP tools** | 6 tools: `staging_status`, `staging_read`, `collector_run`, `metrics_disk_trend`, `metrics_alert_trend`, `metrics_disk_over_threshold`. Always enabled — no external auth. |
+| **Credential sync script** | `scripts/sync-creds.sh` — reads from Bitwarden, writes `collector/.env` at mode 600. BW remains single source of truth; `.env` is a derived artifact. |
+| **systemd units** | `opsman-collector.service` (oneshot), `opsman-collector.timer` (6:45 am weekdays), `opsman-mcp.service` (persistent). `systemd/install.sh` handles VM deployment. |
+| **Day Starter rebuild** | Staging-first architecture. Steps: 1a staging check, 1b infra from staging, 1c real-time security (live APIs), 1d Monday compliance gap. Eliminated 10–15 bulk API calls per morning session. |
+| **Obsidian vault restructure** | All OpsMan output under `SVH/` subfolder: `SVH/Daily/`, `SVH/Inbox/`, `SVH/Record/`, `SVH/System/`, `SVH/Archive/`. Flat note type via `type:` frontmatter; Dataview replaces folder-based navigation. `entities:` field for consistent naming. |
+| **Confluence as authoritative docs** | Entity documentation lives in Confluence. Obsidian is the operational intelligence layer and drafting table. No entity notes in Obsidian. |
+| **Windows Terminal environment** | Gruvbox Dark theme, colour-coded profiles (Claude/pwsh/bash), Ctrl+Alt skill shortcuts. |
+| **PowerShell TUI** | Searchable terminal UI for all PS module functions — parameter forms, command preview, confirmation dialogs, Obsidian output. |
+| **Desktop Commander guard + ra_stevens tier** | Read-only PSRemoting account for Desktop Commander; PreToolUse hook blocks SVH scripts and credential access from non-Claude sessions. |
+| **SVH.AD and SVH.Network PS modules** | Active Directory via PSRemoting, AD DNS and Windows DHCP cross-platform validation. |
+| **Tenant Forensics and License Audit skills** | Two investigation skills shipped. |
+| **Reference auto-sync** | `session-start.sh` rsync to vault on every session — repo is source of truth. |
+| **Centralized config** | `config.yaml` fully populated; session-start injects it at the top of every session. |
+| **Response shaping** | All tool files shaped. Remaining: teams.ts write ops (send_message, create_channel, add_member) — low priority. |
+| **Day-ender sentinel** | `<!-- DAY-STARTER-END -->` in template; day-ender appends without reading first. |
+| **WSL shell environment** | `scripts/wsl-shell-setup.sh`: zsh, fzf, bat, eza, delta, lazygit, btop, mtr, nmap, zoxide, httpie, starship, PowerShell 7. Enables WSL systemd. |
+| **Tailscale remote access** | `scripts/tailscale-wsl-setup.sh` for WSL node; `references/tailscale-udm-setup.md` for UDM Pro/SE subnet router deployment. |
 
 ---
 
-## Track 1: From pull to push
+## Open work — near term
 
-Right now every skill is human-triggered. Claude fetches data when you ask. The next version shifts that: data is collected before you open Claude, and critical events surface without you having to ask.
+### Collector jobs — Wazuh and UniFi
 
-### Pre-aggregation script for day-starter
-A script (shell or Node) that runs before you open Claude — wired into the session-start hook on weekday mornings. Calls NinjaOne, Wazuh, Defender, Entra, M365 health, Planner, and Calendar APIs and writes a single staging JSON to the vault. Day-starter reads the file and skips all the fetching, jumping straight to synthesis.
+Both are stubs (`collector/src/jobs/wazuh.ts`, `collector/src/jobs/unifi.ts`). The day starter currently reads `wazuh-alerts` and `unifi-alerts` from staging, so stubs mean those sections fall back to live API calls.
 
-**What to pre-fetch:** offline/alerting NinjaOne devices, Wazuh alerts ≥ medium (last 24h, 72h on Monday), Defender High/Critical alerts, Entra risky users, M365 service health, Planner tasks assigned to Aaron, today's calendar events.
+**Wazuh job:** POST to `WAZUH_URL/security/user/authenticate`, then GET `/alerts?pretty=true&sort=-timestamp&limit=1000`. Filter `rule.level >= 5`. Write `wazuh-alerts.json`.
 
-**Estimated saving:** 10–15 tool calls and their associated latency eliminated per morning.
+**UniFi job:** GET `https://api.ui.com/v1/sites` (Cloud API, `UNIFI_API_KEY`). For each site, GET devices and stats. Write `unifi-alerts.json` and `unifi-sites.json`.
+
+### Watch-phase metrics — phase 2
+
+Current watch phase extracts disk usage from NinjaOne volumes and alert counts by severity/source. Two more metrics worth adding once the stub jobs are filled in:
+
+- **Auth failures** — from Wazuh alerts matching `authentication_failure` rule group. Track per-agent counts over time. Helps surface brute-force trends during day-starter without a live API call.
+- **Patch lag** — from NinjaOne devices: `os.patchStatus`, `lastPatchInstall`. Track days since last successful patch per device. Flag devices going 30+ days without patches.
+
+### Obsidian Bases — set up the views
+
+The frontmatter fields that unlock Bases are already in the skill files. Create the Base views in Obsidian once there's enough content to make them useful:
+
+| Base | Query | View | Key fields |
+|------|-------|------|-----------|
+| Incident Tracker | `type: incident` in `SVH/Record/` | Kanban by `status` | `severity`, `incident_id`, `date` |
+| Change Calendar | `type: change` in `SVH/Record/` | Calendar by `change_date` | `risk`, `change_id`, `window` |
+| Vulnerability Pipeline | `type: vuln` in `SVH/Record/` | Table sorted by `priority` | `cve`, `priority`, `date` |
+| Briefing History | `type: daily` in `SVH/Daily/` | Calendar | `status`, `has_pending_tasks` |
+
+---
+
+## Future work — later
 
 ### Webhook receiver for alert-driven sessions
+
 NinjaOne and Wazuh can both POST webhooks on alert conditions. A lightweight receiver (n8n, Make, or a small Node process) queues incoming events. Day-starter reads the queue instead of polling — the session opens with "here's what happened since you were last here" rather than Claude having to go find out.
 
 ### PowerShell → vault pipeline
-Add an `Export-SVHToVault` pattern to the PS modules. Functions like `Get-SVHComplianceGap` write their output directly to `OpsManVault/References/` as JSON. The Monday compliance reminder becomes a live file read instead of a manual terminal step. Same pattern for MABS job state, cluster health, and any other on-prem data that currently requires a manual PS run.
 
----
+Add an `Export-SVHToVault` pattern to the PS modules. Functions like `Get-SVHComplianceGap` write their output directly to `SVH/Record/` as JSON. The Monday compliance reminder becomes a live file read instead of a manual terminal step. Same pattern for MABS job state, cluster health, and other on-prem data that currently requires a manual PS run.
 
-## Track 2: Obsidian as a live ops database
+### Re-enable IR Triage
 
-Right now Obsidian is a write-only output sink. With Obsidian Bases + consistent frontmatter, it becomes a queryable ops control center that's automatically current because Claude maintains it.
-
-### Bases to set up
-| Base | Source folder | View | Key fields |
-|------|--------------|------|-----------|
-| Incident Tracker | `Incidents/**` | Kanban by `status` | `severity`, `incident_id`, `date` |
-| Change Calendar | `Changes/**` | Calendar by `change_date` | `risk`, `change_id`, `window` |
-| Vulnerability Pipeline | `Vulnerabilities/**` | Table sorted by `priority` | `cve`, `priority`, `date` |
-| Asset Registry | `Assets/**` | Table | `asset_type`, `date` (last investigated) |
-| Review Queue | `Reviews/**` | Table filtered to `status: draft` | `skill`, `date` |
-| Briefing History | `Briefings/Daily/**` | Calendar | `status`, `has_pending_tasks` |
-
-### Frontmatter additions — done
-The fields that unlock the Bases above are now in the skill files and `obsidian-output.md`:
-- `change_date: YYYY-MM-DD` — change-record (clean date for calendar view, separate from `window` text)
-- `asset_type: server|workstation|user` — asset-investigation
-- `has_pending_tasks: true|false` — day-starter (set to `true` at session end if draft Planner actions remain)
-- `week: YYYY-WW` — week-starter
-- `attendees: []` — meeting-prep
-
-### Obsidian templates
-Store skeleton note structures in `OpsManVault/Templates/`. Skills create notes from the template rather than generating full structure from scratch. Claude writes content into pre-built sections — less output per run, more consistent structure, and you can adjust layouts by editing the template without touching SKILL.md.
-
-Highest-value templates: Day Starter, Incident, Change Record, Asset Investigation. Day Starter runs every workday and generates the most scaffolding.
-
----
-
-## Track 3: Closing the action loop
-
-Right now Claude stages everything for explicit confirmation. The right next step is distinguishing between operations by risk level rather than treating them all the same.
+IR Triage (`SKILL.md.disabled`) is the only skill that can send non-draft Teams messages. It stays disabled until the data layer and action staging are solid enough to trust for incident response. The tiered confirmation model (below) is a prerequisite.
 
 ### Tiered confirmation model
+
+Right now Claude stages everything for explicit confirmation. The right next step is distinguishing by risk level:
+
 | Tier | Operations | Confirmation |
 |------|-----------|-------------|
 | Always confirm | Send Teams/mail, create Planner tasks, dismiss risky users, any write to external systems | Explicit per-session ("push it", "go ahead") |
 | Lightweight confirm | Mark Planner task 100% complete, update Confluence page, file an Obsidian note | Single "yes" or approve in-line |
 | Autonomous | Update briefing state file, sync references to vault, write Obsidian drafts | No confirmation needed |
-
-### Re-enable IR Triage
-IR Triage (`SKILL.md.disabled`) is the only skill that can send non-draft Teams messages. It stays disabled until the data layer and action staging are solid enough to trust for incident response. That point is close — re-enable when the tiered confirmation model is in place.
-
----
-
-## Future terminal environment — WezTerm
-
-Pulled back in favour of Windows Terminal for now. Worth revisiting when there's bandwidth. The original design doc has been removed from `references/` but the key ideas are preserved here.
-
-**What it would add over Windows Terminal:**
-- Live status bar at the bottom of the terminal — `BW ✓ · Wazuh 3 · MDE 1 · Risky 0 · Ninja 34/35 · M365 ✓ · UniFi ✓ · main* · 2m ago` — fed by `status-refresh.sh` via a two-layer cache (shell daemon → JSON file → Lua reader every 120s)
-- LEADER-key chord bindings (CTRL+\\) — cleaner than Ctrl+Alt combos, no modifier conflicts
-- Process-aware tab colours — tab turns blue when Claude is the foreground process, yellow for pwsh, green for zsh; reverts on exit
-- `obsidian://` URI detection — skills print the note path as a hyperlink; click opens it directly in Obsidian
-- Keyboard-native pane management with hjkl navigation and 2/3-pane split chords
-
-**Why it was deferred:** Lua config complexity, symlink setup, and `binfmt_misc` interop fragility on WSL made the initial setup too fiddly. Windows Terminal covers 80% of the workflow with zero config overhead.
-
-**When to revisit:** Once the core data layer (Track 1) is stable and the daily workflow is locked in, the terminal environment is a high-value quality-of-life improvement — especially the status bar and `obsidian://` click-to-open.
 
 ---
 
@@ -115,10 +92,10 @@ Pulled back in favour of Windows Terminal for now. Worth revisiting when there's
 
 | Integration | Why | Effort |
 |-------------|-----|--------|
-| **Ticketing system** (Freshservice, Zendesk, etc.) | TicketSmith currently ends at copy-paste. If SVH uses any ITSM with an API, close the loop. | Medium — depends on platform |
 | **Have I Been Pwned** | Check if `shoestringvalley.com` or `andersen-cost.com` accounts appear in breach data. Free API, trivial to add. | Tiny |
-| **Cloudflare** | DNS, WAF events, cert expiry, analytics — if any SVH services sit behind Cloudflare. | Small |
 | **Azure Monitor / Log Analytics** | Azure ARM access is in place but no Log Analytics query tool. Application and resource logs that aren't in Wazuh. | Small |
+| **Ticketing system** (Freshservice, Zendesk, etc.) | TicketSmith currently ends at copy-paste. Close the loop if SVH uses an ITSM with an API. | Medium — depends on platform |
+| **Cloudflare** | DNS, WAF events, cert expiry — if any SVH services sit behind Cloudflare. | Small |
 | **n8n / Make** | Webhook orchestration layer — receives NinjaOne/Wazuh/Defender events and queues them for day-starter. | Medium |
 
 ---
@@ -127,11 +104,11 @@ Pulled back in favour of Windows Terminal for now. Worth revisiting when there's
 
 For pulling files from managed systems into WSL for analysis.
 
-**Tailscale** — install on WSL (via the Windows host), all Windows servers, and any Linux boxes. They get stable private IPs reachable from each other regardless of NAT. SSH, SCP, and RDP all work to the Tailscale IP without firewall rules. Replaces the need for reverse SSH tunnels for Linux targets. Free up to 100 devices.
+**Tailscale** — install on WSL (via the Windows host), all Windows servers, and any Linux boxes. They get stable private IPs reachable from each other regardless of NAT. SSH, SCP, and RDP all work to the Tailscale IP without firewall rules.
 
-**Croc** — one-off P2P file drops. `croc send logfile.evtx` on the remote, `croc <code>` on WSL. No accounts, works through NAT, end-to-end encrypted. `winget install schollz.croc` on Windows, `apt install croc` on Linux.
+**Croc** — one-off P2P file drops. `croc send logfile.evtx` on the remote, `croc <code>` on WSL. No accounts, works through NAT, end-to-end encrypted.
 
-**Copy-Item over PSRemoting** — already available via `SVH.OnPrem`. Use for pulling Windows event logs and config files without additional tooling:
+**Copy-Item over PSRemoting** — already available via `SVH.OnPrem`:
 ```powershell
 $s = New-PSSession -ComputerName SVH-SQL01 -Credential (Get-SVHTierCredential -Tier server)
 Copy-Item -Path "C:\path\to\file" -Destination ~/landing/ -FromSession $s
@@ -139,71 +116,68 @@ Copy-Item -Path "C:\path\to\file" -Destination ~/landing/ -FromSession $s
 
 ---
 
+## Future terminal environment — WezTerm
+
+Pulled back in favour of Windows Terminal for now. Worth revisiting when there's bandwidth.
+
+**What it would add over Windows Terminal:**
+- Live status bar — `BW ✓ · Wazuh 3 · MDE 1 · Risky 0 · Ninja 34/35 · M365 ✓` — fed by `status-refresh.sh`
+- LEADER-key chord bindings (CTRL+\\) — cleaner than Ctrl+Alt combos
+- Process-aware tab colours — tab turns blue when Claude is foreground
+- `obsidian://` URI detection — skills print the note path as a clickable hyperlink
+
+**Why it was deferred:** Lua config complexity and `binfmt_misc` interop fragility on WSL. Windows Terminal covers 80% of the workflow with zero config overhead.
+
+---
+
 ## Open design issues
 
-### 1. Response shaping — remaining tool files
+### 1. teams.ts write ops — response shaping
 
-`azure.ts` is the fully-shaped reference. All files are done except `teams.ts` write ops.
-
-| File | Status | Notes |
-|------|--------|-------|
-| `azure.ts` | ✓ Done | Reference implementation |
-| `planner.ts` | ✓ Done | |
-| `wazuh.ts` | ✓ Done | |
-| `defender-mde.ts` | ✓ Done | |
-| `confluence.ts` | ✓ Done | |
-| `entra-admin.ts` | ✓ Done | |
-| `outlook-calendar.ts` | ✓ Done | `calendar_list_rooms` shaped in 2026-05-16 session |
-| `ninjaone.ts` | ✓ Done | Custom field tools pass flat key-value through as-is (already shaped) |
-| `ms-admin.ts` | ✓ Done | |
-| `exchange-admin.ts` | ✓ Done | |
-| `intune.ts` | ✓ Done | |
-| `ms-todo.ts` | ✓ Done | |
-| `onedrive.ts` | ✓ Done | |
-| `printerlogic.ts` | ✓ Done | |
-| `sharepoint.ts` | ✓ Done | |
-| `unifi-cloud.ts` | ✓ Done | |
-| `unifi-network.ts` | ✓ Done | |
-| `outlook-mail.ts` | ✓ Done | All tools shaped in 2026-05-16 session |
-| `teams.ts` | Partial | 3 remaining raw returns are write ops (send_message, create_channel, add_member) — low priority |
+`send_message`, `create_channel`, and `add_member` still return raw API responses. Low priority — write ops return minimal data anyway. Shape when IR Triage is re-enabled and write ops get more use.
 
 ### 2. TTL cache on tool responses
 
-Auth tokens are cached within a session (done). Tool *responses* are cached on `wazuh_list_agents` and `mde_list_devices`. Extend the pattern to:
+Auth tokens are cached within a session. Tool responses aren't cached. Extend the pattern to:
 - `ninja_list_servers` — called multiple times in a typical day-starter session
-- `admin_get_service_health` — called daily; changes rarely within a session
+- `admin_get_service_health` — changes rarely within a session
 
-Lower priority than finishing response shaping — shape first, then cache the lean response.
+Lower priority than finishing the collector stubs.
 
 ### 3. BRIEFING_EXISTS / OPEN_INCIDENTS in remote sessions
 
-`LAST_BRIEFING` now has a local fallback via `.claude/briefing-state`. `BRIEFING_EXISTS` and `OPEN_INCIDENTS` still require vault access and show "unknown" in remote execution sessions. Low priority — remote sessions are the exception.
-
-### 4. Obsidian templates not yet created
-
-The `OpsManVault/Templates/` skeleton notes (Day Starter, Incident, Change Record, Asset Investigation) haven't been created yet. When they exist, skills should create notes from template rather than generating full structure inline.
+`LAST_BRIEFING` has a local fallback via `.claude/briefing-state`. `BRIEFING_EXISTS` and `OPEN_INCIDENTS` still require vault access and show "unknown" in remote execution sessions. Low priority — remote sessions are the exception.
 
 ---
 
 ## Architecture notes
 
+### Two-plane model
+
+**Interface plane (WSL):** Claude Code CLI, Bitwarden unlock, PowerShell modules. This is where you interact — `bwu && opsman`, skill invocations, PowerShell write operations. The MCP server runs here in stdio mode, reading BW credentials at startup.
+
+**Service plane (Ubuntu VM on Hyper-V):** Collector and MCP server as systemd units. Collector reads `collector/.env` (no BW dependency at runtime — credentials were synced in by `sync-creds.sh`). MCP server has its own `.env` on the VM; no BW session required for the persistent service.
+
+The two planes are optional — you can run everything in WSL during development, or split across the VM for production. `STAGING_DIR` and `DB_DIR` env vars control where the collector writes and where the MCP server reads; they default to `staging/` and `db/` inside the repo root.
+
 ### Data access model
 
-Every tool makes a targeted API call and returns only what was asked for. No tool fetches broadly and filters client-side.
+**Collector:** bulk reads on a schedule, writes to staging. Never interactive.
+**MCP server:** targeted interactive queries + all write operations. Reads staging via staging tools. Never does bulk reads during a session.
 
-The gap between permission scope and query scope: `Mail.ReadWrite` is a tenant-wide application permission. The server locks all mail and calendar calls to `GRAPH_USER_ID`, and an Exchange `ApplicationAccessPolicy` enforces the same restriction at the Exchange layer. For Teams, `ChannelMessage.Read.All` is tenant-wide but the server only queries IT Team channels and Aaron's own chats — enforced by code, not by the permission grant. RSC (`ChannelMessage.Read.Group`) is the right fix if that gap ever needs closing at the permission layer.
+The gap between permission scope and query scope: `Mail.ReadWrite` is a tenant-wide application permission. The server locks all mail and calendar calls to `GRAPH_USER_ID`, and an Exchange `ApplicationAccessPolicy` enforces the same restriction at the Exchange layer.
 
 ### Desktop Commander / ra_stevens access model
 
-`ra_stevens` is a read-only PSRemoting account — no admin rights, no write access to managed systems. The Desktop Commander guard hook blocks SVH scripts and Bitwarden credential access from non-Claude sessions. This creates a clean tier: Desktop Commander can run read-only PSRemoting calls for situational awareness without exposing full credentials. Pattern to apply if any other tooling needs scoped read access to managed systems.
+`ra_stevens` is a read-only PSRemoting account — no admin rights, no write access. The Desktop Commander guard hook blocks SVH scripts and Bitwarden credential access from non-Claude sessions. Clean tier: Desktop Commander can run read-only diagnostic PSRemoting without exposing full credentials.
 
 ### status-refresh.sh cache model
 
-`status-refresh.sh` runs in the background (`opsman` starts it). Authenticates to each API via curl/jq, writes `/tmp/svh-opsman-status.json` every 120 seconds. Requires `BW_SESSION`. Currently used as a pre-fetch cache; the original consumer (WezTerm status bar) was removed — the file is still written for future consumers.
+`status-refresh.sh` runs in the background (started by `opsman`). Authenticates to each API via curl/jq, writes `/tmp/svh-opsman-status.json` every 120 seconds. Currently unused as a display source (WezTerm status bar was removed) — still written for future consumers.
 
 ### Token overhead
 
-Deferred tool loading: all 142 tool schemas load on-demand via ToolSearch, not upfront. A full ops session costs ~994 schema tokens. Splitting into per-service MCP servers would save negligible tokens at high operational complexity — not worth it.
+All tool schemas load on-demand via ToolSearch, not upfront. A full ops session costs ~994 schema tokens. Splitting into per-service MCP servers would save negligible tokens at high operational complexity — not worth it.
 
 ---
 
@@ -213,10 +187,13 @@ Deferred tool loading: all 142 tool schemas load on-demand via ToolSearch, not u
 Re-fetch the task before updating — Planner requires the current ETag. Ask Claude to retry from a fresh `planner_get_task` call.
 
 **UniFi controller session expires mid-session**
-Sessions refresh automatically but last ~1 hour. Repeated auth errors usually mean `UNIFI_CONTROLLER_URL`, `UNIFI_USERNAME`, or `UNIFI_PASSWORD` is wrong, or the controller isn't reachable from WSL.
+Sessions refresh automatically but last ~1 hour. Repeated auth errors usually mean `UNIFI_SVH_URL` or `UNIFI_SVH_KEY` is wrong, or the controller isn't reachable.
 
 **Wazuh TLS errors**
-The Wazuh client skips certificate verification (on-prem installations use self-signed certs). "Connection refused" means check that `WAZUH_URL` uses `https://` and port 55000 is reachable from WSL.
+The Wazuh client skips certificate verification (on-prem self-signed certs). "Connection refused" means check that `WAZUH_URL` uses `https://` and port 55000 is reachable.
+
+**Collector jobs — stale staging on first run**
+If the collector hasn't run yet today, `staging_status` reports stale. Claude will call `collector_run` to trigger a fresh gather. Expect 2–3 minutes for the full collection to complete.
 
 ---
 
@@ -232,20 +209,40 @@ npm run build
 npx @modelcontextprotocol/inspector node dist/index.js
 ```
 
-Useful for verifying a new tool registered correctly and checking its input schema before testing end-to-end.
+### Manual collector run
+
+```bash
+export BW_SESSION=$(bw unlock --raw)
+./scripts/sync-creds.sh     # ensure collector/.env is current
+
+# Full gather
+npx tsx collector/src/index.ts gather
+
+# Single job
+npx tsx collector/src/index.ts gather --job=ninjaone
+
+# Watch phase only (update metrics DB from existing staging)
+npx tsx collector/src/index.ts watch
+```
 
 ---
 
 ## Sequencing
 
-| Phase | Work | Unlock |
+| Phase | Work | Status |
 |-------|------|--------|
-| **Now** | Obsidian templates (Day Starter, Incident) | Reduces per-run output, consistent structure for Bases |
-| **Now** | Have I Been Pwned integration | Quick win, real security value |
-| **Soon** | Pre-aggregation script wired into session-start | Day-starter becomes near-instant |
-| **Soon** | Tailscale + Croc for file transfer | Closes the investigate → pull logs → analyze loop |
-| **Later** | TTL cache on ninja_list_servers, admin_get_service_health | Both tools fully shaped — easy to add now |
-| **Later** | Shape teams.ts write ops (send_message, create_channel, add_member) | Low priority; write ops return minimal data anyway |
+| **Shipped** | Collector service + staging tools | ✅ Done |
+| **Shipped** | SQLite metrics (disk, alerts, compliance, auth) | ✅ Done |
+| **Shipped** | Day Starter rebuild — staging-first | ✅ Done |
+| **Shipped** | Obsidian vault restructure (SVH/ subfolder, flat types) | ✅ Done |
+| **Now** | Wazuh collector job | Stub → implement |
+| **Now** | UniFi collector job | Stub → implement |
+| **Now** | Watch phase — auth failures + patch lag metrics | Extends existing watch |
+| **Now** | Obsidian Bases — set up views | Needs content volume first |
+| **Soon** | Have I Been Pwned integration | Quick win, real security value |
+| **Soon** | Tailscale + Croc for file transfer | Closes investigate → pull logs → analyze loop |
+| **Later** | TTL cache on ninja_list_servers, admin_get_service_health | Both tools fully shaped |
+| **Later** | Shape teams.ts write ops | Low priority |
 | **Later** | Webhook receiver (n8n or similar) | Shifts briefings from pull to push |
 | **Later** | PowerShell → vault pipeline (Export-SVHToVault) | Eliminates remaining manual PS steps |
 | **Later** | Tiered confirmation model | Reduces friction on low-risk actions |
