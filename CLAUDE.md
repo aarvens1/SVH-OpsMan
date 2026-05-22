@@ -173,6 +173,8 @@ All credentials are in the **SVH OpsMan** BW item. Check both custom fields AND 
 
 Custom fields: GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET, GRAPH_USER_ID, MDE_*, AZURE_*, NINJA_CLIENT_ID, NINJA_CLIENT_SECRET, OBSIDIAN_API_KEY.
 
+The MCP server also reads `STAGING_DIR` and `DB_DIR` from env to locate collector output. These default to `staging/` and `db/` inside the repo root if not set — no Bitwarden entry needed.
+
 Not yet found in BW: WAZUH_*, CONFLUENCE_*, UNIFI_*, PRINTERLOGIC_*. Search BW notes.
 
 ### PowerShell modules

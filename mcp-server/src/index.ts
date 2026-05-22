@@ -32,6 +32,9 @@ import { registerConfluenceTools } from "./tools/confluence.js";
 // Specialised
 import { registerPrinterLogicTools } from "./tools/printerlogic.js";
 
+// Collector integration — staging reads + metrics queries
+import { registerStagingTools } from "./tools/staging.js";
+
 // Load credentials from Bitwarden. Throws if BW_SESSION is not set or vault fetch fails.
 await loadBitwardenSecrets();
 
@@ -95,6 +98,9 @@ registerConfluenceTools(server, services.confluence);
 
 // Specialised
 registerPrinterLogicTools(server, services.printerlogic);
+
+// Collector — always enabled (reads local files/DB, no external auth required)
+registerStagingTools(server, true);
 
 const enabledCount = Object.values(services).filter(Boolean).length;
 console.error(
