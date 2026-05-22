@@ -18,17 +18,25 @@
       "Bash(git stash *)",
       "Bash(find . -name *.ts *)",
       "Bash(grep * mcp-server/src/**)",
+      "Bash(grep * collector/src/**)",
       "Read(.claude/**)",
       "Read(mcp-server/src/**)",
       "Read(mcp-server/package.json)",
       "Read(mcp-server/tsconfig.json)",
+      "Read(collector/src/**)",
+      "Read(collector/package.json)",
+      "Read(collector/tsconfig.json)",
+      "Read(staging/**)",
       "Read(references/**)",
+      "Read(scripts/**)",
+      "Read(systemd/**)",
       "Read(README.md)",
       "Read(CLAUDE.md)",
       "Read(.gitignore)"
     ],
     "deny": [
-      "Read(mcp-server/.env)"
+      "Read(mcp-server/.env)",
+      "Read(collector/.env)"
     ]
   },
   "hooks": {
