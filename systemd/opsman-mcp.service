@@ -1,0 +1,20 @@
+[Unit]
+Description=SVH OpsMan — MCP server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=opsman
+WorkingDirectory=/opt/svh-opsman
+EnvironmentFile=/opt/svh-opsman/mcp-server/.env
+ExecStart=/usr/bin/node /opt/svh-opsman/mcp-server/dist/index.js
+Restart=on-failure
+RestartSec=5s
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+SyslogIdentifier=opsman-mcp
+
+[Install]
+WantedBy=multi-user.target

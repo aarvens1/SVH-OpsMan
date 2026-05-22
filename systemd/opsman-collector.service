@@ -1,0 +1,18 @@
+[Unit]
+Description=SVH OpsMan — data collector
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=opsman
+WorkingDirectory=/opt/svh-opsman
+EnvironmentFile=/opt/svh-opsman/collector/.env
+ExecStart=/usr/bin/node /opt/svh-opsman/collector/dist/index.js gather
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=opsman-collector
+
+# Restart on failure so transient network issues don't kill the day
+# The timer will re-trigger on the next cycle regardless
+TimeoutStartSec=300

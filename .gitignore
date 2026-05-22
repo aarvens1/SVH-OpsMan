@@ -2,3 +2,15 @@
 .claude/push-log
 .claude/briefing-state
 __pycache__/
+
+# Collector runtime data
+staging/*/
+db/*.db
+
+# Build output
+collector/dist/
+mcp-server/dist/
+
+# Environment files (never commit real credentials)
+collector/.env
+mcp-server/.env

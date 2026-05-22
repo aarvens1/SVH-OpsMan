@@ -1,85 +1,156 @@
 # SVH OpsMan — Claude Code project context
 
-SVH OpsMan is a purpose-built IT operations command station. This repo is its custom MCP server — a TypeScript ESM Node.js process that gives Claude access to SVH's IT systems: Microsoft 365, Azure, Defender, NinjaOne, Wazuh, UniFi, PrinterLogic, and Confluence. Communicates over stdio.
+SVH OpsMan is a purpose-built IT operations command station. Two services work together: a **collector** that runs on a schedule and owns all bulk API reads, and an **MCP server** that gives Claude interactive access to SVH's IT systems. Communicates over stdio.
 
 ## Runtime
 
-- **Platform:** WSL 2 (Ubuntu 24.04) on Windows, running in Windows Terminal
-- **Client:** Claude Code CLI — `claude mcp add` registers MCPs, not Claude Desktop
-- **Secrets:** Bitwarden CLI (`bw`) — unlock vault before starting: `export BW_SESSION=$(bw unlock --raw)`. Required — server will not start without an active session.
+- **Interface plane:** WSL 2 (Ubuntu 24.04) on Windows — Claude Code CLI, PowerShell modules, Bitwarden session all live here
+- **Service plane:** Ubuntu VM on Hyper-V — collector and MCP server run as systemd units here (or locally in WSL during development)
+- **Client:** Claude Code CLI — `claude mcp add` registers the MCP server
+- **Secrets (WSL/interactive):** Bitwarden CLI (`bw`) — `export BW_SESSION=$(bw unlock --raw)`. Required for MCP server in WSL mode.
+- **Secrets (VM/collector):** `.env` file at `collector/.env` — copy from `collector/.env.example`, populate from Bitwarden
+
+## Architecture
+
+Three tracks feed a shared tail:
+
+```
+MONITORING              REACTIVE                PROACTIVE
+─────────               ────────                ─────────
+Watch                   Gather (collector)      Research
+  │                       │                       │
+Detect                  Synthesize              Plan
+  └──────────┬────────────┘                       │
+             ▼                                     │
+           Decide ◄────────────────────────────────┘
+             │
+           Stage → Obsidian Inbox/
+             │
+           Execute (Aaron)
+             │
+           Summarize → Obsidian Record/
+```
+
+**Collector owns all bulk data collection.** Claude never calls NinjaOne or Graph for bulk reads during a session. The collector runs at 6:45am weekdays and on-demand, writes to `staging/{date}/`, produces `manifest.json`. Claude checks the manifest before synthesizing — silent failures are not acceptable.
+
+**MCP server owns interactive and write operations.** Tool calls during a session hit the API directly only for targeted, interactive queries (mail search, task update, etc.).
 
 ## Repo layout
 
 ```
-.claude/
-  config.yaml              ← centralized config: UPNs, group IDs, Planner board IDs, vault path
-  settings.json            ← permissions + SessionStart hook
-  hooks/session-start.sh   ← injects git state, BW status, ops context (day, briefing, incidents)
-  rules/                   ← path-scoped conventions (TypeScript, Obsidian output)
-  skills/                  ← one directory per skill; Claude loads on demand
+collector/
+  src/
+    index.ts          ← CLI: gather | watch | health [--job=<name>]
+    config.ts         ← loads .env, exports typed config
+    staging.ts        ← staging directory management
+    manifest.ts       ← manifest read/write
+    types.ts          ← shared types (JobResult, Manifest, metrics rows)
+    auth/             ← token helpers (read from .env)
+    jobs/             ← one file per data source
+    watch/            ← writes time-series metrics from latest staging
+    db/               ← SQLite: schema, runs log, metrics
+  .env.example        ← copy to .env and populate from Bitwarden
 mcp-server/
   src/
-    index.ts               ← entrypoint; registers all tool groups
-    secrets.ts             ← Bitwarden credential loader
-    auth/                  ← per-service token helpers
-    tools/                 ← one file per integrated system
-    utils/http.ts          ← axios client factories + formatError
+    index.ts          ← entrypoint; registers all tool groups
+    secrets.ts        ← Bitwarden credential loader (WSL sessions)
+    auth/             ← per-service token helpers
+    tools/            ← one file per integrated system
+    utils/http.ts     ← axios client factories + formatError
+systemd/
+  opsman-collector.service  ← oneshot service unit
+  opsman-collector.timer    ← 6:45am weekday timer
+  opsman-mcp.service        ← persistent MCP server unit (VM deployment)
+  install.sh                ← install script for target VM
+staging/              ← collector writes here (gitignored except .gitkeep)
+  {date}/
+    manifest.json
+    graph-mail.json
+    graph-calendar.json
+    graph-audit.json
+    ninja-devices.json
+    ninja-alerts.json
+    wazuh-alerts.json
+    unifi-alerts.json
+    planner-tasks.json
+db/                   ← SQLite databases (gitignored except .gitkeep)
+  runs.db             ← run log (one row per collect/watch run)
+  metrics.db          ← time-series: disk, alerts, compliance, patch lag
 powershell/
-  connect.ps1              ← dot-source to load credentials + all modules (requires BW_SESSION)
-  modules/SVH.*.psm1       ← one module per integrated system; see powershell/README.md
-  rolling-cluster-reboot.ps1  ← HCI node drain/reboot orchestration (runs on remote server)
-  Connect-ClusterReboot.ps1   ← WSL/laptop launcher for rolling-cluster-reboot
-  setup-*.ps1              ← one-time app registration and policy setup scripts
-references/                ← triage and troubleshooting reference docs (auto-synced to vault on session start)
-scripts/
-  setup.sh                 ← WSL bootstrap (idempotent; run once on fresh install)
-  wsl-shell-setup.sh       ← installs zsh, tools, pwsh, enables systemd
-  tailscale-wsl-setup.sh   ← Tailscale install for WSL node
-dotfiles/
-  bashrc.sh                ← shell aliases/functions (bwu, opsman, clip, wpath, wexp)
-  windows-terminal-settings.json ← Windows Terminal profiles + keybindings (import via install-windows.ps1)
-  install-windows.ps1      ← one-time Windows install: Cascadia Code NF font, PS profile stub, Windows Terminal settings
-  status-refresh.sh        ← background status daemon (writes /tmp/svh-opsman-status.json)
-tui/
-  run-tui.sh               ← TUI launcher
-  *.py                     ← Textual app (module browser, parameter forms, Obsidian output)
+  connect.ps1         ← dot-source to load credentials + all modules (requires BW_SESSION)
+  modules/SVH.*.psm1  ← one module per integrated system; see powershell/README.md
+references/           ← triage and troubleshooting reference docs (auto-synced to vault)
+scripts/              ← WSL/VM bootstrap scripts
+dotfiles/             ← shell aliases, Windows Terminal, status daemon
+tui/                  ← Textual TUI (module browser, parameter forms)
 ```
+
+## Obsidian vault
+
+Two documentation layers:
+- **Confluence** — authoritative official docs: server pages, runbooks, published change records
+- **Obsidian** — operational intelligence and drafting table: daily log, active synthesis, drafts in progress
+
+Vault structure:
+```
+Inbox/      ← staged items awaiting Execute — the only folder that empties
+Daily/      ← one note per day, operational log and reactive hub
+Record/     ← permanent time-stamped records (incidents, changes, meetings, research, sessions)
+Archive/
+```
+
+Every note has `type:` frontmatter (`incident | change | meeting | research | plan | session | draft`). Dataview handles navigation — no manual MOCs, no entity notes. When Claude references a server or system, it names it consistently so backlink search works; entity documentation lives in Confluence.
 
 ## Key conventions
 
 - **No autonomous actions.** Claude never sends Teams messages, emails, or Planner updates without an explicit user request in that session.
-- **Obsidian first.** All skill output goes to Obsidian. External destinations (Teams, Confluence, Mail) are always staged for review.
-- **No task deletion.** Mark Planner tasks complete at 100% instead. `planner_delete_task` does not exist.
-- **Read-only defaults.** Most tools read only. Write-capable: Mail (send/draft), Teams (send message), Planner (create/update), To Do (create/update), OneDrive (create folder/link), Confluence (create/update pages and comments), Entra (dismiss risky user), Obsidian (read/write), Excalidraw (create/update diagrams).
-- **Diagrams before descriptions.** For network topology, attack paths, asset network position, change impact scope, and project WBS — produce an Excalidraw diagram rather than prose. Save to `Diagrams/<category>/` and embed with `![[filename.excalidraw]]`.
-- **IR Triage only** sends non-draft Teams messages. Build it last for that reason.
+- **Obsidian first.** All output goes to Obsidian. External destinations (Teams, Confluence, Mail) are always staged for review.
+- **No task deletion.** Mark Planner tasks complete at 100% instead.
+- **Read-only defaults.** Most tools read only. Write-capable: Mail (send/draft), Teams (send message), Planner (create/update), To Do (create/update), OneDrive (create folder/link), Confluence (create/update pages and comments), Entra (dismiss risky user), Obsidian (read/write).
+- **Check the manifest first.** Before any Reactive session synthesis, confirm staging is fresh and no jobs failed silently.
+- **IR Triage only** sends non-draft Teams messages. Build it last.
 
 ## Work week
 
 M–Thursday. Monday Day Starter covers the full weekend (last 72h, not 24h).
 
-## Skills
+## Session types
 
-Skills live in `.claude/skills/<name>/SKILL.md` and load on demand. Each skill defines its own allowed tools in frontmatter.
+Session types are lightweight orientations — no SKILL.md files. They're described in `.claude/skills/` for now but will be replaced with tool descriptions and session context as the rebuild matures.
 
-Invoke by name (`/day-starter`) or trigger phrase (e.g., "morning briefing", "X is broken", "write a ticket for this"). Skills are listed with trigger phrases in README.md.
+| Session | Track | Input | Output |
+|---|---|---|---|
+| Day Starter | Reactive | Staging manifest + files | Daily/ note |
+| Posture Watch | Monitoring | Metrics DB trends | Signal list → Decide |
+| Troubleshoot | Reactive | Live queries + staging | Record/ investigation |
+| Research | Proactive | Systems + web | Record/ reference |
+| Plan Session | Proactive | Research + problem | Record/ documented position |
+| Inbox Review | Shared | Inbox/ | Pushed to destinations |
+| Day Ender | Shared | Day's events | Append to Daily/ note |
+| Week Wrap | Both | Week's Record/ | Record/ session note |
+| IR Triage | Reactive | Live data | Stage + Execute (Teams-capable) |
 
-## Adding a new tool
+## Adding a new collector job
+
+1. Create `collector/src/jobs/<service>.ts` — implement the `Job` interface
+2. Import and add to `ALL_JOBS` in `collector/src/index.ts`
+3. Add watch-phase extraction in `collector/src/watch/index.ts` if the job produces metrics data
+4. Add credentials to `collector/.env.example` and the Bitwarden SVH OpsMan item
+5. Add a stub for the staging file in the manifest section above
+
+## Adding a new MCP tool
 
 1. Create `mcp-server/src/tools/<service>.ts` — export `register<Service>Tools(server, enabled)`
 2. Add to `mcp-server/src/index.ts` — import, add env-based `enabled` flag, call register
 3. Add credentials to the **SVH OpsMan** Bitwarden item (custom fields)
-4. Document in README.md under "What Claude has access to" and "Credential reference"
-5. Add the tool name(s) to the `allowed-tools` frontmatter of any skill that uses it
 
 ## Operational references
 
 ### Config
-Canonical values (UPNs, group IDs, Planner board IDs, vault path) live in `.claude/config.yaml`. The session-start hook injects them at the top of every session. **If a skill file has a hardcoded value that conflicts with config.yaml, the config.yaml value takes precedence.** Update config.yaml when any of these values change — skill files do not need to be touched.
+Canonical values (UPNs, group IDs, Planner board IDs, vault path) live in `.claude/config.yaml`. The session-start hook injects them at the top of every session. **config.yaml takes precedence over any hardcoded values in session files.**
 
-### Obsidian
-Vault: `/mnt/c/Users/astevens/vaults/OpsManVault/`  
-Second vault at `/mnt/c/Users/astevens/OneDrive - Andersen Construction/data/` — personal/documents, not skills output.
+### Obsidian vault path
+`/mnt/c/Users/astevens/vaults/OpsManVault/`
 
 ### People
 | Person | UPN | Entra object ID | IT Sysadmin Tasks label |
@@ -89,65 +160,52 @@ Second vault at `/mnt/c/Users/astevens/OneDrive - Andersen Construction/data/` �
 
 Always use `astevens@shoestringvalley.com` for M365 `user_id` params. Gmail address is the Claude login only — never pass it to M365 tools.
 
-Category mapping is for plan `-aZEdilGAUqLC8B8GwOLfmQAAh9M` (IT Sysadmin Tasks). `category1` = Quinn — the tool description saying "category1 = Aaron" is wrong. Verify with `planner_get_plan_details` on other plans. `planner_update_task` doesn't expose an assignments field; use object IDs above for direct Graph assignment calls.
-
 ### Planner
-Primary plan: **IT Sysadmin Tasks** (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`)  
+Primary plan: **IT Sysadmin Tasks** (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`)
 Buckets: To do · In progress · Waiting · Backlog
 
-**Staging rule:** Never call `planner_create_task` or `planner_update_task` without explicit per-session confirmation ("push it", "go ahead", "create it"). Draft CREATE blocks in the briefing's "Draft Planner actions" section first. "I want a task for X" = draft in Obsidian, not a live create.
+**Staging rule:** Never call `planner_create_task` or `planner_update_task` without explicit per-session confirmation. Draft in Obsidian first.
 
-**Day Starter default:** New tasks go to IT Sysadmin Tasks (operational) or personal To Do (personal items). Always include a "Draft Planner actions" section at the bottom of every day starter note.
+`category1` = Quinn (the tool description saying "category1 = Aaron" is wrong).
 
 ### Bitwarden credentials
-All credentials are in the **SVH OpsMan** BW item. Check both custom fields AND notes — some credentials are stored in notes rather than fields.
+All credentials are in the **SVH OpsMan** BW item. Check both custom fields AND notes.
 
-In SVH OpsMan (custom fields): GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET, GRAPH_USER_ID, MDE_*, AZURE_*, NINJA_CLIENT_ID, NINJA_CLIENT_SECRET, OBSIDIAN_API_KEY.
+Custom fields: GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET, GRAPH_USER_ID, MDE_*, AZURE_*, NINJA_CLIENT_ID, NINJA_CLIENT_SECRET, OBSIDIAN_API_KEY.
 
-Not yet found in BW: WAZUH_*, CONFLUENCE_*, UNIFI_*, PRINTERLOGIC_*. Search BW notes when looking for these.
+Not yet found in BW: WAZUH_*, CONFLUENCE_*, UNIFI_*, PRINTERLOGIC_*. Search BW notes.
 
 ### PowerShell modules
 
-Module coverage, credential tiers, PSRemoting accounts, and authoring conventions are in `.claude/rules/powershell.md` (auto-loaded when working in `powershell/`). Full function reference and examples in `powershell/README.md`.
+See `.claude/rules/powershell.md` for conventions. See `powershell/README.md` for full function reference.
 
 **PSRemoting quick-reference — from WSL:**
 
-| Task | Account | Auth from WSL |
-|------|---------|---------------|
-| Disk, services, pending reboot, event logs, processes | `ra_stevens` | Non-interactive — BW fields `DC_REMOTE_USER` / `DC_REMOTE_PASSWORD` |
-| Hyper-V, failover cluster, S2D, MABS, SQL config | `sa_stevens` | Interactive `Get-Credential` — no BW password stored |
-| Active Directory, domain health, replication | `da_stevens` | Interactive `Get-Credential` — no BW password stored |
-| DNS / DHCP servers | `da_stevens` | Interactive `Get-Credential` — no BW password stored |
-
-`ra_stevens` non-interactive pattern (Desktop Commander / automated skills):
-```powershell
-$cred = New-Object PSCredential(
-    (Get-SVHTierUsername -Tier ra),
-    (ConvertTo-SecureString $env:DC_REMOTE_PASSWORD -AsPlainText -Force)
-)
-```
-
-`sa_stevens` and `da_stevens` require `Get-Credential` in an active pwsh session. Adding `SA_REMOTE_PASSWORD` / `DA_REMOTE_PASSWORD` to BW would enable non-interactive use for those tiers too.
+| Task | Account | Auth |
+|------|---------|------|
+| Disk, services, event logs, processes | `ra_stevens` | Non-interactive — BW `DC_REMOTE_USER` / `DC_REMOTE_PASSWORD` |
+| Hyper-V, failover cluster, S2D, MABS | `sa_stevens` | Interactive `Get-Credential` |
+| Active Directory, DNS, DHCP | `da_stevens` | Interactive `Get-Credential` |
 
 ### NinjaOne alerting rules
-- **Skip devices in maintenance mode.** Do not surface offline alerts, monitor alerts, or status warnings for any NinjaOne device that is in maintenance mode. Maintenance mode means the offline/alert state is intentional — treat these as non-events in briefings and investigations.
+- **Skip devices in maintenance mode.** Never surface offline/alert state for devices in maintenance mode.
 - ACCOPDXARCHIVE is intentionally offline and in maintenance mode — never flag it.
 
 ### Known issues
-- Claude Code account switching: work↔personal swap breaks OpsMan on token expiry. No solution yet — tracked in personal To Do.
+- Claude Code account switching: work↔personal swap breaks OpsMan on token expiry. No solution yet.
 
 ## References
 
-`references/` contains triage guides and SVH-specific failure patterns. The session-start hook auto-syncs them to `OpsManVault/References/` on every session — no manual copy needed. The repo versions are the source of truth.
+`references/` contains triage guides and SVH-specific failure patterns. Auto-synced to `OpsManVault/References/` on session start.
 
 | File | Used by |
 |------|---------|
-| `triage-gate.md` | IR Triage — lane classification criteria and escalation path |
-| `common-failure-modes.md` | Troubleshooting — SVH-specific failure patterns (Hyper-V, MABS, CMiC, UniFi, WSUS, PrinterLogic) |
-| `hypothesis-patterns.md` | Troubleshooting — isolation moves by problem class |
-| `common-event-clusters.md` | Event Log Triage — Wazuh/Windows event signatures grouped by scenario |
-| `ps-remoting-snippets.md` | Event Log Triage — Get-WinEvent recipes for common investigation scenarios |
-| `setup-winrm.md` | Event Log Triage — one-time WinRM trust setup from WSL to Windows targets |
-| `credentials.md` | Credential reference — what's in Bitwarden vs. still missing |
-| `users.md` | Team directory — Entra object IDs and UPNs for IT staff |
-| `tailscale-udm-setup.md` | UDM Pro/SE subnet router deployment guide |
+| `triage-gate.md` | IR Triage — lane classification and escalation path |
+| `common-failure-modes.md` | Troubleshoot — SVH-specific failure patterns |
+| `hypothesis-patterns.md` | Troubleshoot — isolation moves by problem class |
+| `common-event-clusters.md` | Event Log Triage — event signatures by scenario |
+| `ps-remoting-snippets.md` | Event Log Triage — Get-WinEvent recipes |
+| `setup-winrm.md` | One-time WinRM trust setup from WSL |
+| `credentials.md` | Credential reference — BW vs. missing |
+| `users.md` | Team directory — Entra IDs and UPNs |
+| `tailscale-udm-setup.md` | UDM Pro/SE subnet router deployment |

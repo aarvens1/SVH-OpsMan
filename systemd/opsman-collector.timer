@@ -1,0 +1,13 @@
+[Unit]
+Description=SVH OpsMan — daily collection timer
+Requires=opsman-collector.service
+
+[Timer]
+# 6:45am weekdays
+OnCalendar=Mon-Fri 06:45:00
+# Run immediately if the last scheduled run was missed (e.g. VM was down)
+Persistent=true
+Unit=opsman-collector.service
+
+[Install]
+WantedBy=timers.target
