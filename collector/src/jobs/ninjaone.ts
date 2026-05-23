@@ -86,31 +86,6 @@ async function fetchAlerts(token: string): Promise<A[]> {
     }));
 }
 
-async function fetchDeviceDetails(token: string, deviceIds: number[]): Promise<Map<number, A>> {
-  // Fetch OS patch summary for devices — used for patch_lag metrics
-  const client = ninjaClient(token);
-  const result = new Map<number, A>();
-
-  // Batch in groups of 10 to avoid rate limits
-  for (let i = 0; i < deviceIds.length; i += 10) {
-    const batch = deviceIds.slice(i, i + 10);
-    await Promise.allSettled(
-      batch.map(async (id) => {
-        try {
-          const res = await client.get<A>(`/device/${id}/os-patch-installs`, {
-            params: { status: "FAILED,PENDING", pageSize: 50 },
-          });
-          result.set(id, res.data);
-        } catch {
-          // Non-fatal — patch lag data is best-effort
-        }
-      })
-    );
-  }
-
-  return result;
-}
-
 export const ninjaJob: Job = {
   name: "ninjaone",
 

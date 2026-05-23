@@ -4,10 +4,9 @@ import {
   insertDiskUsage,
   insertAlertCounts,
   insertComplianceRows,
-  insertPatchLag,
 } from "../db/metrics.js";
 import { insertRun } from "../db/runs.js";
-import type { DiskUsageRow, AlertCountRow, ComplianceRow, PatchLagRow } from "../types.js";
+import type { DiskUsageRow, AlertCountRow, ComplianceRow } from "../types.js";
 
 type A = Record<string, unknown>;
 
@@ -101,12 +100,18 @@ export async function runWatch(
 
   console.error(`[watch] Processing staging dir: ${dir}`);
 
-  const devices = readStagingFile<A[]>(dir, "ninja-devices.json") ?? [];
-  const ninjaAlerts = readStagingFile<A[]>(dir, "ninja-alerts.json") ?? [];
-  const wazuhData = readStagingFile<{ alerts?: A[] }>(dir, "wazuh-alerts.json") ?? {};
-  const wazuhAlerts = wazuhData.alerts ?? [];
-  const unifiData = readStagingFile<{ alerts?: A[] }>(dir, "unifi-alerts.json") ?? {};
-  const unifiAlerts = unifiData.alerts ?? [];
+  const devicesRaw = readStagingFile<A[]>(dir, "ninja-devices.json");
+  const ninjaAlertsRaw = readStagingFile<A[]>(dir, "ninja-alerts.json");
+  const wazuhData = readStagingFile<{ alerts?: A[] }>(dir, "wazuh-alerts.json");
+  const unifiData = readStagingFile<{ alerts?: A[] }>(dir, "unifi-alerts.json");
+
+  const sourcesAttempted = 4;
+  const sourcesFailed = [devicesRaw, ninjaAlertsRaw, wazuhData, unifiData].filter((r) => r === null).length;
+
+  const devices = devicesRaw ?? [];
+  const ninjaAlerts = ninjaAlertsRaw ?? [];
+  const wazuhAlerts = wazuhData?.alerts ?? [];
+  const unifiAlerts = unifiData?.alerts ?? [];
 
   const diskRows = extractDiskUsage(devices);
   const alertRows = extractAlertCounts(ninjaAlerts, wazuhAlerts, unifiAlerts);
@@ -120,12 +125,12 @@ export async function runWatch(
   insertRun(runDb, {
     timestamp: new Date().toISOString(),
     type: "watch",
-    sources_attempted: 3,
-    sources_failed: 0,
+    sources_attempted: sourcesAttempted,
+    sources_failed: sourcesFailed,
     duration_ms: duration,
   });
 
   console.error(
-    `[watch] Done — disk:${diskRows.length} alerts:${alertRows.length} compliance:${complianceRows.length} (${duration}ms)`
+    `[watch] Done — disk:${diskRows.length} alerts:${alertRows.length} compliance:${complianceRows.length} sources:${sourcesAttempted - sourcesFailed}/${sourcesAttempted} (${duration}ms)`
   );
 }
