@@ -11,6 +11,10 @@ db/*.db
 collector/dist/
 mcp-server/dist/
 
+# Dependencies
+collector/node_modules/
+mcp-server/node_modules/
+
 # Environment files (never commit real credentials)
 collector/.env
 mcp-server/.env
