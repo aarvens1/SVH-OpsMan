@@ -568,6 +568,3 @@ opsman   # checks BW, starts status refresh daemon, launches claude
 
 ---
 
-## Roadmap & design notes
-
-`roadmap.md` tracks the evolution plan, open design issues, architectural decisions, and known runtime quirks. Review it before adding new tools or refactoring high-frequency paths.
