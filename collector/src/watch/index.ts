@@ -36,6 +36,24 @@ function extractDiskUsage(devices: A[]): DiskUsageRow[] {
   return rows;
 }
 
+function extractDiskUsageFromFleetVolumes(volumes: A[]): DiskUsageRow[] {
+  const rows: DiskUsageRow[] = [];
+  const ts = nowIso();
+  for (const v of volumes) {
+    const deviceName = String(v["deviceName"] ?? v["deviceId"]);
+    const cap = Number(v["capacity"] ?? 0);
+    const free = Number(v["freeSpace"] ?? 0);
+    if (cap > 0) {
+      rows.push({
+        timestamp: ts,
+        device_id: `${deviceName}:${String(v["name"] ?? "")}`,
+        used_pct: ((cap - free) / cap) * 100,
+      });
+    }
+  }
+  return rows;
+}
+
 function extractAlertCounts(
   ninjaAlerts: A[],
   wazuhAlerts: A[],
@@ -104,16 +122,20 @@ export async function runWatch(
   const ninjaAlertsRaw = readStagingFile<A[]>(dir, "ninja-alerts.json");
   const wazuhData = readStagingFile<{ alerts?: A[] }>(dir, "wazuh-alerts.json");
   const unifiData = readStagingFile<{ alerts?: A[] }>(dir, "unifi-alerts.json");
+  const fleetVolumes = readStagingFile<A[]>(dir, "ninja-volumes.json");
 
-  const sourcesAttempted = 4;
-  const sourcesFailed = [devicesRaw, ninjaAlertsRaw, wazuhData, unifiData].filter((r) => r === null).length;
+  const sourcesAttempted = 5;
+  const sourcesFailed = [devicesRaw, ninjaAlertsRaw, wazuhData, unifiData, fleetVolumes].filter((r) => r === null).length;
 
   const devices = devicesRaw ?? [];
   const ninjaAlerts = ninjaAlertsRaw ?? [];
   const wazuhAlerts = wazuhData?.alerts ?? [];
   const unifiAlerts = unifiData?.alerts ?? [];
 
-  const diskRows = extractDiskUsage(devices);
+  // Prefer dedicated fleet volumes (guaranteed complete) over device payload volumes
+  const diskRows = fleetVolumes
+    ? extractDiskUsageFromFleetVolumes(fleetVolumes)
+    : extractDiskUsage(devices);
   const alertRows = extractAlertCounts(ninjaAlerts, wazuhAlerts, unifiAlerts);
   const complianceRows = extractCompliance(devices);
 

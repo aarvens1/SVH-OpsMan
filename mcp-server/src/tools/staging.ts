@@ -42,8 +42,14 @@ const STAGING_FILES = [
   "graph-calendar",
   "graph-audit",
   "graph-alerts",
+  "graph-service-health",
+  "graph-expiring-secrets",
+  "graph-risky-users",
+  "graph-signin-logs",
   "ninja-devices",
   "ninja-alerts",
+  "ninja-backups",
+  "ninja-volumes",
   "wazuh-alerts",
   "unifi-alerts",
   "planner-tasks",
@@ -116,9 +122,13 @@ export function registerStagingTools(server: McpServer, enabled: boolean): void 
         "Read a staged data file from the latest collection run. " +
         "Use staging_status first to confirm the data is fresh. " +
         "Files: graph-mail (inbox last 24h), graph-calendar (next 7 days), " +
-        "graph-audit (tenant changes last 24h — who changed what), " +
-        "graph-alerts (M365 security alerts), ninja-devices (all managed devices), " +
-        "ninja-alerts (active NinjaOne alerts, maintenance-mode filtered), " +
+        "graph-audit (directory changes last 24h), graph-alerts (M365 Defender security alerts), " +
+        "graph-service-health (M365 per-service status + active incidents), " +
+        "graph-expiring-secrets (app reg secrets/certs expiring within 90 days), " +
+        "graph-risky-users (Entra ID Protection active risky users), " +
+        "graph-signin-logs (failed sign-ins last 24h), " +
+        "ninja-devices (all managed devices), ninja-alerts (active NinjaOne alerts, maintenance-filtered), " +
+        "ninja-backups (backup job results across fleet), ninja-volumes (disk volumes across fleet), " +
         "wazuh-alerts, unifi-alerts, planner-tasks (open IT Sysadmin Tasks).",
       inputSchema: z.object({
         file: z
