@@ -19,7 +19,7 @@ async function fetchMail(token: string, userId: string): Promise<A[]> {
   const client = graphClient(token);
   const res = await client.get<{ value: A[] }>(`/users/${userId}/mailFolders/inbox/messages`, {
     params: {
-      $filter: `receivedDateTime ge ${since}`,
+      $filter: `receivedDateTime ge '${since}'`,
       $orderby: "receivedDateTime desc",
       $top: 50,
       $select: "id,subject,from,receivedDateTime,isRead,hasAttachments,importance,bodyPreview",
@@ -68,7 +68,7 @@ async function fetchAuditLog(token: string): Promise<A[]> {
   const client = graphClient(token);
   const res = await client.get<{ value: A[] }>("/auditLogs/directoryAudits", {
     params: {
-      $filter: `activityDateTime ge ${since}`,
+      $filter: `activityDateTime ge '${since}'`,
       $orderby: "activityDateTime desc",
       $top: 100,
       $select: "id,activityDateTime,activityDisplayName,category,initiatedBy,targetResources,result",
@@ -164,6 +164,8 @@ export const graphJob: Job = {
       writeStagingFile(stagingDir, "graph-alerts.json", tenantAlerts.value);
       files.push("graph-alerts.json");
       records += tenantAlerts.value.length;
+    } else if (tenantAlerts.status === "rejected") {
+      console.error("[graph] alerts failed:", tenantAlerts.reason);
     }
 
     if (files.length === 0) {

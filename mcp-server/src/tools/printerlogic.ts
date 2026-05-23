@@ -23,8 +23,8 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
           .string()
           .optional()
           .describe("Scope to a specific folder (container) ID"),
-        limit: z.number().int().default(100),
-        offset: z.number().int().default(0),
+        limit: z.number().int().default(100).describe("Max results to return"),
+        offset: z.number().int().default(0).describe("Pagination offset"),
       }),
     },
     async ({ search, folder_id, limit, offset }) => {
@@ -103,7 +103,7 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
           .string()
           .optional()
           .describe("Filter by OS compatibility (e.g. 'Windows 10', 'Windows Server 2022')"),
-        limit: z.number().int().default(50),
+        limit: z.number().int().default(50).describe("Max results to return"),
       }),
     },
     async ({ search, os_filter, limit }) => {
@@ -137,7 +137,7 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
       description:
         "List deployment profiles (rules that assign printers to users or computers).",
       inputSchema: z.object({
-        limit: z.number().int().default(50),
+        limit: z.number().int().default(50).describe("Max results to return"),
       }),
     },
     async ({ limit }) => {
@@ -211,7 +211,7 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
           .optional()
           .describe("Filter by event type (e.g. 'printer_installed', 'printer_deleted')"),
         user: z.string().optional().describe("Filter by username"),
-        limit: z.number().int().default(100),
+        limit: z.number().int().default(100).describe("Max results to return"),
       }),
     },
     async ({ start_date, end_date, event_type, user, limit }) => {
@@ -279,10 +279,11 @@ export function registerPrinterLogicTools(server: McpServer, enabled: boolean): 
       inputSchema: z.object({
         report_type: z
           .enum(["by_user", "by_printer", "by_department"])
-          .default("by_user"),
+          .default("by_user")
+          .describe("Dimension to group usage by"),
         start_date: z.string().optional().describe("Start date in ISO 8601"),
         end_date: z.string().optional().describe("End date in ISO 8601"),
-        limit: z.number().int().default(100),
+        limit: z.number().int().default(100).describe("Max rows to return"),
       }),
     },
     async ({ report_type, start_date, end_date, limit }) => {

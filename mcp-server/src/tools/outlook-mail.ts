@@ -95,7 +95,7 @@ export function registerOutlookMailTools(
           isRead: m["isRead"],
           body: (m["body"] as A | undefined)?.["content"],
           bodyContentType: (m["body"] as A | undefined)?.["contentType"],
-          attachments: (attachments.data as A)["value"],
+          attachments: (attachments.data as A)["value"] ?? [],
         });
       } catch (e) {
         return err(e);

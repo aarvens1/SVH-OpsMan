@@ -184,6 +184,8 @@ export function registerStagingTools(server: McpServer, enabled: boolean): void 
         const args = ["tsx", collectorIndex, "gather"];
         if (job) args.push(`--job=${job}`);
 
+        const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
         const result = await new Promise<{ stdout: string; stderr: string; code: number }>(
           (resolve) => {
             const child = spawn("npx", args, {
@@ -193,9 +195,19 @@ export function registerStagingTools(server: McpServer, enabled: boolean): void 
 
             let stdout = "";
             let stderr = "";
+            let timedOut = false;
+
+            const timeout = setTimeout(() => {
+              timedOut = true;
+              child.kill("SIGTERM");
+            }, TIMEOUT_MS);
+
             child.stdout?.on("data", (d: Buffer) => { stdout += d.toString(); });
             child.stderr?.on("data", (d: Buffer) => { stderr += d.toString(); });
-            child.on("close", (code) => resolve({ stdout, stderr, code: code ?? 1 }));
+            child.on("close", (code) => {
+              clearTimeout(timeout);
+              resolve({ stdout, stderr, code: timedOut ? 124 : (code ?? 1) });
+            });
           }
         );
 
@@ -209,7 +221,9 @@ export function registerStagingTools(server: McpServer, enabled: boolean): void 
             success: false,
             exit_code: result.code,
             log: logLines,
-            note: "Collection completed with errors — check staging_status for per-job details.",
+            note: result.code === 124
+              ? "Collector timed out after 5 minutes — check if collector/.env is populated."
+              : "Collection completed with errors — check staging_status for per-job details.",
           });
         }
 

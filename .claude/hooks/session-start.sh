@@ -26,9 +26,9 @@ STATE_FILE="$REPO_ROOT/.claude/briefing-state"
 PUSH_LOG="$REPO_ROOT/.claude/push-log"
 
 if [ -d "$VAULT" ]; then
-  [ -f "$VAULT/Briefings/Daily/$TODAY.md" ] && BRIEFING_EXISTS="yes" || BRIEFING_EXISTS="no"
-  OPEN_INCIDENTS=$(ls "$VAULT/Incidents/Active/"*.md 2>/dev/null | wc -l | tr -d ' ')
-  LAST_BRIEFING=$(ls "$VAULT/Briefings/Daily/"*.md 2>/dev/null | sort | tail -1 | xargs basename -s .md 2>/dev/null || echo "none")
+  [ -f "$VAULT/SVH/Daily/$TODAY.md" ] && BRIEFING_EXISTS="yes" || BRIEFING_EXISTS="no"
+  OPEN_INCIDENTS=$(grep -rl "type: incident" "$VAULT/SVH/Record/" 2>/dev/null | xargs grep -l "status: active" 2>/dev/null | wc -l | tr -d ' ')
+  LAST_BRIEFING=$(ls "$VAULT/SVH/Daily/"*.md 2>/dev/null | sort | tail -1 | xargs basename -s .md 2>/dev/null || echo "none")
 
   # Cache last-briefing date for non-WSL environments
   if [ -n "$LAST_BRIEFING" ] && [ "$LAST_BRIEFING" != "none" ]; then
