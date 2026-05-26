@@ -48,8 +48,12 @@ alias wexp='explorer.exe "$(wslpath -w .)"'   # open current dir in Windows Expl
 alias clip='clip.exe'                          # pipe to Windows clipboard: echo hello | clip
 alias wpath='wslpath -w'                       # convert a WSL path to Windows path: wpath ~/foo
 
+# ── Gemini CLI ────────────────────────────────────────────────────────────────
+export GEMINI_MODEL=gemini-2.5-pro
+alias gs='gemini'
+
 # ── Git ────────────────────────────────────────────────────────────────────────
-alias gs='git status -sb'
+alias gst='git status -sb'
 alias gl='git log --oneline --graph -20'
 alias gd='git diff'
 alias gdc='git diff --cached'
