@@ -113,7 +113,7 @@ tui/
 - **Obsidian first.** All skill output goes to Obsidian. External destinations (Teams, Confluence, Mail) are always staged for review.
 - **No task deletion.** Mark Planner tasks complete at 100% instead. `planner_delete_task` does not exist.
 - **Read-only defaults.** Most tools read only. Write-capable: Mail (send/draft), Teams (send message), Planner (create/update), To Do (create/update), OneDrive (create folder/link), Confluence (create/update pages and comments), Entra (dismiss risky user), NinjaOne (maintenance mode, run script, reset alert), UniFi Network (restart device, WLAN toggle, client block, port enable/disable), Google Drive (create folder, upload file), FreshService (create/update ticket, add note), Obsidian (read/write), Excalidraw (create/update diagrams).
-- **Diagrams before descriptions.** For network topology, attack paths, asset network position, change impact scope, and project WBS — produce an Excalidraw diagram rather than prose. Save to `Diagrams/<category>/` and embed with `![[filename.excalidraw]]`.
+- **Diagrams before descriptions.** For network topology, attack paths, asset network position, change impact scope, and project WBS — produce an Excalidraw diagram rather than prose. Save to `Diagrams/<category>/` and embed with `![[filename.md]]`.
 - **Check the manifest first.** Before any session synthesis using collector data, confirm staging is fresh and no jobs failed silently.
 - **IR Triage only** sends non-draft Teams messages. Build it last for that reason.
 
