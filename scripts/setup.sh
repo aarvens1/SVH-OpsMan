@@ -189,10 +189,12 @@ fi
 
 # ── 6e. Bitwarden Windows Credential Manager entry ───────────────────────────
 step "Windows Credential Manager (manual)"
-warn "Create the BW password entry on Windows (run once from PowerShell):"
-warn '  powershell.exe -Command "New-StoredCredential -Target svh-opsman -UserName bw -Password '"'"'<your-bw-password>'"'"' -Persist LocalMachine"'
-warn "Requires the CredentialManager PowerShell module:"
-warn '  powershell.exe -Command "Install-Module CredentialManager -Scope CurrentUser -Force"'
+warn "To enable auto-unlock, store your BW master password on the Windows host."
+warn "Run these commands once from a ${BOLD}Windows PowerShell${RESET} terminal:"
+warn "  ${CYAN}\$cred = Get-Credential -UserName 'svh-opsman' -Message 'Enter Bitwarden master password'${RESET}"
+warn "  ${CYAN}New-StoredCredential -Target 'svh-opsman' -UserName 'svh-opsman' \`
+    -Password \$cred.GetNetworkCredential().Password -Persist LocalMachine${RESET}"
+warn "(This requires the CredentialManager module: Install-Module CredentialManager)"
 
 # ── 7. Hook permissions ───────────────────────────────────────────────────────
 step "Hook permissions"
