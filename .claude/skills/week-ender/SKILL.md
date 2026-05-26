@@ -2,7 +2,7 @@
 name: week-ender
 description: Thursday pre-meeting wrap-up. What shipped, what slipped, seeds for next week, and an optional summary draft. Run before the Thursday admin meeting so the week's state is visible going in. Trigger phrases: "week ender", "wrap up the week", "weekly wrap".
 when_to_use: Use Thursday morning before the admin meeting. The Day Ender still runs at EOD to capture Thursday afternoon — the weekly note stays as a pre-meeting snapshot.
-allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__calendar_list_events mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__calendar_list_events mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__obsidian__* mcp__time__* mcp__svh-opsman__gmail_list_recent mcp__svh-opsman__gmail_search mcp__svh-opsman__gmail_get_message mcp__svh-opsman__gmail_send mcp__svh-opsman__gcal_list_events mcp__svh-opsman__gcal_get_event mcp__svh-opsman__gcal_create_event mcp__svh-opsman__gcal_update_event mcp__svh-opsman__gtasks_list_task_lists mcp__svh-opsman__gtasks_list_tasks mcp__svh-opsman__gtasks_create_task mcp__svh-opsman__gtasks_complete_task mcp__svh-opsman__gdrive_list_files mcp__svh-opsman__gdrive_search mcp__svh-opsman__gdrive_read_file"
 ---
 
 # Week Ender
@@ -46,6 +46,8 @@ Fall back to live APIs if staging is stale. Note failures in **Data gaps**.
   - Copilot Audit for IT team: `wP9PL7YWCEqGbG6o4aYVT2QADaLq`
 - `todo_list_task_lists` then `todo_list_tasks` — personal task completion.
 - `calendar_list_events` — what meetings happened, which recurred.
+- `gcal_list_events` (Google Calendar, calendar_id: "primary") — personal events this week.
+- `gtasks_list_task_lists` then `gtasks_list_tasks` (show_completed: true) for each list — Google Tasks completed and still open this week.
 - `wazuh_search_alerts` / `mde_list_alerts` — notable security events this week.
 - `ninja_list_all_backups` — backup status for the week.
 - `ninja_list_servers` — enumerate all servers, then `ninja_list_device_alerts` in parallel for every returned device ID. Show end-of-week alert state grouped by org in the Infrastructure status section.
@@ -70,10 +72,15 @@ Append a **Week Ender** section to `Briefings/Weekly/YYYY-WW.md` (or create if i
 ### ✅ Shipped this week
 ### 🔄 Slipped to next week (with reason)
 ### 🌱 Seeds for next week
+### Personal
 ### 📝 Summary draft (optional)
 ### 🖥 Infrastructure status
 ### 📝 Draft Planner actions
 ```
+
+**Personal** section — sourced from `gcal_list_events` (Google Calendar) and `gtasks_list_tasks` gathered in Step 1b:
+- **Personal events this week** — notable personal calendar events (not just work). One line each.
+- **Google Tasks this week** — completed tasks (brief list) and anything still open or overdue going into the weekend. Format: `[list] — [task]` + status. If all complete: "All Google Tasks closed."
 
 The **summary draft** (for a manager or team update) goes at the bottom, clearly labelled as a draft, if the user asks for one. Draft it in Aaron's voice following the `aaron-voice` rules — use the register matrix to pick the right tone (internal leadership vs. cross-functional group), pick the right opener/closer from the tables, and run the self-check before presenting. Nothing gets sent without explicit instruction.
 
