@@ -1,0 +1,19 @@
+[Unit]
+Description=SVH OpsMan — MCP server
+After=svh-opsman-bw-unlock.service
+Requires=svh-opsman-bw-unlock.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/SVH-OpsMan
+EnvironmentFile=%h/.config/svh-opsman/bw-session
+ExecStart=node %h/SVH-OpsMan/mcp-server/dist/index.js
+Restart=on-failure
+RestartSec=10
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+SyslogIdentifier=svh-opsman-mcp
+
+[Install]
+WantedBy=default.target
