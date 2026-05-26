@@ -72,6 +72,56 @@ alias patch-bw='bash "$OPSMANDIR/scripts/patch-bw-cli.sh"'
 # Start new shells in OpsMan when opened from the default home directory
 [[ "$PWD" == "$HOME" ]] && cd "$OPSMANDIR"
 
+# ── Collector: data pulls ─────────────────────────────────────────────────────
+# Run all jobs (full gather + watch phase)
+alias gather='node "$OPSMANDIR/collector/dist/index.js" gather'
+# Per-job pulls — use when you only want to refresh one source
+alias gather-graph='node "$OPSMANDIR/collector/dist/index.js" gather --job=graph'
+alias gather-ninja='node "$OPSMANDIR/collector/dist/index.js" gather --job=ninjaone'
+alias gather-unifi='node "$OPSMANDIR/collector/dist/index.js" gather --job=unifi'
+alias gather-wazuh='node "$OPSMANDIR/collector/dist/index.js" gather --job=wazuh'
+alias gather-planner='node "$OPSMANDIR/collector/dist/index.js" gather --job=planner'
+# Re-run the watch/metrics phase only (no API calls)
+alias gather-watch='node "$OPSMANDIR/collector/dist/index.js" watch'
+
+# ── Collector: browse staging output ──────────────────────────────────────────
+_staging_dir() { ls "$OPSMANDIR/staging/" 2>/dev/null | grep -v '^\.' | sort | tail -1; }
+
+# staging-ls — list files in the latest staging run with sizes
+staging-ls() {
+    local d=$(_staging_dir)
+    [[ -z "$d" ]] && echo "No staging data yet — run: gather" && return 1
+    echo "── $d ──"
+    ls -lh "$OPSMANDIR/staging/$d/" | grep -v '^total'
+}
+
+# staging-cat FILE — pretty-print a staging file (omit .json extension)
+staging-cat() {
+    local d=$(_staging_dir)
+    [[ -z "$d" ]] && echo "No staging data yet" && return 1
+    local f="$OPSMANDIR/staging/$d/${1}.json"
+    if [[ -f "$f" ]]; then
+        jq . "$f"
+    else
+        echo "Not found: ${1}.json"
+        echo "Available: $(ls "$OPSMANDIR/staging/$d/" | grep '\.json' | grep -v manifest | sed 's/\.json//' | tr '\n' ' ')"
+    fi
+}
+
+# staging-manifest — show the latest manifest (job status + record counts)
+staging-manifest() {
+    local d=$(_staging_dir)
+    [[ -z "$d" ]] && echo "No staging data yet" && return 1
+    jq . "$OPSMANDIR/staging/$d/manifest.json"
+}
+
+# ── Collector: metrics DB ─────────────────────────────────────────────────────
+alias runs='sqlite3 -column -header "$OPSMANDIR/db/runs.db" "SELECT timestamp, type, sources_attempted, sources_failed, duration_ms FROM runs ORDER BY timestamp DESC LIMIT 15;"'
+alias disk-trend='sqlite3 -column -header "$OPSMANDIR/db/metrics.db" "SELECT recorded_at, server, drive_letter, used_pct FROM disk_usage ORDER BY recorded_at DESC LIMIT 30;"'
+alias alert-trend='sqlite3 -column -header "$OPSMANDIR/db/metrics.db" "SELECT recorded_at, source, count FROM alert_counts ORDER BY recorded_at DESC LIMIT 20;"'
+# disk-hot — servers currently above 80% on any drive
+alias disk-hot='sqlite3 -column -header "$OPSMANDIR/db/metrics.db" "SELECT server, drive_letter, used_pct, recorded_at FROM disk_usage WHERE used_pct > 80 ORDER BY used_pct DESC, recorded_at DESC LIMIT 20;"'
+
 # ── OpsMan workspace ──────────────────────────────────────────────────────────
 
 # opsman — launch Claude Code in the current terminal:

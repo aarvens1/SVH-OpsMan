@@ -14,12 +14,30 @@ function graphClient(token: string) {
   });
 }
 
+function isoNoMs(date: Date): string {
+  return date.toISOString().replace(/\.\d+Z$/, "Z");
+}
+
+function logGraphError(label: string, reason: unknown): void {
+  if (reason && typeof reason === "object" && "response" in reason) {
+    const r = (reason as { response?: { status?: number; data?: { error?: { code?: string; message?: string } } } }).response;
+    const e = r?.data?.error;
+    if (e) {
+      console.error(`[graph] ${label} failed: HTTP ${r?.status} — ${e.code}: ${e.message}`);
+    } else {
+      console.error(`[graph] ${label} failed: HTTP ${r?.status}`, r?.data);
+    }
+  } else {
+    console.error(`[graph] ${label} failed:`, reason);
+  }
+}
+
 async function fetchMail(token: string, userId: string): Promise<A[]> {
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const since = isoNoMs(new Date(Date.now() - 24 * 60 * 60 * 1000));
   const client = graphClient(token);
   const res = await client.get<{ value: A[] }>(`/users/${userId}/mailFolders/inbox/messages`, {
     params: {
-      $filter: `receivedDateTime ge '${since}'`,
+      $filter: `receivedDateTime ge ${since}`,
       $top: 50,
       $select: "id,subject,from,receivedDateTime,isRead,hasAttachments,importance,bodyPreview",
     },
@@ -63,11 +81,12 @@ async function fetchCalendar(token: string, userId: string): Promise<A[]> {
 }
 
 async function fetchAuditLog(token: string): Promise<A[]> {
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const since = isoNoMs(new Date(Date.now() - 24 * 60 * 60 * 1000));
   const client = graphClient(token);
   const res = await client.get<{ value: A[] }>("/auditLogs/directoryAudits", {
+    headers: { ConsistencyLevel: "eventual" },
     params: {
-      $filter: `activityDateTime ge '${since}'`,
+      $filter: `activityDateTime ge ${since}`,
       $top: 100,
       $select: "id,activityDateTime,activityDisplayName,category,initiatedBy,targetResources,result",
     },
@@ -238,12 +257,13 @@ async function fetchRiskyUsers(token: string): Promise<A[]> {
 
 // Required: AuditLog.Read.All (same as audit log — already in use)
 async function fetchSignInLogs(token: string): Promise<A[]> {
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const since = isoNoMs(new Date(Date.now() - 24 * 60 * 60 * 1000));
   const client = graphClient(token);
   try {
     const res = await client.get<{ value: A[] }>("/auditLogs/signIns", {
+      headers: { ConsistencyLevel: "eventual" },
       params: {
-        $filter: `createdDateTime ge '${since}' and status/errorCode ne 0`,
+        $filter: `createdDateTime ge ${since} and status/errorCode ne 0`,
         $top: 100,
         $select: "id,createdDateTime,userPrincipalName,appDisplayName,status,ipAddress,location,riskLevelDuringSignIn",
       },
@@ -294,7 +314,7 @@ export const graphJob: Job = {
       files.push("graph-mail.json");
       records += mail.value.length;
     } else {
-      console.error("[graph] mail failed:", mail.reason);
+      logGraphError("mail", mail.reason);
     }
 
     if (calendar.status === "fulfilled") {
@@ -302,7 +322,7 @@ export const graphJob: Job = {
       files.push("graph-calendar.json");
       records += calendar.value.length;
     } else {
-      console.error("[graph] calendar failed:", calendar.reason);
+      logGraphError("calendar", calendar.reason);
     }
 
     if (auditLog.status === "fulfilled") {
@@ -310,7 +330,7 @@ export const graphJob: Job = {
       files.push("graph-audit.json");
       records += auditLog.value.length;
     } else {
-      console.error("[graph] audit log failed:", auditLog.reason);
+      logGraphError("audit log", auditLog.reason);
     }
 
     if (tenantAlerts.status === "fulfilled" && tenantAlerts.value.length > 0) {
@@ -318,7 +338,7 @@ export const graphJob: Job = {
       files.push("graph-alerts.json");
       records += tenantAlerts.value.length;
     } else if (tenantAlerts.status === "rejected") {
-      console.error("[graph] alerts failed:", tenantAlerts.reason);
+      logGraphError("alerts", tenantAlerts.reason);
     }
 
     // Always write service health — "all green" is a valid and useful result
@@ -328,7 +348,7 @@ export const graphJob: Job = {
       const sh = serviceHealth.value as { services: A[]; activeIssues: A[] };
       records += sh.services.length + sh.activeIssues.length;
     } else {
-      console.error("[graph] service health failed:", serviceHealth.reason);
+      logGraphError("service health", serviceHealth.reason);
     }
 
     if (expiringSecrets.status === "fulfilled" && expiringSecrets.value.length > 0) {
@@ -336,7 +356,7 @@ export const graphJob: Job = {
       files.push("graph-expiring-secrets.json");
       records += expiringSecrets.value.length;
     } else if (expiringSecrets.status === "rejected") {
-      console.error("[graph] expiring secrets failed:", expiringSecrets.reason);
+      logGraphError("expiring secrets", expiringSecrets.reason);
     }
 
     if (riskyUsers.status === "fulfilled" && riskyUsers.value.length > 0) {
@@ -344,7 +364,7 @@ export const graphJob: Job = {
       files.push("graph-risky-users.json");
       records += riskyUsers.value.length;
     } else if (riskyUsers.status === "rejected") {
-      console.error("[graph] risky users failed:", riskyUsers.reason);
+      logGraphError("risky users", riskyUsers.reason);
     }
 
     if (signinLogs.status === "fulfilled" && signinLogs.value.length > 0) {
@@ -352,7 +372,7 @@ export const graphJob: Job = {
       files.push("graph-signin-logs.json");
       records += signinLogs.value.length;
     } else if (signinLogs.status === "rejected") {
-      console.error("[graph] sign-in logs failed:", signinLogs.reason);
+      logGraphError("sign-in logs", signinLogs.reason);
     }
 
     if (files.length === 0) {

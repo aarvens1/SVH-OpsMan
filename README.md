@@ -56,9 +56,10 @@ graph LR
 **Collector is manual-only.** Run it yourself before a briefing, or let the skill trigger it via `collector_run`. No scheduled timer. To run manually:
 
 ```bash
-node collector/dist/index.js gather           # all jobs
-node collector/dist/index.js gather --job=ninjaone  # single job
-node collector/dist/index.js health           # check last run status
+gather                    # all jobs (shell alias from dotfiles/bashrc.sh)
+gather-ninja              # single job (also: gather-graph, gather-unifi, gather-wazuh, gather-planner)
+staging-ls / staging-cat  # browse output files
+runs / disk-trend / alert-trend  # query metrics.db
 ```
 
 **Mostly human-initiated.** Skills are prompt patterns you trigger. The morning briefing timer (`svh-opsman-briefing.timer`) fires `/day-starter` at 07:00 Mon–Thu — that skill will trigger `collector_run` if staging is stale. Everything else: Claude synthesizes, you command.
@@ -144,6 +145,7 @@ Trigger by slash command or by saying any of the listed phrases. Skills load on 
 
 | Skill | Invoke | What it does | Output |
 |-------|--------|-------------|--------|
+| **Staging Review** | `/staging-review` · "What's in staging" · "Show me the latest data" · "Staging summary" · "What did the last gather collect" | Quick table: collection timestamp, per-source record counts, missing/failed jobs. Chat-only reply, no vault write. | Chat |
 | **OpsMan Health** | `/opsman-health` · "Test all data points" · "Connectivity check" · "Is OpsMan healthy" | Fires a lightweight probe against every configured integration and reports ✅/❌/⚠️/➖ per service. Use after MCP changes or when a tool call fails unexpectedly. | Console only (no Obsidian unless asked) |
 | **Security Posture** | `/posture-check` · "Posture check" · "State of the land" | Green/Yellow/Red across Identity, Endpoints, Patching, Infrastructure, SIEM, and Cloud. | Obsidian snapshot |
 | **On-Prem Health** | `/onprem-health` · "Check the servers" · "Server health" · "How are the servers doing" | NinjaOne inventory + backup + patch sweep, Desktop Commander PSRemoting disk/service checks, Hyper-V/cluster/MABS flagged separately. | `Investigations/YYYY-MM-DD-onprem-health.md` |
@@ -303,6 +305,35 @@ node collector/dist/index.js gather --job=planner
 
 # Check what the last run produced
 node collector/dist/index.js health
+```
+
+**Shell aliases** (`dotfiles/bashrc.sh`) — shorter forms for the above:
+
+```bash
+gather                # all jobs
+gather-graph          # Graph only (mail, calendar, audit, alerts, service health)
+gather-ninja          # NinjaOne only
+gather-unifi          # UniFi only
+gather-wazuh          # Wazuh only
+gather-planner        # Planner only
+gather-watch          # re-run watch/metrics phase only (no API calls)
+```
+
+**Browse the output:**
+
+```bash
+staging-ls            # list files in latest staging dir with sizes
+staging-cat ninja-alerts   # pretty-print any staging file (omit .json)
+staging-manifest      # show the manifest (job status + record counts)
+```
+
+**Query the metrics DB:**
+
+```bash
+runs                  # last 15 collector runs (timestamp, type, failures, duration)
+disk-trend            # last 30 disk_usage rows from metrics.db
+alert-trend           # last 20 alert_count rows
+disk-hot              # drives currently above 80%
 ```
 
 Output lands in `staging/YYYY-MM-DD/` with a `manifest.json`. The MCP server reads from whatever the latest dated directory is. Data is considered fresh for 2 hours — after that, `staging_status` reports stale and briefing skills will re-run the collector.
