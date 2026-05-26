@@ -48,9 +48,22 @@ alias wexp='explorer.exe "$(wslpath -w .)"'   # open current dir in Windows Expl
 alias clip='clip.exe'                          # pipe to Windows clipboard: echo hello | clip
 alias wpath='wslpath -w'                       # convert a WSL path to Windows path: wpath ~/foo
 
-# ── Gemini CLI ────────────────────────────────────────────────────────────────
+# ── Antigravity CLI (formerly Gemini) ─────────────────────────────────────────
+# The 'gemini' CLI is deprecated and will be removed after June 18, 2026.
+# Migrated to 'antigravity' as of May 26, 2026.
+# The 'gs' alias can conflict with 'git status', so we unalias it first to be safe.
+unalias gs 2>/dev/null || true
+
 export GEMINI_MODEL=gemini-2.5-pro
-alias gs='gemini'
+
+# Main account (uses default ~/.config/antigravity config)
+alias gs='antigravity'
+
+# Example alias for a 'work' account (will create/use ~/.config/antigravity-work)
+alias ag-work='ANTIGRAVITY_CONFIG_HOME=~/.config/antigravity-work antigravity'
+
+# Example alias for a 'personal' account (will create/use ~/.config/antigravity-personal)
+alias ag-personal='ANTIGRAVITY_CONFIG_HOME=~/.config/antigravity-personal antigravity'
 
 # ── Git ────────────────────────────────────────────────────────────────────────
 alias gst='git status -sb'
@@ -104,7 +117,8 @@ staging-cat() {
         jq . "$f"
     else
         echo "Not found: ${1}.json"
-        echo "Available: $(ls "$OPSMANDIR/staging/$d/" | grep '\.json' | grep -v manifest | sed 's/\.json//' | tr '\n' ' ')"
+        echo "Available: $(ls "$OPSMANDIR/staging/$d/" | grep '\.json' | grep -v manifest | sed 's/\.json//' | tr '
+' ' ')"
     fi
 }
 

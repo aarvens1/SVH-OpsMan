@@ -10,10 +10,11 @@ import { ninjaJob } from "./jobs/ninjaone.js";
 import { wazuhJob } from "./jobs/wazuh.js";
 import { unifiJob } from "./jobs/unifi.js";
 import { plannerJob } from "./jobs/planner.js";
+import { heartbeatJob } from "./jobs/heartbeat.js";
 import type { Job } from "./jobs/base.js";
 import type { JobResult } from "./types.js";
 
-const ALL_JOBS: Job[] = [graphJob, ninjaJob, wazuhJob, unifiJob, plannerJob];
+const ALL_JOBS: Job[] = [graphJob, ninjaJob, wazuhJob, unifiJob, plannerJob, heartbeatJob];
 
 async function runGather(jobFilter?: string): Promise<void> {
   const start = Date.now();

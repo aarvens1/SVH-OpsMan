@@ -10,7 +10,9 @@
     "dev": "tsx src/index.ts",
     "gather": "tsx src/index.ts gather",
     "watch": "tsx src/index.ts watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "axios": "^1.7.0",
@@ -18,9 +20,10 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^18.19.3",
     "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
+    "typescript": "~5.5.2",
+    "vitest": "^4.1.6"
   },
   "engines": {
     "node": ">=18.0.0"

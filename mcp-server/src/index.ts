@@ -42,6 +42,7 @@ import { registerN8nTools } from "./tools/n8n.js";
 
 // Staging / collector
 import { registerStagingTools } from "./tools/staging.js";
+import { registerPowerShellTools } from "./tools/powershell.js";
 
 // Load credentials from Bitwarden. Throws if BW_SESSION is not set or vault fetch fails.
 await loadBitwardenSecrets();

@@ -2,7 +2,7 @@
 name: onprem-health
 description: On-prem server health check across all managed Windows servers. NinjaOne for inventory and backup status, Desktop Commander PSRemoting for disk/service spot-checks, Hyper-V and cluster state flagged separately. Trigger phrases: "onprem health", "check the servers", "server health", "how are the servers doing".
 when_to_use: Use for a broad on-prem infrastructure health sweep — not for investigating a specific server (use /asset-investigation for that) or a specific incident.
-allowed-tools: "mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_get_server mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_volumes mcp__svh-opsman__ninja_list_services mcp__svh-opsman__ninja_list_processes mcp__desktop-commander__* mcp__obsidian__* mcp__time__* Read(powershell/**)"
+allowed-tools: "mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_get_server mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_volumes mcp__svh-opsman__ninja_list_services mcp__svh-opsman__ninja_list_processes mcp__desktop-commander__* mcp__obsidian__* mcp__time__* Read(powershell/**) mcp__svh-opsman__synology_storage_info mcp__svh-opsman__synology_m365_backup_status mcp__svh-opsman__synology_m365_backup_logs"
 ---
 
 # On-Prem Server Health
