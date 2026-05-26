@@ -25,8 +25,9 @@ graph LR
         MS["Microsoft 365\nEntra · Planner · Mail · Calendar\nTeams · OneDrive · SharePoint\nExchange · Intune · MS Admin"]
         MDE["Defender for Endpoint"]
         AZ["Azure ARM"]
-        INFRA["Infrastructure\nNinjaOne · Wazuh\nUniFi Cloud · UniFi Network\nPrinterLogic"]
-        CONF["Confluence"]
+        INFRA["Infrastructure\nNinjaOne · Wazuh\nUniFi Cloud · UniFi Network\nSynology NAS · PrinterLogic"]
+        CONF["Confluence · FreshService"]
+        GOOG["Google\nGmail · Calendar · Drive"]
     end
 
     subgraph External["External MCPs"]
@@ -44,7 +45,7 @@ graph LR
 
 **Obsidian is home base.** Briefings, incident notes, change records, meeting notes — everything Helm produces lands in Obsidian. Nothing goes to Teams, Mail, Planner, or Confluence without you explicitly asking.
 
-**Human-initiated only.** Skills are prompt patterns you trigger. Nothing runs on a schedule. Claude synthesizes — you command.
+**Mostly human-initiated.** Skills are prompt patterns you trigger. The one exception is the morning briefing timer (`svh-opsman-briefing.timer`) — it fires `/day-starter` at 07:00 Mon–Thu via a WSL systemd user unit. Everything else: Claude synthesizes, you command.
 
 **PowerShell module suite** lives in `powershell/`. Load with `. ./connect.ps1` from Windows Terminal. The modules cover write operations and on-prem checks — disabling accounts, isolating devices, rebooting servers, querying Hyper-V and MABS via PSRemoting. A **TUI** (`tui/run-tui.sh`) wraps all module functions in a searchable terminal interface: browse by module, fill parameters in a form, preview the command, confirm before anything destructive runs, and save output to Obsidian or view it inline.
 
@@ -69,12 +70,15 @@ graph LR
 | **MS Admin** 🔒 | Service health, active incidents, Message Center, license subscriptions |
 | **Defender for Endpoint** 🔒 | Devices, alerts, incidents, software inventory, CVEs, TVM recommendations |
 | **Azure** 🔒 | Resource groups, VMs, storage, VNets, NSGs, activity logs, costs, Advisor |
-| **NinjaOne RMM** 🔒 | Servers and workstations — services, patches, event logs, backups, alerts |
+| **NinjaOne RMM** | Servers and workstations — services, patches, event logs, backups, alerts; set maintenance mode, run scripts, reset alerts |
 | **Wazuh SIEM** 🔒 | Alerts, agent inventory, FIM events, vulnerability detections, rootcheck |
 | **UniFi Cloud** 🔒 | Sites and devices across all locations |
-| **UniFi Network** 🔒 | VLANs, WLANs, firewall rules, switch ports, connected clients |
+| **UniFi Network** | VLANs, WLANs, firewall rules, switch ports, connected clients; restart devices, toggle WLANs, block clients, enable/disable ports |
+| **Synology NAS** 🔒 | Active Backup for Microsoft 365 task status and job logs; storage pool and volume health |
 | **PrinterLogic** 🔒 | Printers, drivers, deployment profiles, audit logs, print quotas |
 | **Confluence** | Search, read, edit pages, manage comments |
+| **FreshService** | Tickets, notes, assets, asset types, software inventory |
+| **Google** | Gmail (read, search, send), Google Calendar (events, availability), Google Drive (browse, upload, create folders) |
 | **Obsidian** | Read and write notes — home base for all output |
 | **Fathom** | Meeting transcripts and summaries |
 | **GitHub** | Repos, issues, PRs, Actions workflows |
@@ -234,7 +238,7 @@ This installs and configures:
 - **bat**, **eza**, **delta**, **lazygit**, **btop**, **mtr**, **nmap**, **zoxide**, **httpie**
 - **starship** prompt (lean — git branch + exit code only; API status lives in `status-refresh.sh`)
 - **PowerShell 7** (`pwsh`) via snap — available directly in WSL for running SVH modules locally
-- Aliases: `ops`/`vault` dir shortcuts · `lg` for lazygit · `gs`/`gd`/`gl` git shorthands · `cat`→`bat`, `ls`→`eza`
+- Aliases: `ops`/`vault` dir shortcuts · `lg` for lazygit · `gst`/`gd`/`gl` git shorthands · `gs` for Gemini CLI · `cat`→`bat`, `ls`→`eza`
 
 After the WSL restart, run `tailscale-wsl-setup.sh` to install Tailscale (see setup step 6 below).
 
@@ -255,9 +259,8 @@ The `.claude/` directory is checked into this repo. Opening the project in Claud
 ### 4. Build the server
 
 ```bash
-cd mcp-server
-npm install
-npm run build
+cd mcp-server && npm install && npm run build
+cd ../collector && npm install && npm run build
 ```
 
 ---
@@ -266,15 +269,52 @@ npm run build
 
 All credentials are stored as custom fields on a single Bitwarden vault item named **SVH OpsMan**. Field names must match env var keys exactly.
 
+For the systemd auto-unlock path (recommended), store your Bitwarden master password in Windows Credential Manager:
+
+```powershell
+# Run once from Windows PowerShell
+$cred = Get-Credential -UserName "svh-opsman" -Message "Enter Bitwarden master password"
+New-StoredCredential -Target svh-opsman -UserName svh-opsman `
+  -Password $cred.GetNetworkCredential().Password -Persist LocalMachine
+```
+
+For manual sessions (Claude Code CLI without systemd):
+
 ```bash
-export BW_SESSION=$(bw unlock --raw)   # unlock vault before starting
+export BW_SESSION=$(bw unlock --raw)
 ```
 
 Verify startup:
 ```
 [svh-opsman] Loaded 20 credential(s) from Bitwarden vault
-[svh-opsman] Starting — 9/9 service groups configured
+[svh-opsman] Starting — 12/12 service groups configured
 [svh-opsman] Ready — listening on stdio
+```
+
+---
+
+### 5b. Systemd user services (auto-start on login)
+
+`scripts/setup.sh` installs and enables the three user services. Run it after building:
+
+```bash
+~/SVH-OpsMan/scripts/setup.sh
+```
+
+Services installed under `~/.config/systemd/user/`:
+
+| Unit | Purpose |
+|------|---------|
+| `svh-opsman-bw-unlock.service` | Reads BW password from Windows Credential Manager, writes session token to `~/.config/svh-opsman/bw-session` |
+| `svh-opsman-mcp.service` | Runs the MCP server as a persistent user service, sources the BW session token |
+| `svh-opsman-briefing.timer` | Fires `/day-starter` via Claude Code at 07:00 Mon–Thu |
+
+From Windows: `powershell/Start-WSLServices.ps1` starts the WSL services at login. Register it as a scheduled task:
+
+```powershell
+schtasks.exe /Create /TN "SVH OpsMan WSL Services" `
+  /TR "powershell.exe -NonInteractive -WindowStyle Hidden -File `"$env:USERPROFILE\SVH-OpsMan\powershell\Start-WSLServices.ps1`"" `
+  /SC ONLOGON /RU "$env:USERNAME" /F
 ```
 
 ---
@@ -409,11 +449,14 @@ az role assignment create --assignee <client-id> --role "Cost Management Reader"
 | Service | Where to get credentials | Bitwarden fields |
 |---------|--------------------------|-----------------|
 | **UniFi Cloud** | account.ui.com → API Keys | `UNIFI_API_KEY` |
-| **UniFi Network** | Local admin on UDM Pro / CloudKey | `UNIFI_CONTROLLER_URL` · `UNIFI_USERNAME` · `UNIFI_PASSWORD` |
+| **UniFi Network** | Local API key on UDM Pro / CloudKey (`/proxy/network/api/auth/login`) | `UNIFI_{SITE}_URL` · `UNIFI_{SITE}_KEY` (e.g. `UNIFI_SVH_URL`, `UNIFI_SVH_KEY`) |
 | **NinjaOne** | Administration → Apps → API → Client Credentials | `NINJA_CLIENT_ID` · `NINJA_CLIENT_SECRET` |
 | **Confluence** | id.atlassian.com → Security → API tokens | `CONFLUENCE_DOMAIN` · `CONFLUENCE_EMAIL` · `CONFLUENCE_API_TOKEN` |
 | **Wazuh** | Wazuh manager API user | `WAZUH_URL` · `WAZUH_USERNAME` · `WAZUH_PASSWORD` |
 | **PrinterLogic** | PrinterLogic admin console → API token | `PRINTERLOGIC_URL` · `PRINTERLOGIC_API_TOKEN` |
+| **FreshService** | Admin → Profile → API Key | `FRESHSERVICE_DOMAIN` · `FRESHSERVICE_API_KEY` |
+| **Synology NAS** | DSM user with ActiveBackup 365 and Storage Manager read access | `SYNOLOGY_HOST` · `SYNOLOGY_USER` · `SYNOLOGY_PASSWORD` |
+| **Google** | GCP Console → OAuth 2.0 Client ID (Web app) → generate refresh token via `oauth2-playground` or `gcloud` | `GOOGLE_CLIENT_ID` · `GOOGLE_CLIENT_SECRET` · `GOOGLE_REFRESH_TOKEN` · `GOOGLE_USER_EMAIL` |
 
 ---
 
@@ -455,7 +498,7 @@ Use `Get-SVHTierUsername -Tier <tier>` to retrieve the correct account name for 
 
 ## Reference documents
 
-`references/` — supporting content skills use at runtime. Copy to `Obsidian/References/` so the Obsidian MCP can serve them in any session. The repo versions are the source of truth.
+`references/` — supporting content skills use at runtime. Auto-synced to `OpsManVault/References/` by the session-start hook on every session open. The repo versions are the source of truth — edit here, not in the vault.
 
 | File | Used by |
 |------|---------|
@@ -467,6 +510,7 @@ Use `Get-SVHTierUsername -Tier <tier>` to retrieve the correct account name for 
 | `setup-winrm.md` | Event Log Triage — one-time WinRM trust setup from WSL to Windows targets |
 | `credentials.md` | Credential reference — what's in Bitwarden vs. still missing |
 | `users.md` | Team directory — Entra object IDs and UPNs for IT staff |
+| `tailscale-udm-setup.md` | UDM Pro/SE subnet router deployment guide |
 
 ---
 
