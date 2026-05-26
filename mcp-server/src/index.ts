@@ -36,6 +36,9 @@ import { registerFreshServiceTools } from "./tools/freshservice.js";
 
 // Specialised
 import { registerPrinterLogicTools } from "./tools/printerlogic.js";
+import { registerHibpTools } from "./tools/hibp.js";
+import { registerCloudflareTools } from "./tools/cloudflare.js";
+import { registerN8nTools } from "./tools/n8n.js";
 
 // Load credentials from Bitwarden. Throws if BW_SESSION is not set or vault fetch fails.
 await loadBitwardenSecrets();
@@ -75,6 +78,9 @@ const services = {
   google: checkEnv("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REFRESH_TOKEN"),
   freshservice: checkEnv("FRESHSERVICE_DOMAIN", "FRESHSERVICE_API_KEY"),
   synology: checkEnv("SYNOLOGY_HOST", "SYNOLOGY_USER", "SYNOLOGY_PASSWORD"),
+  hibp: checkEnv("HIBP_API_KEY"),
+  cloudflare: checkEnv("CLOUDFLARE_API_TOKEN"),
+  n8n: checkEnv("N8N_URL", "N8N_API_KEY"),
 };
 
 // Microsoft Graph — covers all Graph-backed services
@@ -110,6 +116,9 @@ registerFreshServiceTools(server, services.freshservice);
 
 // Specialised
 registerPrinterLogicTools(server, services.printerlogic);
+registerHibpTools(server, services.hibp);
+registerCloudflareTools(server, services.cloudflare);
+registerN8nTools(server, services.n8n);
 
 const enabledCount = Object.values(services).filter(Boolean).length;
 console.error(

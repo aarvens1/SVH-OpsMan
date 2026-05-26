@@ -112,7 +112,7 @@ tui/
 - **No autonomous actions.** Claude never sends Teams messages, emails, or Planner updates without an explicit user request in that session.
 - **Obsidian first.** All skill output goes to Obsidian. External destinations (Teams, Confluence, Mail) are always staged for review.
 - **No task deletion.** Mark Planner tasks complete at 100% instead. `planner_delete_task` does not exist.
-- **Read-only defaults.** Most tools read only. Write-capable: Mail (send/draft), Teams (send message), Planner (create/update), To Do (create/update), OneDrive (create folder/link), Confluence (create/update pages and comments), Entra (dismiss risky user), Obsidian (read/write), Excalidraw (create/update diagrams).
+- **Read-only defaults.** Most tools read only. Write-capable: Mail (send/draft), Teams (send message), Planner (create/update), To Do (create/update), OneDrive (create folder/link), Confluence (create/update pages and comments), Entra (dismiss risky user), NinjaOne (maintenance mode, run script, reset alert), UniFi Network (restart device, WLAN toggle, client block, port enable/disable), Google Drive (create folder, upload file), FreshService (create/update ticket, add note), Obsidian (read/write), Excalidraw (create/update diagrams).
 - **Diagrams before descriptions.** For network topology, attack paths, asset network position, change impact scope, and project WBS — produce an Excalidraw diagram rather than prose. Save to `Diagrams/<category>/` and embed with `![[filename.excalidraw]]`.
 - **Check the manifest first.** Before any session synthesis using collector data, confirm staging is fresh and no jobs failed silently.
 - **IR Triage only** sends non-draft Teams messages. Build it last for that reason.
@@ -175,7 +175,7 @@ All credentials are in the **SVH OpsMan** BW item. Check both custom fields AND 
 
 In SVH OpsMan (custom fields): GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET, GRAPH_USER_ID, MDE_*, AZURE_*, NINJA_CLIENT_ID, NINJA_CLIENT_SECRET, OBSIDIAN_API_KEY.
 
-Not yet found in BW: WAZUH_*, CONFLUENCE_*, UNIFI_*, PRINTERLOGIC_*. Search BW notes when looking for these.
+Not yet added to BW (need to add to enable these tools): WAZUH_*, CONFLUENCE_*, UNIFI_*, PRINTERLOGIC_*, FRESHSERVICE_*, SYNOLOGY_*, GOOGLE_*, HIBP_API_KEY, CLOUDFLARE_API_TOKEN, N8N_URL, N8N_API_KEY. Search BW notes when looking for credentials — some are stored there rather than in custom fields. See `references/credentials.md` for full details.
 
 ### PowerShell modules
 
@@ -206,6 +206,25 @@ $cred = New-Object PSCredential(
 
 ### Known issues
 - Claude Code account switching: work↔personal swap breaks OpsMan on token expiry. No solution yet — tracked in personal To Do.
+
+### Known runtime quirks
+
+**Planner 412 Precondition Failed** — Planner requires the current ETag on updates. Re-fetch the task with `planner_get_task` before retrying — the fresh fetch returns the current ETag.
+
+**UniFi session expiry** — Controller sessions last ~1 hour. Repeated auth errors mid-session usually mean the credentials are wrong or the controller isn't reachable from WSL, not a session race — the client re-authenticates automatically.
+
+**Wazuh TLS errors** — The Wazuh client skips certificate verification (on-prem self-signed cert). "Connection refused" means `WAZUH_URL` is wrong or port 55000 isn't reachable from WSL — check `https://` prefix and firewall rules.
+
+**Synology DSM error 119** — Session expired. The SID cache is cleared automatically on this error so the next call re-authenticates. If it loops, check that `SYNOLOGY_USER` still has an active DSM session (DSM can invalidate sessions on password change).
+
+### Dev tools
+
+Browse all registered MCP tools without opening Claude:
+```bash
+cd mcp-server && npm run build
+npx @modelcontextprotocol/inspector node dist/index.js
+```
+Useful for verifying a new tool registered and checking its input schema before end-to-end testing.
 
 ## References
 

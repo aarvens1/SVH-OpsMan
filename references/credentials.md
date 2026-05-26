@@ -103,6 +103,25 @@ OAuth2 refresh token flow. Create a Web application client in GCP Console → AP
 | `GOOGLE_REFRESH_TOKEN` | Long-lived refresh token |
 | `GOOGLE_USER_EMAIL` | Gmail address to lock API calls to (e.g. `astevens2694@gmail.com`) |
 
+### Have I Been Pwned
+
+| Env var | What it holds |
+|---------|--------------|
+| `HIBP_API_KEY` | API key from haveibeenpwned.com — requires a paid subscription for account lookups |
+
+### Cloudflare
+
+| Env var | What it holds |
+|---------|--------------|
+| `CLOUDFLARE_API_TOKEN` | API token from dash.cloudflare.com → My Profile → API Tokens — needs Zone:Read and Analytics:Read permissions |
+
+### n8n
+
+| Env var | What it holds |
+|---------|--------------|
+| `N8N_URL` | n8n instance base URL (e.g. `https://n8n.internal` or `https://n8n.yourdomain.com`) |
+| `N8N_API_KEY` | n8n API key — Settings → n8n API → Create an API key |
+
 ## PSRemoting — sa_stevens / da_stevens (optional BW additions)
 
 These accounts currently require interactive `Get-Credential` when PSRemoting from WSL.

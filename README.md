@@ -79,6 +79,9 @@ graph LR
 | **Confluence** | Search, read, edit pages, manage comments |
 | **FreshService** | Tickets, notes, assets, asset types, software inventory |
 | **Google** | Gmail (read, search, send), Google Calendar (events, availability), Google Drive (browse, upload, create folders) |
+| **Have I Been Pwned** 🔒 | Check email addresses and domains against breach and paste databases |
+| **Cloudflare** 🔒 | Zones, DNS records, traffic analytics, WAF/firewall events |
+| **n8n** 🔒 | List workflows, browse execution history, debug failed runs |
 | **Obsidian** | Read and write notes — home base for all output |
 | **Fathom** | Meeting transcripts and summaries |
 | **GitHub** | Repos, issues, PRs, Actions workflows |
@@ -579,6 +582,11 @@ Skill shortcuts replace WezTerm's LEADER key with **Ctrl+Alt+[key]**:
 
 ---
 
-## Roadmap & design notes
+## Dev tools
 
-`roadmap.md` tracks the evolution plan, open design issues, architectural decisions, and known runtime quirks. Review it before adding new tools or refactoring high-frequency paths.
+Browse all registered MCP tools without opening Claude:
+
+```bash
+cd mcp-server && npm run build
+npx @modelcontextprotocol/inspector node dist/index.js
+```
