@@ -36,11 +36,9 @@ export function registerN8nTools(server: McpServer, enabled: boolean): void {
     async ({ active_only }) => {
       if (!process.env["N8N_URL"] || !process.env["N8N_API_KEY"]) return cfgErr(NO_CFG_MSG);
       try {
-        const params: Record<string, unknown> = { limit: 100 };
-        if (active_only) params["active"] = true;
-        const res = await n8nClient().get("/workflows", { params });
+        const res = await n8nClient().get("/workflows", { params: { limit: 100 } });
         const data = res.data as A;
-        const workflows = ((data["data"] as A[]) ?? []).map((w: A) => ({
+        let workflows = ((data["data"] as A[]) ?? []).map((w: A) => ({
           id: w["id"],
           name: w["name"],
           active: w["active"],
@@ -48,6 +46,7 @@ export function registerN8nTools(server: McpServer, enabled: boolean): void {
           created_at: w["createdAt"],
           updated_at: w["updatedAt"],
         }));
+        if (active_only) workflows = workflows.filter((w) => w.active === true);
         return ok({ count: workflows.length, workflows });
       } catch (e) {
         return err(e);
@@ -120,19 +119,20 @@ export function registerN8nTools(server: McpServer, enabled: boolean): void {
         const res = await n8nClient().get(`/executions/${execution_id}`);
         const e = res.data as A;
         const nodeData = (e["data"] as A | undefined)?.["resultData"] as A | undefined;
-        const nodes = Object.entries((nodeData?.["runData"] as Record<string, unknown>) ?? {}).map(
-          ([nodeName, runs]) => {
-            const run = (runs as A[])[0] as A | undefined;
-            const output = run?.["data"] as A | undefined;
-            const error = run?.["error"] as A | undefined;
-            return {
-              node: nodeName,
-              execution_time_ms: run?.["executionTime"],
-              error: error ? { message: error["message"], name: error["name"] } : undefined,
-              output_items: (output?.["main"] as A[][] | undefined)?.[0]?.length,
-            };
-          }
-        );
+        const runData = nodeData?.["runData"];
+        const nodes = runData && typeof runData === "object" && !Array.isArray(runData)
+          ? Object.entries(runData as Record<string, unknown>).map(([nodeName, runs]) => {
+              const run = (runs as A[])[0] as A | undefined;
+              const output = run?.["data"] as A | undefined;
+              const error = run?.["error"] as A | undefined;
+              return {
+                node: nodeName,
+                execution_time_ms: run?.["executionTime"],
+                error: error ? { message: error["message"], name: error["name"] } : undefined,
+                output_items: (output?.["main"] as A[][] | undefined)?.[0]?.length,
+              };
+            })
+          : [];
         return ok({
           id: e["id"],
           workflow_name: (e["workflowData"] as A | undefined)?.["name"],
@@ -140,12 +140,13 @@ export function registerN8nTools(server: McpServer, enabled: boolean): void {
           mode: e["mode"],
           started_at: e["startedAt"],
           stopped_at: e["stoppedAt"],
-          error: (e["data"] as A | undefined)?.["resultData"]
-            ? undefined
-            : "no execution data",
+          note: !nodeData ? "execution data not available (may be pruned)" : undefined,
           nodes,
         });
-      } catch (e) {
+      } catch (e: unknown) {
+        if (axios.isAxiosError(e) && e.response?.status === 404) {
+          return err(new Error(`Execution ${execution_id} not found`));
+        }
         return err(e);
       }
     }

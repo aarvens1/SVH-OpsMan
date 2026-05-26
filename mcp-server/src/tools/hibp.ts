@@ -54,8 +54,9 @@ export function registerHibpTools(server: McpServer, enabled: boolean): void {
         }));
         return ok({ email, breach_count: breaches.length, breaches });
       } catch (e: unknown) {
-        if (axios.isAxiosError(e) && e.response?.status === 404) {
-          return ok({ email, breach_count: 0, breaches: [], note: "Not found in any known breach" });
+        if (axios.isAxiosError(e)) {
+          if (e.response?.status === 404) return ok({ email, breach_count: 0, breaches: [], note: "Not found in any known breach" });
+          if (e.response?.status === 429) return err(new Error("HIBP rate limit hit — wait 1–2 seconds between account lookups"));
         }
         return err(e);
       }
@@ -86,8 +87,9 @@ export function registerHibpTools(server: McpServer, enabled: boolean): void {
         }));
         return ok({ email, paste_count: pastes.length, pastes });
       } catch (e: unknown) {
-        if (axios.isAxiosError(e) && e.response?.status === 404) {
-          return ok({ email, paste_count: 0, pastes: [], note: "Not found in any known paste" });
+        if (axios.isAxiosError(e)) {
+          if (e.response?.status === 404) return ok({ email, paste_count: 0, pastes: [], note: "Not found in any known paste" });
+          if (e.response?.status === 429) return err(new Error("HIBP rate limit hit — wait 1–2 seconds between account lookups"));
         }
         return err(e);
       }
@@ -127,7 +129,11 @@ export function registerHibpTools(server: McpServer, enabled: boolean): void {
           is_retired: b["IsRetired"],
           is_spam_list: b["IsSpamList"],
         });
-      } catch (e) {
+      } catch (e: unknown) {
+        if (axios.isAxiosError(e)) {
+          if (e.response?.status === 404) return err(new Error(`Breach "${name}" not found — check the name against hibp_check_account results`));
+          if (e.response?.status === 429) return err(new Error("HIBP rate limit hit — wait 1–2 seconds between lookups"));
+        }
         return err(e);
       }
     }

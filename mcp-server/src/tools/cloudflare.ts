@@ -151,21 +151,22 @@ export function registerCloudflareTools(server: McpServer, enabled: boolean): vo
     async ({ zone_id, limit, action }) => {
       if (!process.env["CLOUDFLARE_API_TOKEN"]) return cfgErr(NO_CFG_MSG);
       try {
-        const params: Record<string, unknown> = { limit };
-        if (action) params["action"] = action;
-        const res = await cfClient().get(`/zones/${zone_id}/security/events`, { params });
-        const events = cfData<A>(res.data).map((e: A) => ({
-          id: e["rayId"] ?? e["id"],
+        const res = await cfClient().get(`/zones/${zone_id}/firewall/events`, {
+          params: { per_page: limit },
+        });
+        let events = cfData<A>(res.data).map((e: A) => ({
+          id: e["ray_id"] ?? e["id"],
           action: e["action"],
-          rule_id: e["ruleId"],
+          rule_id: e["rule_id"],
           source: e["source"],
-          occurred_at: e["occurredAt"],
-          client_ip: e["clientIP"],
-          client_country: e["clientCountryName"],
-          client_request_path: e["clientRequestPath"],
-          client_request_method: e["clientRequestHTTPMethodName"],
-          user_agent: e["userAgent"],
+          occurred_at: e["occurred_at"],
+          ip: e["ip"],
+          country: e["country"],
+          host: e["host"],
+          path: e["path"],
+          user_agent: e["user_agent"],
         }));
+        if (action) events = events.filter((e) => e.action === action);
         return ok({ zone_id, count: events.length, events });
       } catch (e) {
         return err(e);
