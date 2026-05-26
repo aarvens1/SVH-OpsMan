@@ -310,4 +310,142 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
       }
     }
   );
+
+  // ── Write operations ───────────────────────────────────────────────────────
+
+  server.registerTool(
+    "unifi_restart_device",
+    {
+      description:
+        "Restart a UniFi network device (access point, switch, or gateway) by MAC address. " +
+        "The device will be offline for 30–90 seconds during reboot.",
+      inputSchema: z.object({
+        controller: CONTROLLER_PARAM,
+        site_id: SITE_PARAM,
+        device_mac: z.string().describe("MAC address of the device to restart (e.g. aa:bb:cc:dd:ee:ff)"),
+      }),
+    },
+    async ({ controller, site_id, device_mac }) => {
+      try {
+        const mac = device_mac.toLowerCase().replace(/[-:]/g, ":").trim();
+        await createControllerClient(controller).post(`/api/s/${site_id}/cmd/devmgr`, {
+          cmd: "restart",
+          mac,
+        });
+        return ok({ controller, site_id, mac, restarted: true });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "unifi_set_wlan_state",
+    {
+      description:
+        "Enable or disable a wireless network (SSID) on a UniFi site. " +
+        "Use unifi_list_wlans to get the wlan_id.",
+      inputSchema: z.object({
+        controller: CONTROLLER_PARAM,
+        site_id: SITE_PARAM,
+        wlan_id: z.string().describe("WLAN config ID from unifi_list_wlans"),
+        enabled: z.boolean().describe("true to enable the SSID, false to disable"),
+      }),
+    },
+    async ({ controller, site_id, wlan_id, enabled }) => {
+      try {
+        await createControllerClient(controller).put(
+          `/api/s/${site_id}/rest/wlanconf/${wlan_id}`,
+          { enabled }
+        );
+        return ok({ controller, site_id, wlan_id, enabled });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "unifi_set_client_block",
+    {
+      description:
+        "Block or unblock a wireless client by MAC address. " +
+        "Blocked clients are prevented from associating with any SSID on the site. " +
+        "Use unifi_list_clients to find the client MAC.",
+      inputSchema: z.object({
+        controller: CONTROLLER_PARAM,
+        site_id: SITE_PARAM,
+        client_mac: z.string().describe("Client MAC address (e.g. aa:bb:cc:dd:ee:ff)"),
+        blocked: z.boolean().describe("true to block the client, false to unblock"),
+      }),
+    },
+    async ({ controller, site_id, client_mac, blocked }) => {
+      try {
+        const mac = client_mac.toLowerCase().replace(/[-:]/g, ":").trim();
+        const cmd = blocked ? "block-sta" : "unblock-sta";
+        await createControllerClient(controller).post(`/api/s/${site_id}/cmd/stamgr`, {
+          cmd,
+          mac,
+        });
+        return ok({ controller, site_id, mac, blocked });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "unifi_set_port_enabled",
+    {
+      description:
+        "Enable or disable a specific port on a UniFi switch by port index. " +
+        "Disabling sets the port override op_mode to 'disabled'; enabling removes the override to restore the assigned profile. " +
+        "Use unifi_get_switch_ports to find port indices.",
+      inputSchema: z.object({
+        controller: CONTROLLER_PARAM,
+        site_id: SITE_PARAM,
+        device_mac: z.string().describe("MAC address of the switch"),
+        port_idx: z.number().int().min(1).describe("Port index (1-based) from unifi_get_switch_ports"),
+        enabled: z.boolean().describe("true to enable the port, false to disable"),
+      }),
+    },
+    async ({ controller, site_id, device_mac, port_idx, enabled }) => {
+      try {
+        const client = createControllerClient(controller);
+        const mac = device_mac.toLowerCase().replace(/[-:]/g, ":").trim();
+
+        const res = await client.get(`/api/s/${site_id}/stat/device/${mac.replace(/:/g, "")}`);
+        const items = classicData(res.data);
+        const device = items[0] as A | undefined;
+        if (!device) return err(new Error(`Device ${device_mac} not found`));
+
+        const deviceId = device["_id"] as string | undefined;
+        if (!deviceId) return err(new Error("Could not resolve device ID"));
+
+        const overrides = [...((device["port_overrides"] as A[] | undefined) ?? [])];
+        const existing = overrides.findIndex((o) => (o["port_idx"] as number) === port_idx);
+
+        if (enabled) {
+          // Remove the disable override — restores the port's assigned profile
+          if (existing >= 0 && (overrides[existing]?.["op_mode"] as string | undefined) === "disabled") {
+            overrides.splice(existing, 1);
+          }
+        } else {
+          if (existing >= 0) {
+            overrides[existing] = { ...overrides[existing], op_mode: "disabled" };
+          } else {
+            overrides.push({ port_idx, op_mode: "disabled" });
+          }
+        }
+
+        await client.put(`/api/s/${site_id}/rest/device/${deviceId}`, {
+          port_overrides: overrides,
+        });
+
+        return ok({ controller, site_id, device_mac: mac, port_idx, enabled });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
 }
