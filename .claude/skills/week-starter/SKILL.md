@@ -21,6 +21,18 @@ allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mc
    - If neither is present or both are stale: fall back to 7 days. Log "No recent weekly state — using 7-day default" in the note.
 4. Use the computed window as **N days** in all data queries below.
 
+### Backup currency check
+
+After reading the state file, evaluate backup status and surface any failures in **Needs attention now**:
+
+- **OneDrive**: if `last_onedrive_backup` is missing, OR `last_onedrive_backup < last_day_ender`, flag it:
+  `⚠️ OneDrive backup overdue — last backup: [DATE or "never"] / last Day Ender: [DATE]`
+- **Google Drive**: if `last_gdrive_backup` is missing, OR `last_gdrive_backup < last_week_ender` (backup predates last Week Ender), flag it:
+  `⚠️ Google Drive backup overdue — last backup: [DATE or "never"] / last Week Ender: [DATE]`
+- If both are current: do not surface. Record healthy state only.
+
+Google Drive backup runs at the end of each Week Ender (Thursdays). If this check fires Monday and last Week Ender was more than a week ago, that is expected — flag it if it's been more than 10 days.
+
 ## Step 1 — Last week's state
 
 ### Step 1a — Check and refresh staging

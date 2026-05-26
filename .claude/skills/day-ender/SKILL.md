@@ -155,3 +155,16 @@ After the Obsidian note is appended, update `System/briefing-state.md` in the Ob
 - Set `last_day_ender` to the current ISO timestamp (with timezone offset, e.g. `2026-05-12T17:00:00-07:00`).
 - Preserve all other fields (`last_day_starter`, `last_week_starter`, `last_week_ender`).
 - Use `mode: rewrite` since this is a state file, not a daily note.
+
+## Step 4 — Run OneDrive backup
+
+After updating the state file, run the OneDrive backup. This writes `last_onedrive_backup` to the state file on success.
+
+Run in a Bash tool call:
+```bash
+bash ~/SVH-OpsMan/scripts/backup.sh --onedrive-only
+```
+
+Wait for it to complete (typically 3–8 minutes on first run, under a minute on subsequent runs). Report the result inline:
+- **Success** — note "✅ OneDrive backup complete" at the end of your response.
+- **Failure** — note it as `⚠️ OneDrive backup failed — check log at ~/.local/share/svh-opsman/backup-YYYY-MM-DD.log` and surface it in **Active issues at EOD** in the daily note via `edit_block`.

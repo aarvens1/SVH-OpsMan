@@ -32,10 +32,22 @@ last_day_starter: 2026-05-12T08:30:00-07:00
 last_day_ender: 2026-05-12T17:00:00-07:00
 last_week_starter: 2026-05-11T08:45:00-07:00
 last_week_ender: 2026-05-08T09:55:00-07:00
+last_onedrive_backup: 2026-05-12T17:05:00-07:00
+last_gdrive_backup: 2026-05-08T10:00:00-07:00
 ---
 ```
 
 Preserve all other fields when updating `last_day_starter`. If the file doesn't exist yet, create it with only the `last_day_starter` field.
+
+### Backup currency check
+
+After reading the state file, evaluate backup status and surface any failures in **Needs attention now**:
+
+- **OneDrive**: if `last_onedrive_backup` is missing, OR `last_onedrive_backup < last_day_ender` (backup predates the most recent Day Ender run), flag it:
+  `⚠️ OneDrive backup overdue — last backup: [DATE or "never"] / last Day Ender: [DATE]`
+- If `last_onedrive_backup >= last_day_ender`: do not surface this. Record a healthy state only.
+
+The OneDrive backup runs at the end of each Day Ender. If this check fires on a Monday, compare against `last_day_ender` — if the last backup was before Thursday EOD, flag it.
 
 ## Step 1a — Check and refresh staging
 

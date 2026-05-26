@@ -211,14 +211,15 @@ if systemctl --user is-system-running &>/dev/null 2>&1 || systemctl --user statu
   cp "$REPO_DIR/systemd/user/svh-opsman-backup.service" "$USER_SYSTEMD/"
   cp "$REPO_DIR/systemd/user/svh-opsman-backup.timer"   "$USER_SYSTEMD/"
   systemctl --user daemon-reload
-  systemctl --user enable svh-opsman-backup.timer 2>/dev/null
-  ok "svh-opsman-backup.timer installed and enabled"
+  ok "svh-opsman-backup.service and .timer installed (not enabled — backup is triggered by Day Ender and Week Ender)"
 else
   warn "systemd not running — install backup units manually after WSL restart:"
   warn "  cp systemd/user/svh-opsman-backup.{service,timer} ~/.config/systemd/user/"
-  warn "  systemctl --user enable --now svh-opsman-backup.timer"
+  warn "  systemctl --user daemon-reload"
 fi
-warn "Action required: configure rclone remotes before the timer fires:"
+warn "Backup runs automatically at the end of each Day Ender (OneDrive) and Week Ender (Google Drive)."
+warn "To run manually: bash scripts/backup.sh"
+warn "Action required: configure rclone remotes if not already done:"
 warn "  rclone config   (add 'onedrive' and 'gdrive' — see docs/setup/backup.md)"
 
 # ── 7. Hook permissions ───────────────────────────────────────────────────────

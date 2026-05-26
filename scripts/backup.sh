@@ -2,6 +2,11 @@
 # SVH OpsMan — WSL backup to OneDrive (comprehensive) and Google Drive (vault only)
 # Requires rclone configured with remotes named "onedrive" and "gdrive".
 # See docs/setup/backup.md for first-time setup.
+#
+# Usage:
+#   backup.sh                 — both OneDrive and Google Drive
+#   backup.sh --onedrive-only — OneDrive only (run by Day Ender)
+#   backup.sh --gdrive-only   — Google Drive only (run by Week Ender)
 
 set -euo pipefail
 
@@ -13,13 +18,38 @@ ok()   { echo -e "  ${GREEN}✓${RESET} $*"; }
 warn() { echo -e "  ${YELLOW}⚠${RESET}  $*"; }
 die()  { echo -e "  ${RED}✗ $*${RESET}" >&2; exit 1; }
 
+# ── parse flags ───────────────────────────────────────────────────────────────
+MODE=both
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --onedrive-only) MODE=onedrive; shift ;;
+    --gdrive-only)   MODE=gdrive;   shift ;;
+    *) warn "Unknown flag: $1"; shift ;;
+  esac
+done
+
 LOG_DIR="$HOME/.local/share/svh-opsman"
 LOG_FILE="$LOG_DIR/backup-$(date +%Y-%m-%d).log"
 mkdir -p "$LOG_DIR"
 
 # Redirect stdout+stderr to log and terminal
 exec > >(tee -a "$LOG_FILE") 2>&1
-echo "=== Backup started: $(date --iso-8601=seconds) ==="
+echo "=== Backup started: $(date --iso-8601=seconds) [mode: $MODE] ==="
+
+VAULT="/mnt/c/Users/astevens/vaults/OpsManVault"
+STATE_FILE="$VAULT/System/briefing-state.md"
+
+# Update a key: value field in the briefing state file
+update_state_field() {
+  local field="$1" value="$2"
+  [ -f "$STATE_FILE" ] || { warn "State file not found ($STATE_FILE) — skipping state update"; return; }
+  if grep -q "^${field}:" "$STATE_FILE"; then
+    sed -i "s|^${field}: .*|${field}: ${value}|" "$STATE_FILE"
+  else
+    echo "${field}: ${value}" >> "$STATE_FILE"
+  fi
+  ok "State: ${field} = ${value}"
+}
 
 # ── preflight ─────────────────────────────────────────────────────────────────
 step "Preflight checks"
@@ -45,9 +75,12 @@ else
   warn "Run: rclone config   (see docs/setup/backup.md)"
 fi
 
-$ONEDRIVE_OK || $GDRIVE_OK || die "No remotes configured — nothing to back up"
+case "$MODE" in
+  onedrive) $ONEDRIVE_OK || die "OneDrive remote not configured" ;;
+  gdrive)   $GDRIVE_OK   || die "Google Drive remote not configured" ;;
+  both)     $ONEDRIVE_OK || $GDRIVE_OK || die "No remotes configured — nothing to back up" ;;
+esac
 
-VAULT="/mnt/c/Users/astevens/vaults/OpsManVault"
 [ -d "$VAULT" ] || die "Vault not found at $VAULT"
 
 # ── common rclone flags ───────────────────────────────────────────────────────
@@ -59,7 +92,7 @@ RCLONE_FLAGS=(
 )
 
 # ── OneDrive — comprehensive backup ──────────────────────────────────────────
-if $ONEDRIVE_OK; then
+if { [[ "$MODE" == "both" ]] || [[ "$MODE" == "onedrive" ]]; } && $ONEDRIVE_OK; then
   step "OneDrive — vault"
   rclone sync "$VAULT/" onedrive:Backups/WSL/vaults/OpsManVault/ \
     --exclude ".obsidian/workspace.json" \
@@ -95,16 +128,20 @@ if $ONEDRIVE_OK; then
       rclone copyto "$HOME/$f" "onedrive:Backups/WSL/dotfiles/$f" "${RCLONE_FLAGS[@]}" && \
       ok "$f" || true
   done
+
+  update_state_field "last_onedrive_backup" "$(date --iso-8601=seconds)"
 fi
 
 # ── Google Drive — vault only ─────────────────────────────────────────────────
-if $GDRIVE_OK; then
+if { [[ "$MODE" == "both" ]] || [[ "$MODE" == "gdrive" ]]; } && $GDRIVE_OK; then
   step "Google Drive — vault"
   rclone sync "$VAULT/" gdrive:Backups/OpsManVault/ \
     --exclude ".obsidian/workspace.json" \
     --exclude ".obsidian/workspace-mobile.json" \
     "${RCLONE_FLAGS[@]}"
   ok "Vault synced to Google Drive"
+
+  update_state_field "last_gdrive_backup" "$(date --iso-8601=seconds)"
 fi
 
 # ── done ──────────────────────────────────────────────────────────────────────

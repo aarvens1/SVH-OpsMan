@@ -108,6 +108,19 @@ After the Obsidian note is appended, update `System/briefing-state.md` in the Ob
 
 If any Draft Planner action blocks remain in the weekly note at the end of the session (i.e. Aaron did not confirm them), update `has_pending_tasks` to `true` in the weekly note's frontmatter using `edit_block`.
 
-## Step 5 — Memory cleanup
+## Step 5 — Run Google Drive backup
+
+After updating the state file, run the Google Drive vault backup. This writes `last_gdrive_backup` to the state file on success.
+
+Run in a Bash tool call:
+```bash
+bash ~/SVH-OpsMan/scripts/backup.sh --gdrive-only
+```
+
+Wait for it to complete (typically 3–8 minutes on first run, under a minute on subsequent runs). Report the result inline:
+- **Success** — note "✅ Google Drive backup complete" at the end of your response.
+- **Failure** — note it as `⚠️ Google Drive backup failed — check log at ~/.local/share/svh-opsman/backup-YYYY-MM-DD.log` and add it to **Seeds for next week** in the weekly note via `edit_block`.
+
+## Step 6 — Memory cleanup
 
 Run the `memory-cleanup` skill. This audits all memory files, deletes stale or resolved entries, moves any actionable items to `TODO.md`, and rebuilds the `MEMORY.md` index. Report findings inline — no separate output needed.
