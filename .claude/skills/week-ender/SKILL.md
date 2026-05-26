@@ -107,3 +107,7 @@ After the Obsidian note is appended, update `System/briefing-state.md` in the Ob
 - Use `mode: rewrite`.
 
 If any Draft Planner action blocks remain in the weekly note at the end of the session (i.e. Aaron did not confirm them), update `has_pending_tasks` to `true` in the weekly note's frontmatter using `edit_block`.
+
+## Step 5 — Memory cleanup
+
+Run the `memory-cleanup` skill. This audits all memory files, deletes stale or resolved entries, moves any actionable items to `TODO.md`, and rebuilds the `MEMORY.md` index. Report findings inline — no separate output needed.
