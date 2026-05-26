@@ -1,0 +1,28 @@
+{
+  "name": "svh-opsman-collector",
+  "version": "1.0.0",
+  "description": "SVH OpsMan — on-demand data collector and metrics writer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "gather": "tsx src/index.ts gather",
+    "watch": "tsx src/index.ts watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "better-sqlite3": "^9.6.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
