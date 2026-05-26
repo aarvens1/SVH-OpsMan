@@ -40,6 +40,9 @@ import { registerHibpTools } from "./tools/hibp.js";
 import { registerCloudflareTools } from "./tools/cloudflare.js";
 import { registerN8nTools } from "./tools/n8n.js";
 
+// Staging / collector
+import { registerStagingTools } from "./tools/staging.js";
+
 // Load credentials from Bitwarden. Throws if BW_SESSION is not set or vault fetch fails.
 await loadBitwardenSecrets();
 
@@ -81,6 +84,7 @@ const services = {
   hibp: checkEnv("HIBP_API_KEY"),
   cloudflare: checkEnv("CLOUDFLARE_API_TOKEN"),
   n8n: checkEnv("N8N_URL", "N8N_API_KEY"),
+  staging: true as boolean,
 };
 
 // Microsoft Graph — covers all Graph-backed services
@@ -119,6 +123,7 @@ registerPrinterLogicTools(server, services.printerlogic);
 registerHibpTools(server, services.hibp);
 registerCloudflareTools(server, services.cloudflare);
 registerN8nTools(server, services.n8n);
+registerStagingTools(server, services.staging);
 
 const enabledCount = Object.values(services).filter(Boolean).length;
 console.error(

@@ -1,8 +1,8 @@
 ---
 name: day-starter
-description: Morning briefing. Covers the period since the last Day Ender ran (on Mondays) or since the last Day Starter ran (other days), with a 72-hour cap. Falls back to 24h (72h on Monday) if no state exists. Override with "last N days/hours" or "reset" to use defaults. Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
+description: Morning briefing. Covers the period since the last Day Ender ran (on Mondays) or since the last Day Starter ran (other days), with a 120-hour cap. Falls back to 120h if no state exists (no shorter default). Override with "last N days/hours" or "reset" to use defaults. Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
 when_to_use: Use at the start of each workday to get a prioritized digest of what needs attention.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_get_backup_usage mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__collector_run mcp__svh-opsman__metrics_disk_over_threshold mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_get_backup_usage mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__*"
 ---
 
 # Day Starter
@@ -13,13 +13,13 @@ allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list
 
 1. Call `mcp__time__get_current_time` to get the current timestamp and day of week.
 2. Check whether the user specified an explicit override in their invocation:
-   - **"reset"** or **"default"**: skip the state file. Use 24h (72h if Monday). Write current timestamp to state after the run.
+   - **"reset"** or **"default"**: skip the state file. Use 120h. Write current timestamp to state after the run.
    - **"last N days"** / **"last N hours"** / any explicit time range: use that window. Write current timestamp to state after the run.
 3. If no override, read `System/briefing-state.md` from the Obsidian vault:
    - If the file doesn't exist or can't be parsed: treat as no state.
    - **If today is Monday and `last_day_ender` is present**: set the window to `now − last_day_ender`. This anchors to Thursday's EOD wrap so nothing in the Thu-afternoon → weekend gap falls through. Log "Monday: anchoring to last Day Ender (TIMESTAMP)" in the note. Skip the `last_day_starter` check below.
-   - If `last_day_starter` is present and **≤ 72 hours ago**: set the window to `now − last_day_starter`.
-   - If `last_day_starter` is missing or **> 72 hours ago**: fall back to defaults — 24h (72h if Monday). Log "No recent state found — using default window" in the note.
+   - If `last_day_starter` is present and **≤ 120 hours ago**: set the window to `now − last_day_starter`.
+   - If `last_day_starter` is missing or **> 120 hours ago**: use 120h from current time. Never fall back to a shorter window. Log "No recent state — using 120h window" in the note.
 4. Note the computed window (e.g., "14h 22m") — use it consistently as **N hours** in all data queries below.
 
 ### State file format
@@ -36,6 +36,26 @@ last_week_ender: 2026-05-08T09:55:00-07:00
 ```
 
 Preserve all other fields when updating `last_day_starter`. If the file doesn't exist yet, create it with only the `last_day_starter` field.
+
+## Step 1a — Check and refresh staging
+
+Call `staging_status` first.
+
+- If `fresh: true` (< 2h old): proceed directly to Step 1 using staging data where noted.
+- If `fresh: false` or no staging data exists: call `collector_run` (no job arg — runs all jobs). Wait for it to complete, then note the result in **Data gaps** if any jobs failed.
+
+After staging is confirmed (fresh or just refreshed), the infrastructure-heavy parts of Step 1 read from `staging_read` instead of calling live APIs:
+- Ninja devices/alerts → `staging_read { file: "ninja-devices" }` and `staging_read { file: "ninja-alerts" }`
+- Wazuh alerts → `staging_read { file: "wazuh-alerts" }` (fall back to `wazuh_search_alerts` if the staging job failed)
+- UniFi alerts → `staging_read { file: "unifi-alerts" }` (fall back to `unifi_list_sites` if the staging job failed)
+- Tenant audit log → `staging_read { file: "graph-audit" }` (fall back to `entra_get_audit_logs` if the staging job failed)
+
+The following always use live APIs regardless of staging state (real-time security signals that must not be stale):
+- `entra_list_risky_users`
+- `entra_get_sign_in_logs`
+- `mde_list_alerts`
+- `admin_list_service_incidents`
+- All Planner/To Do/Mail/Calendar/Teams queries
 
 ## Step 1 — Security & monitoring
 

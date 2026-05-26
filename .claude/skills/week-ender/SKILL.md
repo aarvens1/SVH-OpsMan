@@ -2,7 +2,7 @@
 name: week-ender
 description: Thursday pre-meeting wrap-up. What shipped, what slipped, seeds for next week, and an optional summary draft. Run before the Thursday admin meeting so the week's state is visible going in. Trigger phrases: "week ender", "wrap up the week", "weekly wrap".
 when_to_use: Use Thursday morning before the admin meeting. The Day Ender still runs at EOD to capture Thursday afternoon — the weekly note stays as a pre-meeting snapshot.
-allowed-tools: "mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__calendar_list_events mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__calendar_list_events mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__obsidian__* mcp__time__*"
 ---
 
 # Week Ender
@@ -22,7 +22,16 @@ allowed-tools: "mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner
 
 ## Step 1 — What happened this week
 
-Run in parallel:
+### Step 1a — Staging check
+
+Call `staging_status`. If fresh, use `staging_read` for bulk infrastructure reads:
+- `staging_read { file: "ninja-alerts" }` for end-of-week device alert state
+- `staging_read { file: "unifi-alerts" }` for site health snapshot
+- `staging_read { file: "wazuh-alerts" }` for security event summary
+
+Fall back to live APIs if staging is stale. Note failures in **Data gaps**.
+
+### Step 1b — Run in parallel:
 - `planner_get_user_tasks` (user_id: `astevens@shoestringvalley.com`, open_only: false) — Aaron's tasks including completed ones this week.
 - `planner_list_tasks` for the operational boards (completed vs. still open):
   - IT Sysadmin Tasks: `-aZEdilGAUqLC8B8GwOLfmQAAh9M`
