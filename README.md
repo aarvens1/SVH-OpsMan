@@ -28,6 +28,7 @@ graph LR
         INFRA["Infrastructure\nNinjaOne · Wazuh\nUniFi Cloud · UniFi Network\nSynology NAS · PrinterLogic"]
         CONF["Confluence · FreshService"]
         GOOG["Google\nGmail · Calendar · Drive"]
+        STAGING["Staging tools\nstaging_status · staging_read\ncollector_run · metrics_*"]
     end
 
     subgraph External["External MCPs"]
@@ -39,13 +40,28 @@ graph LR
         OTHER["Firecrawl · Time"]
     end
 
+    subgraph Collector["Collector (on-demand)"]
+        COL["node collector/dist/index.js gather\nWrites staging/{date}/ + manifest.json\nMetrics → db/metrics.db"]
+    end
+
     You --> Custom
     You --> External
+    COL --> STAGING
 ```
 
-**Obsidian is home base.** Briefings, incident notes, change records, meeting notes — everything Helm produces lands in Obsidian. Nothing goes to Teams, Mail, Planner, or Confluence without you explicitly asking.
+**Obsidian is home base.** Briefings, incident notes, change records, meeting notes — everything produces lands in Obsidian. Nothing goes to Teams, Mail, Planner, or Confluence without you explicitly asking.
 
-**Mostly human-initiated.** Skills are prompt patterns you trigger. The one exception is the morning briefing timer (`svh-opsman-briefing.timer`) — it fires `/day-starter` at 07:00 Mon–Thu via a WSL systemd user unit. Everything else: Claude synthesizes, you command.
+**Two-phase briefings.** Briefing skills (day-starter, day-ender, week-starter, week-ender) check `staging_status` first. If staging is fresh (< 2h old), bulk infrastructure reads (NinjaOne devices/alerts, Wazuh, UniFi, tenant audit) come from `staging_read` — fast, no per-device API calls. If stale, `collector_run` refreshes staging automatically before continuing. Real-time security signals (risky users, MDE alerts, sign-ins, M365 incidents) always use live APIs.
+
+**Collector is manual-only.** Run it yourself before a briefing, or let the skill trigger it via `collector_run`. No scheduled timer. To run manually:
+
+```bash
+node collector/dist/index.js gather           # all jobs
+node collector/dist/index.js gather --job=ninjaone  # single job
+node collector/dist/index.js health           # check last run status
+```
+
+**Mostly human-initiated.** Skills are prompt patterns you trigger. The morning briefing timer (`svh-opsman-briefing.timer`) fires `/day-starter` at 07:00 Mon–Thu — that skill will trigger `collector_run` if staging is stale. Everything else: Claude synthesizes, you command.
 
 **PowerShell module suite** lives in `powershell/`. Load with `. ./connect.ps1` from Windows Terminal. The modules cover write operations and on-prem checks — disabling accounts, isolating devices, rebooting servers, querying Hyper-V and MABS via PSRemoting. A **TUI** (`tui/run-tui.sh`) wraps all module functions in a searchable terminal interface: browse by module, fill parameters in a form, preview the command, confirm before anything destructive runs, and save output to Obsidian or view it inline.
 
@@ -82,6 +98,7 @@ graph LR
 | **Have I Been Pwned** 🔒 | Check email addresses and domains against breach and paste databases |
 | **Cloudflare** 🔒 | Zones, DNS records, traffic analytics, WAF/firewall events |
 | **n8n** 🔒 | List workflows, browse execution history, debug failed runs |
+| **Staging / Collector** | `staging_status` — check data freshness; `staging_read` — read bulk snapshots (ninja-devices, ninja-alerts, wazuh-alerts, unifi-alerts, graph-audit, graph-mail, graph-calendar, planner-tasks); `collector_run` — trigger a fresh collect; `metrics_disk_trend` / `metrics_alert_trend` / `metrics_disk_over_threshold` — query SQLite metrics history |
 | **Obsidian** | Read and write notes — home base for all output |
 | **Fathom** | Meeting transcripts and summaries |
 | **GitHub** | Repos, issues, PRs, Actions workflows |
@@ -266,6 +283,31 @@ The `.claude/` directory is checked into this repo. Opening the project in Claud
 cd mcp-server && npm install && npm run build
 cd ../collector && npm install && npm run build
 ```
+
+---
+
+### 4b. Run the collector (first-time and on-demand)
+
+Briefing skills call `collector_run` automatically when staging is stale, but you can also prime the cache manually:
+
+```bash
+# All jobs (NinjaOne, Wazuh, UniFi, Graph mail/calendar/audit, Planner)
+node collector/dist/index.js gather
+
+# Single job — faster when you only need one source
+node collector/dist/index.js gather --job=ninjaone
+node collector/dist/index.js gather --job=wazuh
+node collector/dist/index.js gather --job=unifi
+node collector/dist/index.js gather --job=graph
+node collector/dist/index.js gather --job=planner
+
+# Check what the last run produced
+node collector/dist/index.js health
+```
+
+Output lands in `staging/YYYY-MM-DD/` with a `manifest.json`. The MCP server reads from whatever the latest dated directory is. Data is considered fresh for 2 hours — after that, `staging_status` reports stale and briefing skills will re-run the collector.
+
+There is no scheduled timer for the collector. It runs when you ask, or when a briefing skill triggers `collector_run`.
 
 ---
 
