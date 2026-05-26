@@ -6,7 +6,7 @@ export function insertRun(db: Database.Database, entry: RunLogEntry): number {
     INSERT INTO runs (timestamp, type, sources_attempted, sources_failed, duration_ms, note_path)
     VALUES (@timestamp, @type, @sources_attempted, @sources_failed, @duration_ms, @note_path)
   `);
-  const result = stmt.run(entry);
+  const result = stmt.run({ note_path: null, ...entry });
   return result.lastInsertRowid as number;
 }
 

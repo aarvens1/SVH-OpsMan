@@ -20,7 +20,6 @@ async function fetchMail(token: string, userId: string): Promise<A[]> {
   const res = await client.get<{ value: A[] }>(`/users/${userId}/mailFolders/inbox/messages`, {
     params: {
       $filter: `receivedDateTime ge '${since}'`,
-      $orderby: "receivedDateTime desc",
       $top: 50,
       $select: "id,subject,from,receivedDateTime,isRead,hasAttachments,importance,bodyPreview",
     },
@@ -69,7 +68,6 @@ async function fetchAuditLog(token: string): Promise<A[]> {
   const res = await client.get<{ value: A[] }>("/auditLogs/directoryAudits", {
     params: {
       $filter: `activityDateTime ge '${since}'`,
-      $orderby: "activityDateTime desc",
       $top: 100,
       $select: "id,activityDateTime,activityDisplayName,category,initiatedBy,targetResources,result",
     },
