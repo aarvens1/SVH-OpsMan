@@ -343,6 +343,397 @@ There is no scheduled timer for the collector. It runs when you ask, or when a b
 
 ---
 
+### 4c. Staging data reference
+
+Every file is a JSON array of objects (or a single object for `graph-service-health`). All files live in `staging/YYYY-MM-DD/`. Browse with `staging-ls` / `staging-cat <name>` or query directly with `jq`.
+
+---
+
+#### `graph-mail.json`
+
+Last 24h inbox messages.
+
+```json
+{
+  "id": "AAMk...",
+  "subject": "UniFi Console Backup Created",
+  "from": { "name": "UniFi OS, SEA-Main Office", "address": "no-reply@notifications.ui.com" },
+  "receivedDateTime": "2026-05-25T20:53:35Z",
+  "isRead": false,
+  "hasAttachments": false,
+  "importance": "normal",
+  "bodyPreview": "Backup Created..."
+}
+```
+
+```bash
+# Unread subjects
+staging-cat graph-mail | jq '[.[] | select(.isRead==false) | .subject]'
+# Senders with attachments
+staging-cat graph-mail | jq '[.[] | select(.hasAttachments) | .from.address]'
+# High-importance mail
+staging-cat graph-mail | jq '[.[] | select(.importance=="high") | {subject,from:.from.address}]'
+```
+
+---
+
+#### `graph-calendar.json`
+
+Next 7 days of calendar events.
+
+```json
+{
+  "id": "AAMk...",
+  "subject": "KP SMC Overall Big Room",
+  "start": { "dateTime": "2026-05-26T17:00:00.0000000", "timeZone": "UTC" },
+  "end":   { "dateTime": "2026-05-26T19:00:00.0000000", "timeZone": "UTC" },
+  "location": { "displayName": "Microsoft Teams Meeting; PDX-..." },
+  "organizer": { "name": "Kaiser Permanente...", "address": "..." },
+  "attendeeCount": 225,
+  "isAllDay": false,
+  "bodyPreview": "Schedule..."
+}
+```
+
+```bash
+# All meeting titles and start times
+staging-cat graph-calendar | jq '[.[] | {subject, start: .start.dateTime}]'
+# All-day events only
+staging-cat graph-calendar | jq '[.[] | select(.isAllDay) | .subject]'
+# Large meetings (>10 attendees)
+staging-cat graph-calendar | jq '[.[] | select(.attendeeCount > 10) | {subject, attendeeCount}]'
+```
+
+---
+
+#### `graph-audit.json`
+
+Last 24h Entra directory audit events (user changes, app consent grants, role assignments, etc.).
+
+```json
+{
+  "id": "Directory_b88a832e...",
+  "activityDateTime": "2026-05-26T17:44:02Z",
+  "activity": "Update user",
+  "category": "UserManagement",
+  "result": "success",
+  "initiatedBy": {
+    "app": { "displayName": "Microsoft Substrate Management", "servicePrincipalId": "..." }
+  },
+  "targets": [{ "type": "User", "displayName": null, "userPrincipalName": "user@domain.com" }]
+}
+```
+
+```bash
+# Distinct activity types
+staging-cat graph-audit | jq '[.[].activity] | unique'
+# Failures only
+staging-cat graph-audit | jq '[.[] | select(.result != "success") | {activity, result}]'
+# Events initiated by a human (not a service)
+staging-cat graph-audit | jq '[.[] | select(.initiatedBy.user != null) | {activity, user: .initiatedBy.user.userPrincipalName}]'
+# Role assignment changes
+staging-cat graph-audit | jq '[.[] | select(.category == "RoleManagement") | {activity, targets: [.targets[].userPrincipalName]}]'
+```
+
+---
+
+#### `graph-signin-logs.json`
+
+Failed sign-ins (errorCode ≠ 0) in the last 24h.
+
+```json
+{
+  "id": "5e21111f...",
+  "createdDateTime": "2026-05-26T17:38:05Z",
+  "userPrincipalName": "user@domain.com",
+  "appDisplayName": "Bluebeam",
+  "errorCode": 50125,
+  "failureReason": "Sign-in was interrupted due to a password reset...",
+  "ipAddress": "50.145.204.110",
+  "city": "Marietta",
+  "countryOrRegion": "US",
+  "riskLevel": "none"
+}
+```
+
+```bash
+# Distinct failure reasons
+staging-cat graph-signin-logs | jq '[.[].failureReason] | unique'
+# Failures by user (count)
+staging-cat graph-signin-logs | jq '[.[].userPrincipalName] | group_by(.) | map({user:.[0], count:length}) | sort_by(-.count)'
+# Sign-ins from outside US
+staging-cat graph-signin-logs | jq '[.[] | select(.countryOrRegion != "US") | {user:.userPrincipalName, country:.countryOrRegion, ip:.ipAddress}]'
+# High-risk sign-ins
+staging-cat graph-signin-logs | jq '[.[] | select(.riskLevel != "none") | {user:.userPrincipalName, riskLevel, app:.appDisplayName}]'
+```
+
+---
+
+#### `graph-expiring-secrets.json`
+
+App registration passwords and certificates expiring within 90 days, sorted by days remaining.
+
+```json
+{
+  "appId": "72bce6c1...",
+  "appDisplayName": "Mercury Build",
+  "credentialType": "password",
+  "displayName": "inital",
+  "endDateTime": "2026-06-10T22:14:03Z",
+  "daysUntilExpiry": 16
+}
+```
+
+```bash
+# Expiring within 30 days
+staging-cat graph-expiring-secrets | jq '[.[] | select(.daysUntilExpiry <= 30) | {app:.appDisplayName, days:.daysUntilExpiry, type:.credentialType}]'
+# Certificate vs password breakdown
+staging-cat graph-expiring-secrets | jq '[.[].credentialType] | group_by(.) | map({type:.[0], count:length})'
+```
+
+---
+
+#### `graph-risky-users.json`
+
+Entra Identity Protection risky users (not dismissed or remediated).
+
+```json
+{
+  "id": "c6e4722c...",
+  "userPrincipalName": "user@domain.com",
+  "displayName": "Display Name",
+  "riskLevel": "none",
+  "riskState": "confirmedSafe",
+  "riskLastUpdatedDateTime": "2025-04-16T04:15:45Z"
+}
+```
+
+```bash
+# By risk level
+staging-cat graph-risky-users | jq '[.[].riskLevel] | group_by(.) | map({level:.[0], count:length})'
+# High/medium risk only
+staging-cat graph-risky-users | jq '[.[] | select(.riskLevel == "high" or .riskLevel == "medium") | {user:.userPrincipalName, riskLevel, riskState}]'
+```
+
+---
+
+#### `graph-service-health.json`
+
+M365 service status snapshot. **Object, not array.** Empty `services` array means `ServiceHealth.Read.All` permission may not be granted.
+
+```json
+{
+  "services": [{ "service": "Exchange Online", "status": "serviceOperational" }],
+  "activeIssues": [{ "id": "...", "title": "...", "service": "...", "severity": "...", "startDateTime": "..." }]
+}
+```
+
+```bash
+# Services not fully operational
+staging-cat graph-service-health | jq '[.services[] | select(.status != "serviceOperational")]'
+# Active issues
+staging-cat graph-service-health | jq '.activeIssues'
+```
+
+---
+
+#### `ninja-devices.json`
+
+All NinjaOne managed devices.
+
+```json
+{
+  "id": 466,
+  "displayName": "PDX-JECOOK-L",
+  "dnsName": "PDX-JECOOK-L.Andersen-Const.com",
+  "nodeClass": "WINDOWS_WORKSTATION",
+  "offline": true,
+  "lastContact": 1779487391.064,
+  "maintenanceMode": false
+}
+```
+
+`nodeClass` values: `WINDOWS_WORKSTATION`, `WINDOWS_SERVER`, `MAC`, `LINUX_WORKSTATION`, `VMWARE_VM_HOST`, etc.
+
+```bash
+# Offline devices not in maintenance mode
+staging-cat ninja-devices | jq '[.[] | select(.offline and .maintenanceMode == false) | .displayName]'
+# Count by node class
+staging-cat ninja-devices | jq '[.[].nodeClass] | group_by(.) | map({class:.[0], count:length}) | sort_by(-.count)'
+# Last contact as human-readable (requires date command)
+staging-cat ninja-devices | jq '[.[] | select(.offline) | {name:.displayName, lastContact:(.lastContact | todate)}]'
+```
+
+---
+
+#### `ninja-alerts.json`
+
+Active NinjaOne alerts across all devices.
+
+```json
+{
+  "deviceId": 1958,
+  "message": "Disk Volume Free space for 'C:' is less than or equal to 10%...",
+  "severity": "NONE",
+  "createTime": 1762812399
+}
+```
+
+`severity` values: `NONE`, `MINOR`, `MODERATE`, `MAJOR`, `CRITICAL`.
+
+```bash
+# Critical and major alerts
+staging-cat ninja-alerts | jq '[.[] | select(.severity == "CRITICAL" or .severity == "MAJOR") | .message]'
+# Alert count by severity
+staging-cat ninja-alerts | jq '[.[].severity] | group_by(.) | map({severity:.[0], count:length})'
+# Alerts for a specific device ID
+staging-cat ninja-alerts | jq '[.[] | select(.deviceId == 1958)]'
+```
+
+---
+
+#### `ninja-volumes.json`
+
+Disk volumes for all NinjaOne-managed servers/workstations.
+
+```json
+{
+  "deviceId": 2982,
+  "name": "C:",
+  "label": "Windows",
+  "capacity": 510738296832,
+  "freeSpace": 310013095936
+}
+```
+
+```bash
+# Used % per volume (sort by fullest first)
+staging-cat ninja-volumes | jq '[.[] | . + {usedPct: (((.capacity - .freeSpace) / .capacity * 100) | round)}] | sort_by(-.usedPct) | .[:20] | .[] | {deviceId, name, usedPct}'
+# Volumes above 80% full
+staging-cat ninja-volumes | jq '[.[] | select(.capacity > 0) | . + {usedPct: (((.capacity - .freeSpace) / .capacity * 100) | round)} | select(.usedPct > 80) | {deviceId, name, label, usedPct}]'
+# Total free space across all volumes (GB)
+staging-cat ninja-volumes | jq '[.[].freeSpace] | add / 1073741824 | round | "\(.) GB free total"'
+```
+
+---
+
+#### `ninja-backups.json`
+
+Backup job results from all NinjaOne backup plans.
+
+```json
+{
+  "jobId": "400745e1...",
+  "deviceId": 2218,
+  "organizationId": 25,
+  "planName": "Image backup plan",
+  "planType": "ARROW_IMAGE",
+  "jobStatus": "COMPLETED",
+  "jobStartTime": 1779156007,
+  "jobEndTime": 1779156523,
+  "totalStoredBytes": 1565935777
+}
+```
+
+`jobStatus` values: `COMPLETED`, `FAILED`, `RUNNING`, `CANCELLED`.
+
+```bash
+# Failed backups
+staging-cat ninja-backups | jq '[.[] | select(.jobStatus == "FAILED") | {deviceId, planName, jobStartTime: (.jobStartTime | todate)}]'
+# Status summary
+staging-cat ninja-backups | jq '[.[].jobStatus] | group_by(.) | map({status:.[0], count:length})'
+# Largest backups (top 10)
+staging-cat ninja-backups | jq '[.[] | {deviceId, planName, gb: (.totalStoredBytes / 1073741824 | round)}] | sort_by(-.gb) | .[:10]'
+```
+
+---
+
+#### `unifi-devices.json`
+
+All UniFi network devices (APs, switches, gateways, consoles) across all sites.
+
+```json
+{
+  "id": "D8B37099F5DF",
+  "name": "SYL-Main Office",
+  "mac": "D8B37099F5DF",
+  "model": "UDM",
+  "ip": "50.188.182.109",
+  "status": "online",
+  "firmwareVersion": "5.1.12",
+  "firmwareStatus": "upToDate",
+  "isConsole": true,
+  "startupTime": "2026-05-22T10:54:48Z",
+  "hostId": "D8B37099F5DF...",
+  "hostName": "SYL-Main Office"
+}
+```
+
+```bash
+# Devices by status
+staging-cat unifi-devices | jq '[.[].status] | group_by(.) | map({status:.[0], count:length})'
+# Offline devices
+staging-cat unifi-devices | jq '[.[] | select(.status != "online") | {name, model, status, hostName}]'
+# Firmware out of date
+staging-cat unifi-devices | jq '[.[] | select(.firmwareStatus != "upToDate") | {name, model, firmwareVersion, firmwareStatus}]'
+# Devices by site (hostName)
+staging-cat unifi-devices | jq '[.[].hostName] | group_by(.) | map({site:.[0], count:length})'
+```
+
+---
+
+#### `unifi-alerts.json`
+
+Active UniFi Cloud alerts. Empty array `[]` (2 bytes) means no active alerts — this is normal.
+
+```bash
+staging-cat unifi-alerts | jq 'length'   # 0 = all clear
+```
+
+---
+
+#### `planner-tasks.json`
+
+All tasks from the IT Sysadmin Tasks Planner board.
+
+```json
+{
+  "id": "wKROI1Oa8kaqygUiNxKsVWQAJUNA",
+  "title": "Look into creating a dynamic Entra group for managers",
+  "bucketId": "joF47YOa20qum7e0KtZhBWQAO1wS",
+  "percentComplete": 0,
+  "dueDateTime": null,
+  "priority": 5,
+  "assignments": {},
+  "createdDateTime": "2026-05-20T23:11:38Z"
+}
+```
+
+`priority`: 1 = Urgent, 3 = Important, 5 = Medium, 9 = Low. `percentComplete`: 0, 50, or 100.
+
+```bash
+# Incomplete tasks
+staging-cat planner-tasks | jq '[.[] | select(.percentComplete < 100) | .title]'
+# Overdue (requires today's date)
+staging-cat planner-tasks | jq --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '[.[] | select(.dueDateTime != null and .dueDateTime < $now and .percentComplete < 100) | {title, due:.dueDateTime}]'
+# Urgent tasks
+staging-cat planner-tasks | jq '[.[] | select(.priority == 1) | .title]'
+# In progress (50%)
+staging-cat planner-tasks | jq '[.[] | select(.percentComplete == 50) | .title]'
+```
+
+---
+
+#### `manifest.json`
+
+Run metadata — not a data file, but useful for debugging.
+
+```bash
+staging-cat manifest | jq '.jobs[] | {job, status, records, duration_ms}'
+```
+
+---
+
 ### 5. Credentials
 
 All credentials are stored as custom fields on a single Bitwarden vault item named **SVH OpsMan**. Field names must match env var keys exactly.
