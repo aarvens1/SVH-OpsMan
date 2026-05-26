@@ -61,6 +61,19 @@ tui/                       ← The PowerShell TUI application
 3.  Define the skill's name, description, allowed tools, and trigger phrases in the frontmatter.
 4.  Write the instructions for the AI in the body of the markdown file, explaining the workflow, which tools to call, and the desired output format.
 
+## Testing
+
+The MCP server has a [Vitest](https://vitest.dev/) unit test suite covering utilities and tool logic.
+
+```bash
+cd mcp-server
+npm test            # single run
+npm run test:watch  # watch mode
+npm run typecheck   # TypeScript check without building
+```
+
+Test files live under `mcp-server/src/__tests__/`. When adding a new tool, add a corresponding test file under `__tests__/tools/`. When adding a utility, add tests under `__tests__/utils/`. Run `npm run typecheck` before committing — test files are excluded from the build but the source files they import are not.
+
 ## Using Gemini for Development
 
 While Claude is the "Ops Expert," Gemini's role is the **Dev Assistant**. It is ideal for:

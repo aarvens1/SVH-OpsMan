@@ -47,6 +47,8 @@ For network topology, attack paths, asset network position, change impact scope,
 
 **File extension rule:** All Excalidraw files must use `.md` extension, never `.excalidraw`. Correct: `FGT-Site-Topology.md`. Wrong: `FGT-Site-Topology.excalidraw`.
 
+**Full diagram spec:** See `.claude/rules/excalidraw.md` — color palette, AP style, client count indicators, arrow weights, file wrapper format, and Python generation approach.
+
 ## Visual style
 
 See `.claude/rules/note-patterns.md` for the full design spec: functional emoji suite, callout usage, table conventions, and prose tone rules. Apply these to all skill output.

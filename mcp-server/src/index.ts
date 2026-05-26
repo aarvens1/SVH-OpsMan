@@ -43,6 +43,7 @@ import { registerN8nTools } from "./tools/n8n.js";
 // Staging / collector
 import { registerStagingTools } from "./tools/staging.js";
 import { registerPowerShellTools } from "./tools/powershell.js";
+import { registerDbQueryTools } from "./tools/db-query.js";
 
 // Load credentials from Bitwarden. Throws if BW_SESSION is not set or vault fetch fails.
 await loadBitwardenSecrets();
@@ -86,6 +87,8 @@ const services = {
   cloudflare: checkEnv("CLOUDFLARE_API_TOKEN"),
   n8n: checkEnv("N8N_URL", "N8N_API_KEY"),
   staging: true as boolean,
+  powershell: true as boolean,
+  db_query: true as boolean,
 };
 
 // Microsoft Graph — covers all Graph-backed services
@@ -125,6 +128,8 @@ registerHibpTools(server, services.hibp);
 registerCloudflareTools(server, services.cloudflare);
 registerN8nTools(server, services.n8n);
 registerStagingTools(server, services.staging);
+registerPowerShellTools(server, services.powershell);
+registerDbQueryTools(server, services.db_query);
 
 const enabledCount = Object.values(services).filter(Boolean).length;
 console.error(

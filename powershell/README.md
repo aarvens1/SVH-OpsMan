@@ -33,6 +33,19 @@ pwsh
 
 ---
 
+## MCP access (via Claude)
+
+Two read-only tools in the `svh-opsman` MCP server expose the module suite to Claude for interactive discovery. No live pwsh session is required — they parse the `.psm1` files and `Get-Help` output directly.
+
+| Tool | Purpose |
+|------|---------|
+| `powershell_discover_commands` | Search all modules for functions matching a topic keyword |
+| `powershell_get_command_parameters` | Return full parameter details for a named command |
+
+Use the TUI (Option A above) for interactive execution.
+
+---
+
 ## Modules
 
 | Module | What it covers | Auth |

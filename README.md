@@ -11,7 +11,7 @@ The project is built on a few core components:
 - **AI Assistants**:
     - **Claude**: The primary "Ops Expert" for interacting with live systems, running investigations, and performing operational tasks.
     - **Gemini**: The "Dev Assistant" for code generation, refactoring, and development support.
-- **MCP Server**: A custom Model Context Protocol (MCP) server that exposes tools for interacting with all integrated IT systems.
+- **MCP Server**: A custom Model Context Protocol (MCP) server that exposes tools for interacting with all integrated IT systems. Also includes PowerShell module discovery tools (`powershell_discover_commands`, `powershell_get_command_parameters`) and direct SQL access to the collector metrics database (`db_query_execute_sql`).
 - **Collector**: An on-demand data gathering engine that collects bulk data from various sources into a `staging` directory.
 - **Obsidian Vault**: The primary "staging area" for all output. All reports, drafts, and notes are generated here before being actioned.
 - **PowerShell Modules**: A comprehensive suite of PowerShell modules for performing write operations and interacting with on-premise systems.

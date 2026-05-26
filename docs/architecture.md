@@ -23,9 +23,13 @@ Synology NAS · PrinterLogic"]
         CONF["Confluence · FreshService"]
         GOOG["Google
 Gmail · Calendar · Drive"]
+        PS["PowerShell
+powershell_discover_commands
+powershell_get_command_parameters"]
         STAGING["Staging tools
 staging_status · staging_read
-collector_run · metrics_*"]
+collector_run · metrics_*
+db_query_execute_sql"]
     end
 
     subgraph External["External MCPs"]
