@@ -1,0 +1,14 @@
+[Unit]
+Description=SVH OpsMan — Bitwarden auto-unlock
+Before=svh-opsman-mcp.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=%h/SVH-OpsMan/scripts/bw-auto-unlock.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=svh-opsman-bw-unlock
+
+[Install]
+WantedBy=default.target
