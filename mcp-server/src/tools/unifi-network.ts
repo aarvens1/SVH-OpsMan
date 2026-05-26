@@ -327,7 +327,8 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
     },
     async ({ controller, site_id, device_mac }) => {
       try {
-        const mac = device_mac.toLowerCase().replace(/[-:]/g, ":").trim();
+        const raw = device_mac.toLowerCase().replace(/[^0-9a-f]/g, "");
+        const mac = raw.match(/.{2}/g)?.join(":") ?? raw;
         await createControllerClient(controller).post(`/api/s/${site_id}/cmd/devmgr`, {
           cmd: "restart",
           mac,
@@ -426,9 +427,15 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
         const existing = overrides.findIndex((o) => (o["port_idx"] as number) === port_idx);
 
         if (enabled) {
-          // Remove the disable override — restores the port's assigned profile
-          if (existing >= 0 && (overrides[existing]?.["op_mode"] as string | undefined) === "disabled") {
-            overrides.splice(existing, 1);
+          if (existing >= 0) {
+            const { op_mode: _dropped, ...rest } = overrides[existing] as Record<string, unknown>;
+            if (Object.keys(rest).length > 1) {
+              // Keep the entry but remove op_mode: "disabled"
+              overrides[existing] = rest;
+            } else {
+              // Entry only had port_idx + op_mode — remove entirely to restore assigned profile
+              overrides.splice(existing, 1);
+            }
           }
         } else {
           if (existing >= 0) {

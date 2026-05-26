@@ -53,7 +53,9 @@ async function dsm(
     httpsAgent: HTTPS_AGENT,
   });
   if (res.data["success"] === false) {
-    throw new Error(`DSM API error code ${(res.data["error"] as A | undefined)?.["code"]}`);
+    const code = (res.data["error"] as A | undefined)?.["code"];
+    if (code === 119) sidCache = null; // session expired — force re-login on next call
+    throw new Error(`DSM API error code ${code}`);
   }
   return (res.data["data"] as A) ?? {};
 }

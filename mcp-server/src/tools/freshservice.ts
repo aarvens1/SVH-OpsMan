@@ -233,6 +233,9 @@ export function registerFreshServiceTools(server: McpServer, enabled: boolean): 
         if (responder_id !== undefined) payload["responder_id"] = responder_id;
         if (tags !== undefined) payload["tags"] = tags;
         if (due_by !== undefined) payload["due_by"] = due_by;
+        if (Object.keys(payload).length === 0) {
+          return err(new Error("freshservice_update_ticket: at least one field must be provided"));
+        }
         const res = await freshserviceClient().put(`/tickets/${ticket_id}`, payload);
         const raw = res.data as A;
         const t = (raw["ticket"] as A | undefined) ?? raw;

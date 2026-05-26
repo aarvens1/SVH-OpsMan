@@ -421,19 +421,24 @@ export function registerGoogleTools(
           params: { fields: "id,name,mimeType" },
         });
         const fileId = (createRes.data as A)["id"] as string;
-        const uploadRes = await axios.patch(
-          `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
-          content,
-          {
-            params: { uploadType: "media", fields: "id,name,mimeType,size,webViewLink" },
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": mime_type,
-            },
-            timeout: 30_000,
-          }
-        );
-        return ok(uploadRes.data);
+        try {
+          const uploadRes = await axios.patch(
+            `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
+            content,
+            {
+              params: { uploadType: "media", fields: "id,name,mimeType,size,webViewLink" },
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": mime_type,
+              },
+              timeout: 30_000,
+            }
+          );
+          return ok(uploadRes.data);
+        } catch (uploadErr) {
+          await driveClient(token).delete(`/files/${fileId}`).catch(() => undefined);
+          throw uploadErr;
+        }
       } catch (e) {
         return err(e);
       }

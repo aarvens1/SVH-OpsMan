@@ -18,7 +18,7 @@ if [[ -z "$BW_PASSWORD" ]]; then
   exit 1
 fi
 
-TOKEN=$(echo "$BW_PASSWORD" | bw unlock --raw 2>/dev/null)
+TOKEN=$(printf '%s' "$BW_PASSWORD" | bw unlock --raw 2>/dev/null)
 
 if [[ -z "$TOKEN" ]]; then
   echo "[bw-auto-unlock] bw unlock failed — wrong password or vault not configured" >&2

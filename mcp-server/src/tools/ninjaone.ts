@@ -889,7 +889,7 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       try {
         const token = await getNinjaManagementToken();
         const body: Record<string, unknown> = { id: script_id, runAs: run_as };
-        if (parameters) body["parameters"] = parameters;
+        if (parameters !== undefined) body["parameters"] = parameters;
         const res = await ninjaClient(token).post(`/device/${device_id}/script/run`, body);
         return ok(res.data ?? { device_id, script_id, queued: true });
       } catch (e) {
