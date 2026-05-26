@@ -128,6 +128,72 @@ npm run build --silent
 ok "mcp-server built → dist/"
 cd "$REPO_DIR"
 
+# ── 6b. Build collector ───────────────────────────────────────────────────────
+step "collector build"
+if [ -d "$REPO_DIR/collector" ]; then
+  cd "$REPO_DIR/collector"
+  npm install --silent
+  npm run build --silent
+  ok "collector built → dist/"
+  cd "$REPO_DIR"
+else
+  warn "collector/ not found — skipping"
+fi
+
+# ── 6c. Runtime directories ───────────────────────────────────────────────────
+step "Runtime directories"
+mkdir -p "$HOME/.config/svh-opsman" "$HOME/.local/share/svh-opsman"
+chmod 700 "$HOME/.config/svh-opsman"
+ok "~/.config/svh-opsman and ~/.local/share/svh-opsman ready"
+
+# ── 6d. systemd (WSL) ────────────────────────────────────────────────────────
+step "systemd WSL user services"
+
+# Check/set systemd=true in /etc/wsl.conf
+if ! grep -q "^systemd=true" /etc/wsl.conf 2>/dev/null; then
+  if ! grep -q "\[boot\]" /etc/wsl.conf 2>/dev/null; then
+    echo -e "\n[boot]\nsystemd=true" | sudo tee -a /etc/wsl.conf >/dev/null
+  else
+    sudo sed -i '/\[boot\]/a systemd=true' /etc/wsl.conf
+  fi
+  warn "systemd=true added to /etc/wsl.conf — restart WSL to apply: wsl --shutdown"
+else
+  ok "systemd=true already set in /etc/wsl.conf"
+fi
+
+# Install user service units
+USER_SYSTEMD="$HOME/.config/systemd/user"
+mkdir -p "$USER_SYSTEMD"
+for unit in bw-unlock mcp briefing.timer briefing; do
+  src="$REPO_DIR/systemd/user/svh-opsman-${unit}.service"
+  timer_src="$REPO_DIR/systemd/user/svh-opsman-${unit}"
+  # Handle .timer files specially
+  if [[ "$unit" == "briefing.timer" ]]; then
+    cp "$REPO_DIR/systemd/user/svh-opsman-briefing.timer" "$USER_SYSTEMD/"
+    ok "svh-opsman-briefing.timer installed"
+    continue
+  fi
+  [ -f "$src" ] && cp "$src" "$USER_SYSTEMD/" && ok "svh-opsman-${unit}.service installed"
+done
+
+# Reload and enable
+if systemctl --user is-system-running &>/dev/null 2>&1 || systemctl --user status &>/dev/null 2>&1; then
+  systemctl --user daemon-reload
+  systemctl --user enable svh-opsman-bw-unlock.service svh-opsman-mcp.service svh-opsman-briefing.timer 2>/dev/null
+  ok "systemd user units enabled"
+else
+  warn "systemd not running yet — enable units manually after WSL restart:"
+  warn "  systemctl --user daemon-reload"
+  warn "  systemctl --user enable svh-opsman-bw-unlock svh-opsman-mcp svh-opsman-briefing.timer"
+fi
+
+# ── 6e. Bitwarden Windows Credential Manager entry ───────────────────────────
+step "Windows Credential Manager (manual)"
+warn "Create the BW password entry on Windows (run once from PowerShell):"
+warn '  powershell.exe -Command "New-StoredCredential -Target svh-opsman -UserName bw -Password '"'"'<your-bw-password>'"'"' -Persist LocalMachine"'
+warn "Requires the CredentialManager PowerShell module:"
+warn '  powershell.exe -Command "Install-Module CredentialManager -Scope CurrentUser -Force"'
+
 # ── 7. Hook permissions ───────────────────────────────────────────────────────
 step "Hook permissions"
 chmod +x "$REPO_DIR/.claude/hooks/"*.sh 2>/dev/null && ok "Hooks marked executable" || true
@@ -224,3 +290,6 @@ echo -e "  5. ${BOLD}cd mcp-server && npm start${RESET}  — verify the server s
 echo -e "  6. On Windows: ${BOLD}dotfiles\\install-windows.ps1${RESET}  — install font + Windows Terminal settings"
 echo -e "  7. Open the repo in Claude Code: ${BOLD}claude${RESET}  — or type: ${BOLD}opsman${RESET}"
 echo -e "  8. PowerShell TUI: ${BOLD}tui/run-tui.sh${RESET}  — browse and run module functions in terminal"
+echo -e "  9. On Windows: register the Task Scheduler job for WSL auto-start:"
+echo -e "     ${BOLD}powershell.exe -File powershell\\Start-WSLServices.ps1${RESET} (see file for schtasks command)"
+echo -e " 10. Create the Bitwarden Windows Credential Manager entry (see step 6e output above)"

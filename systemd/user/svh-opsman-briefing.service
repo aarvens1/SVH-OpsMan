@@ -1,0 +1,13 @@
+[Unit]
+Description=SVH OpsMan — morning briefing
+After=svh-opsman-bw-unlock.service
+Requires=svh-opsman-bw-unlock.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/SVH-OpsMan
+EnvironmentFile=%h/.config/svh-opsman/bw-session
+ExecStart=claude --print "/day-starter"
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=svh-opsman-briefing

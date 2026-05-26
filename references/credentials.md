@@ -57,14 +57,16 @@ These services will fail when their tools are called until credentials are added
 
 ### UniFi
 
-Two separate clients — UniFi Cloud (UI API key) and UniFi Network controller (username/password):
+Two separate clients — UniFi Cloud (UI API key) and UniFi Network controller (per-site API keys):
 
 | Env var | What it holds |
 |---------|--------------|
 | `UNIFI_API_KEY` | UI.com cloud API key (for `unifi_list_hosts`, `unifi_list_sites`) |
-| `UNIFI_CONTROLLER_URL` | Self-hosted controller URL (e.g. `https://unifi.internal:8443`) |
-| `UNIFI_USERNAME` | Controller local admin username |
-| `UNIFI_PASSWORD` | Controller local admin password |
+| `UNIFI_SVH_URL` | SVH controller URL (e.g. `https://unifi.svh.internal`) |
+| `UNIFI_SVH_KEY` | SVH controller API key |
+| `UNIFI_PDX_URL` · `UNIFI_PDX_KEY` | Portland site (add more sites following the same pattern) |
+
+Add additional sites by setting `UNIFI_{SITE}_URL` and `UNIFI_{SITE}_KEY`. Warehouse variants use `_WH` suffix (e.g. `UNIFI_BOI_WH_URL`).
 
 ### PrinterLogic
 
@@ -72,6 +74,53 @@ Two separate clients — UniFi Cloud (UI API key) and UniFi Network controller (
 |---------|--------------|
 | `PRINTERLOGIC_URL` | PrinterLogic instance base URL |
 | `PRINTERLOGIC_API_TOKEN` | PrinterLogic API token |
+
+### FreshService
+
+| Env var | What it holds |
+|---------|--------------|
+| `FRESHSERVICE_DOMAIN` | FreshService subdomain (e.g. `shoestringvalley` for `shoestringvalley.freshservice.com`) |
+| `FRESHSERVICE_API_KEY` | FreshService API key (Admin → Profile → API Key) |
+
+### Synology NAS
+
+| Env var | What it holds |
+|---------|--------------|
+| `SYNOLOGY_HOST` | DSM base URL (e.g. `https://synology.internal:5001`) |
+| `SYNOLOGY_USER` | DSM user with ActiveBackup 365 and Storage Manager read access |
+| `SYNOLOGY_PASSWORD` | DSM user password |
+
+Note: self-signed TLS cert is accepted automatically — no CA configuration needed.
+
+### Google
+
+OAuth2 refresh token flow. Create a Web application client in GCP Console → APIs & Services → Credentials, then obtain a refresh token with `email`, `https://www.googleapis.com/auth/calendar`, `https://www.googleapis.com/auth/drive`, `https://www.googleapis.com/auth/gmail.modify` scopes.
+
+| Env var | What it holds |
+|---------|--------------|
+| `GOOGLE_CLIENT_ID` | OAuth2 client ID |
+| `GOOGLE_CLIENT_SECRET` | OAuth2 client secret |
+| `GOOGLE_REFRESH_TOKEN` | Long-lived refresh token |
+| `GOOGLE_USER_EMAIL` | Gmail address to lock API calls to (e.g. `astevens2694@gmail.com`) |
+
+### Have I Been Pwned
+
+| Env var | What it holds |
+|---------|--------------|
+| `HIBP_API_KEY` | API key from haveibeenpwned.com — requires a paid subscription for account lookups |
+
+### Cloudflare
+
+| Env var | What it holds |
+|---------|--------------|
+| `CLOUDFLARE_API_TOKEN` | API token from dash.cloudflare.com → My Profile → API Tokens — needs Zone:Read and Analytics:Read permissions |
+
+### n8n
+
+| Env var | What it holds |
+|---------|--------------|
+| `N8N_URL` | n8n instance base URL (e.g. `https://n8n.internal` or `https://n8n.yourdomain.com`) |
+| `N8N_API_KEY` | n8n API key — Settings → n8n API → Create an API key |
 
 ## PSRemoting — sa_stevens / da_stevens (optional BW additions)
 
