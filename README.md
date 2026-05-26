@@ -1,49 +1,48 @@
 # SVH OpsMan
 
-SVH OpsMan is a purpose-built command station for SVH IT operations, providing a unified interface to all connected systems. It uses an AI-powered engine to streamline everything from daily briefings to incident response.
+This repository is Aaron's WSL 2 environment — the shell configuration, IT ops tooling, and AI assistant setup that run on a Windows 11 workstation. It's organized in three layers.
 
-This README provides a high-level overview of the project. For detailed information, please refer to the documents in the `docs/` directory.
+## Layers
 
-## Core Concepts
+**Layer 1 — Environment**
+WSL shell, dotfiles, WinRM trust, Tailscale subnet routing, and systemd services. The foundation everything else runs on. See `docs/setup/` for one-time configuration guides and `scripts/` for setup automation.
 
-The project is built on a few core components:
+**Layer 2 — OpsMan**
+A custom MCP server that connects Claude to all managed IT systems (NinjaOne, Defender, M365, Azure, UniFi, Confluence, and more), an on-demand data collector for bulk pulls, a PowerShell module suite for write operations, and a TUI for interactive admin work.
 
-- **AI Assistants**:
-    - **Claude**: The primary "Ops Expert" for interacting with live systems, running investigations, and performing operational tasks.
-    - **Gemini**: The "Dev Assistant" for code generation, refactoring, and development support.
-- **MCP Server**: A custom Model Context Protocol (MCP) server that exposes tools for interacting with all integrated IT systems. Also includes PowerShell module discovery tools (`powershell_discover_commands`, `powershell_get_command_parameters`) and direct SQL access to the collector metrics database (`db_query_execute_sql`).
-- **Collector**: An on-demand data gathering engine that collects bulk data from various sources into a `staging` directory.
-- **Obsidian Vault**: The primary "staging area" for all output. All reports, drafts, and notes are generated here before being actioned.
-- **PowerShell Modules**: A comprehensive suite of PowerShell modules for performing write operations and interacting with on-premise systems.
+**Layer 3 — AI Context**
+Claude and Gemini configuration, skill definitions, and runtime reference files the AI reads during operations. Claude is the Ops Expert — full MCP access, owns incident response and all reporting. Gemini is the Dev Assistant — three accounts (Dev / Docs / Research), no MCP access, owns the development lifecycle.
 
 ## Quick Start
 
-For users who have already completed the setup, the daily workflow starts with:
+```bash
+# 1. Unlock Bitwarden
+export BW_SESSION=$(bw unlock --raw)
 
-1.  **Unlock Bitwarden:**
-    ```bash
-    export BW_SESSION=$(bw unlock --raw)
-    ```
-2.  **Start the OpsMan CLI:**
-    ```bash
-    opsman
-    ```
-3.  **Request a briefing:**
-    ```
-    /day-starter
-    ```
+# 2. Launch OpsMan
+opsman
+
+# 3. Run morning briefing
+/day-starter
+```
 
 ## Documentation
 
-All detailed documentation has been moved to the `docs/` directory to keep the project root clean.
+- **[Getting Started](./docs/getting_started.md)** — end-to-end setup on a fresh workstation
+- **[User Guide](./docs/user_guide.md)** — daily workflow, skills reference, Gemini accounts
+- **[Architecture](./docs/architecture.md)** — system design, data flow, technology decisions
+- **[Development Guide](./docs/development.md)** — repo layout, conventions, extending the system
 
-- **[Getting Started (`docs/getting_started.md`)](./docs/getting_started.md)**: A full, end-to-end setup guide for new users on a fresh workstation.
-- **[User Guide (`docs/user_guide.md`)](./docs/user_guide.md)**: A guide to the daily workflow, available skills, and how to interact effectively with the AI.
-- **[Architecture (`docs/architecture.md`)](./docs/architecture.md)**: A deep dive into the system's architecture, technology stack, and design decisions.
-- **[Development Guide (`docs/development.md`)](./docs/development.md)**: Information for developers contributing to the project, including repository structure and how to add new tools or skills.
-- **Reference Guides**:
-    - **[Credentials (`docs/reference/credentials.md`)](./docs/reference/credentials.md)**: Detailed reference for all required credentials.
-    - **[PowerShell (`docs/reference/powershell.md`)](./docs/reference/powershell.md)**: Guide to the PowerShell module suite.
-    - **[Staging Data (`docs/reference/staging_data.md`)](./docs/reference/staging_data.md)**: Reference for the data format of files produced by the collector.
-- **[Runtime References (`references/`)](./references/)**: Triage guides and failure patterns used by the AI at runtime.
+**Setup guides** (`docs/setup/`):
+- [Backup](./docs/setup/backup.md) — rclone setup, OneDrive + Google Drive, systemd timer
+- [WinRM](./docs/setup/winrm.md) — PSRemoting from WSL to Windows servers
+- [Tailscale on UDM](./docs/setup/tailscale-udm.md) — subnet router setup per site
 
+**Reference** (`docs/reference/`):
+- [Credentials](./docs/reference/credentials.md) — app registration setup and required permissions
+- [PowerShell Modules](./docs/reference/powershell.md) — module suite reference
+- [Staging Data](./docs/reference/staging_data.md) — collector output format
+
+**AI runtime references** (`references/`):
+- Triage gates, failure patterns, event clusters, hypothesis patterns — consumed by skills at runtime
+- [Credential field names](./references/credentials.md) — Bitwarden field inventory and pending items

@@ -99,6 +99,42 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | **Draft** | `/draft` · "Draft an email to..." | Takes bullet points and drafts a polished email or Teams message in your voice. |
 | **TicketSmith** | `/ticketsmith` · "Write a ticket for this"| Converts a raw user complaint into a well-structured IT ticket. |
 | **Scribe** | `/scribe` · "Document what I just did" | Turns rough notes into structured documentation in various styles (e.g., how-to, incident report). |
+| **Gemini Handoff** | `/gemini-handoff` · "Hand this to Gemini" | Writes a sanitized code task spec to `.gemini/handoff.md` for Gemini to pick up. No private data crosses the boundary. |
+
+## Gemini Dev Assistant
+
+Gemini runs alongside Claude in three dedicated accounts. Claude owns ops; Gemini owns dev. Neither crosses into the other's lane.
+
+### The Three Accounts
+
+| Account | Role | What to use it for |
+| :------ | :--- | :----------------- |
+| **A — Dev** | Active coding | Scaffolding, refactoring, testing, TypeScript types, git ops, npm audit |
+| **B — Docs** | Long-context analysis | Bulk documentation passes, reading entire modules, large-file diffs |
+| **C — Research** | Public web lookups | API docs, package versions, error messages, CVE public info |
+
+### Gemini Skills
+
+| Skill | Account | Invoke |
+| :---- | :------ | :----- |
+| `create-collector-job` | A | "Scaffold a new collector job for..." |
+| `test-writer` | A | "Write tests for `path/to/file.ts`" |
+| `refactor-powershell` | A | "Refactor `SVH.Core.psm1`" |
+| `code-reviewer` | A / B | "Review my changes since main" |
+| `api-spec` | A | "Generate types from this JSON shape" |
+| `ts-linter` | A | "Run the linter" |
+| `npm-audit` | A | "Check for vulnerable dependencies" |
+| `dependency-manager` | A | "Add zod to mcp-server" |
+| `git-helper` | A | "Show me what changed in collector/" |
+| `release-drafter` | A | "Draft release notes since the last tag" |
+| `code-documenter` | A / B | "Add JSDoc to all exports in `utils/`" |
+| `log-analyzer` | B | "Analyze this log file" |
+| `web-research` | C | "Quick Google: what's the Graph API for sign-in logs?" |
+| `claude-handoff` | A | "Pick up the Claude handoff" |
+
+### Data Boundary
+
+Gemini accounts have no MCP tool access. Never paste raw NinjaOne responses, Wazuh alerts, M365 mail content, or Bitwarden credentials into a Gemini session. When Gemini needs to know the shape of a private API response, use `/gemini-handoff` in Claude — it strips real values and passes only field names and types.
 
 ## PowerShell TUI
 

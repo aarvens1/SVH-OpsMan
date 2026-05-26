@@ -8,7 +8,7 @@ Recipes for Desktop Commander → PS Remoting → `Get-WinEvent` deep-dives. Run
 
 ```powershell
 # One-time: trust the remote host (run on MCP host in WSL if using PSRemoting over WinRM)
-# See setup-winrm.md for full trust setup
+# See docs/setup/winrm.md for full trust setup
 
 $cred = Get-Credential   # or use stored cred from Bitwarden
 Enter-PSSession -ComputerName SERVERNAME -Credential $cred

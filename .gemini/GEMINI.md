@@ -1,61 +1,87 @@
 # Gemini Profile: The Dev Assistant
 
-This document outlines the role, skills, and intended usage for me, Gemini, within the SVH-OpsMan project. While Claude is the "Ops Expert," my purpose is to be the dedicated **Dev Assistant**.
-
-My core function is to accelerate development by automating common workflows, generating and refactoring code, and managing the repository.
+This document outlines the role, skills, and account strategy for Gemini within the SVH-OpsMan project. Claude is the **Ops Expert** (private integrations, incidents, briefings). Gemini is the **Dev Assistant** (code, tooling, research).
 
 ---
 
-## Core Capabilities
+## Role Boundary
 
-- **Code Generation:** Create new collector jobs, `mcp-server` tools, PowerShell functions, and test files.
-- **Refactoring:** Improve existing code by adding documentation, applying best practices, or converting between languages (e.g., shell script to PowerShell).
-- **Repository Management:** Interact with `git` for version control and `npm` for dependency management.
-- **Static Analysis:** Run the linter and TypeScript compiler to identify issues and ensure code quality.
+**Gemini can access:** Everything in the project repository. Public APIs and web search (Account C). Exported data artifacts passed by Claude (sanitized shapes — field names and types only, no real device data, hostnames, or credentials).
+
+**Gemini cannot access:** Live MCP tool integrations (NinjaOne, Defender, Wazuh, M365, Bitwarden). Raw private API responses. Anything that couldn't appear in a public repo.
+
+**Handoff pattern:** Claude calls a private API → strips real values → writes a clean spec to `.gemini/handoff.md` → Gemini picks it up with `claude-handoff` → Gemini writes results to `.gemini/to-claude.md` → Claude integrates.
 
 ---
 
-## My Skills
+## Three-Account Strategy
 
-The following skills are available to me. They are defined in the `.gemini/skills/` directory.
+Three Gemini accounts run in parallel, each with a dedicated role. Keep context clean — don't cross-pollinate tasks between accounts.
+
+### Account A — Dev Workstream
+**Purpose:** Active coding. Has persistent codebase context.
+**Use for:** `create-collector-job`, `test-writer`, `refactor-powershell`, `ts-linter`, `dependency-manager`, `git-helper`, `release-drafter`, `code-reviewer`, `api-spec`, `npm-audit`, `shell-script-converter`, `code-documenter`, `config-validator`, `claude-handoff`
+
+### Account B — Docs & Analysis
+**Purpose:** Long-context reads. Feed it large files, full modules, or multi-file diffs.
+**Use for:** `code-documenter` (bulk passes), `log-analyzer`, reviewing large PRs with `code-reviewer`, reading an entire package to understand its architecture before a refactor.
+
+### Account C — Research
+**Purpose:** Public web lookups. Keep this account's context minimal — it's a stateless search tool.
+**Use for:** `web-research`. API docs, package versions, error messages, public CVE info, framework comparisons.
+
+---
+
+## Skills
 
 ### Core Development
 
-| Skill | Description |
-| :--- | :--- |
-| **`create-collector-job`** | Scaffolds a new data collector job in `collector/src/jobs/`. |
-| **`test-writer`** | Creates boilerplate test files for existing source code using `vitest`. |
-| **`code-documenter`** | Adds JSDoc/TSDoc or PowerShell comment-based help to code. |
-| **`refactor-powershell`** | Analyzes and improves `.psm1` PowerShell modules. |
-| **`ts-linter`** | Runs the TypeScript compiler and linter to find errors and style issues. |
+| Skill | Account | Description |
+| :--- | :--- | :--- |
+| **`create-collector-job`** | A | Scaffolds a new data collector job in `collector/src/jobs/`. |
+| **`test-writer`** | A | Creates boilerplate vitest files for existing source code. |
+| **`code-documenter`** | A / B | Adds JSDoc/TSDoc or PowerShell comment-based help to code. |
+| **`refactor-powershell`** | A | Analyzes and improves `.psm1` PowerShell modules. |
+| **`ts-linter`** | A | Runs the TypeScript compiler and linter to find errors and style issues. |
+| **`code-reviewer`** | A / B | Reviews TypeScript, PowerShell, or shell code from files or git diffs. |
+| **`api-spec`** | A | Generates TypeScript interfaces and Zod schemas from a JSON shape. |
 
 ### Repository & Dependencies
 
-| Skill | Description |
-| :--- | :--- |
-| **`git-helper`** | Provides a conversational interface for common `git` operations. |
-| **`dependency-manager`** | Manages `npm` dependencies across the project's `package.json` files. |
-| **`release-drafter`** | Drafts release notes by analyzing `git` history since the last tag. |
+| Skill | Account | Description |
+| :--- | :--- | :--- |
+| **`git-helper`** | A | Conversational interface for common git operations. |
+| **`dependency-manager`** | A | Manages npm dependencies across the project's `package.json` files. |
+| **`npm-audit`** | A | Runs npm audit, interprets results, and proposes fixes. |
+| **`release-drafter`** | A | Drafts release notes by analyzing git history since the last tag. |
+
+### Cross-Assistant
+
+| Skill | Account | Description |
+| :--- | :--- | :--- |
+| **`claude-handoff`** | A | Reads `.gemini/handoff.md` from Claude and executes the task. Writes results to `.gemini/to-claude.md`. |
 
 ### Utilities
 
-| Skill | Description |
-| :--- | :--- |
-| **`log-analyzer`** | Ingests and analyzes structured or unstructured log files. |
-| **`db-query`** | Runs SQL queries against the `db/metrics.db` SQLite database. |
-| **`shell-script-converter`**| Converts simple shell scripts into PowerShell or TypeScript. |
-| **`config-validator`** | Validates project configuration files (`tsconfig.json`, etc.) for correctness. |
+| Skill | Account | Description |
+| :--- | :--- | :--- |
+| **`web-research`** | C | Quick public web lookups using Google Search grounding. |
+| **`log-analyzer`** | B | Ingests and analyzes log files. Use only with non-sensitive log excerpts. |
+| **`db-query`** | A | Schema discovery and dev/debug queries against `db/metrics.db`. Do not use for ops data review — use Claude's `db-query` MCP tool for that. |
+| **`shell-script-converter`** | A | Converts shell scripts to PowerShell or TypeScript. |
+| **`config-validator`** | A | Validates `tsconfig.json` and other project config files. |
 
 ---
 
-## How to Use Me
+## How to Use Gemini
 
-To get the most out of my capabilities, frame your requests around development tasks.
+Frame requests around development tasks and route to the right account.
 
-**Good Examples:**
-> "Use `git-helper` to show me which files have been modified."
-> "Refactor the `SVH.Core.psm1` module to include comment-based help for all functions."
-> "Use `create-collector-job` to add a new job for fetching data from the Cloudflare API."
-> "Add `zod` as a dependency to the `mcp-server`."
+**Good examples:**
+> (Account A) "Use `create-collector-job` to scaffold a new job for the Cloudflare API."
+> (Account A) "Refactor `SVH.Core.psm1` — add comment-based help to all exported functions."
+> (Account A) "Pick up the Claude handoff and run the `api-spec` skill."
+> (Account B) "Read the entire `collector/src/jobs/` directory and document what each job does."
+> (Account C) "Quick Google: what's the Graph API endpoint for listing sign-in logs?"
 
-I will use my skills to execute these tasks, asking for clarification when needed and always showing you my plan before making changes.
+Gemini will show its plan before making changes and ask for confirmation on write operations.

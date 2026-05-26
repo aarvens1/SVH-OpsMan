@@ -1,0 +1,10 @@
+[Unit]
+Description=SVH OpsMan — nightly backup timer (02:00 daily)
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+Unit=svh-opsman-backup.service
+
+[Install]
+WantedBy=timers.target

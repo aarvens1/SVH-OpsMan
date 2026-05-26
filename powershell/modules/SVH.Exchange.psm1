@@ -314,6 +314,70 @@ function Set-SVHEXOLitigationHold {
 }
 Export-ModuleMember -Function Set-SVHEXOLitigationHold
 
+function Get-SVHSharedMailboxDelegates {
+    <#
+    .SYNOPSIS  Audit FullAccess, SendAs, and SendOnBehalf delegates for shared mailboxes.
+    .NOTES     Requires: Connect-ExchangeOnline
+    .EXAMPLE   Get-SVHSharedMailboxDelegates -AllShared | Export-Csv delegates.csv -NoTypeInformation
+    .EXAMPLE   Get-SVHSharedMailboxDelegates -Identity shared@shoestringvalley.com
+    #>
+    [CmdletBinding(DefaultParameterSetName = 'All')]
+    [OutputType([PSObject])]
+    param(
+        [Parameter(ParameterSetName = 'Identity', Mandatory, ValueFromPipeline)]
+        [string[]]$Identity,
+        [Parameter(ParameterSetName = 'All')]
+        [switch]$AllShared
+    )
+    begin {
+        if (-not (Get-Command Get-Mailbox -ErrorAction SilentlyContinue)) {
+            throw 'ExchangeOnlineManagement not connected. Run: Connect-ExchangeOnline -UserPrincipalName (Get-SVHTierUsername -Tier m365)'
+        }
+        $mailboxes = [System.Collections.Generic.List[string]]::new()
+        if ($PSCmdlet.ParameterSetName -eq 'All') {
+            (Get-EXOMailbox -RecipientTypeDetails SharedMailbox -ResultSize Unlimited).PrimarySmtpAddress |
+                ForEach-Object { $mailboxes.Add($_) }
+        }
+    }
+    process {
+        if ($PSCmdlet.ParameterSetName -eq 'Identity') { $Identity | ForEach-Object { $mailboxes.Add($_) } }
+    }
+    end {
+        foreach ($mbx in $mailboxes) {
+            Write-Verbose "Auditing delegates for $mbx"
+
+            $fullAccess = try {
+                Get-EXOMailboxPermission -Identity $mbx -ErrorAction Stop |
+                    Where-Object { $_.AccessRights -contains 'FullAccess' -and -not $_.Deny -and $_.User -notmatch 'NT AUTHORITY' } |
+                    ForEach-Object { [PSCustomObject]@{ Mailbox = $mbx; PermissionType = 'FullAccess'; Delegate = $_.User.ToString() } }
+            } catch { @() }
+
+            $sendAs = try {
+                Get-RecipientPermission -Identity $mbx -ErrorAction SilentlyContinue |
+                    Where-Object { $_.AccessRights -contains 'SendAs' -and $_.Trustee -notmatch 'NT AUTHORITY' } |
+                    ForEach-Object { [PSCustomObject]@{ Mailbox = $mbx; PermissionType = 'SendAs'; Delegate = $_.Trustee } }
+            } catch { @() }
+
+            $sendOnBehalf = try {
+                (Get-EXOMailbox -Identity $mbx -ErrorAction Stop).GrantSendOnBehalfTo | ForEach-Object {
+                    $rec = Get-EXORecipient -Identity $_ -ErrorAction SilentlyContinue
+                    [PSCustomObject]@{
+                        Mailbox        = $mbx
+                        PermissionType = 'SendOnBehalf'
+                        Delegate       = if ($rec) { $rec.PrimarySmtpAddress } else { $_.ToString() }
+                    }
+                }
+            } catch { @() }
+
+            $all = @($fullAccess) + @($sendAs) + @($sendOnBehalf)
+            if ($all) { $all } else {
+                [PSCustomObject]@{ Mailbox = $mbx; PermissionType = '(none)'; Delegate = '' }
+            }
+        }
+    }
+}
+Export-ModuleMember -Function Get-SVHSharedMailboxDelegates
+
 function Set-SVHEXOForwarding {
     <#
     .SYNOPSIS  Set or clear SMTP forwarding on a mailbox.

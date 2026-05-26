@@ -196,6 +196,31 @@ warn "  ${CYAN}New-StoredCredential -Target 'svh-opsman' -UserName 'svh-opsman' 
     -Password \$cred.GetNetworkCredential().Password -Persist LocalMachine${RESET}"
 warn "(This requires the CredentialManager module: Install-Module CredentialManager)"
 
+# ── 6f. Backup timer ─────────────────────────────────────────────────────────
+step "Backup timer (rclone)"
+if ! command -v rclone &>/dev/null; then
+  sudo apt-get install -y -qq rclone
+  ok "rclone installed"
+else
+  ok "rclone $(rclone --version 2>/dev/null | head -1 | awk '{print $2}') already installed"
+fi
+
+chmod +x "$REPO_DIR/scripts/backup.sh"
+
+if systemctl --user is-system-running &>/dev/null 2>&1 || systemctl --user status &>/dev/null 2>&1; then
+  cp "$REPO_DIR/systemd/user/svh-opsman-backup.service" "$USER_SYSTEMD/"
+  cp "$REPO_DIR/systemd/user/svh-opsman-backup.timer"   "$USER_SYSTEMD/"
+  systemctl --user daemon-reload
+  systemctl --user enable svh-opsman-backup.timer 2>/dev/null
+  ok "svh-opsman-backup.timer installed and enabled"
+else
+  warn "systemd not running — install backup units manually after WSL restart:"
+  warn "  cp systemd/user/svh-opsman-backup.{service,timer} ~/.config/systemd/user/"
+  warn "  systemctl --user enable --now svh-opsman-backup.timer"
+fi
+warn "Action required: configure rclone remotes before the timer fires:"
+warn "  rclone config   (add 'onedrive' and 'gdrive' — see docs/setup/backup.md)"
+
 # ── 7. Hook permissions ───────────────────────────────────────────────────────
 step "Hook permissions"
 chmod +x "$REPO_DIR/.claude/hooks/"*.sh 2>/dev/null && ok "Hooks marked executable" || true
@@ -292,6 +317,7 @@ echo -e "  5. ${BOLD}cd mcp-server && npm start${RESET}  — verify the server s
 echo -e "  6. On Windows: ${BOLD}dotfiles\\install-windows.ps1${RESET}  — install font + Windows Terminal settings"
 echo -e "  7. Open the repo in Claude Code: ${BOLD}claude${RESET}  — or type: ${BOLD}opsman${RESET}"
 echo -e "  8. PowerShell TUI: ${BOLD}tui/run-tui.sh${RESET}  — browse and run module functions in terminal"
-echo -e "  9. On Windows: register the Task Scheduler job for WSL auto-start:"
+echo -e "  9. Configure rclone remotes for backup: ${BOLD}rclone config${RESET}  (see docs/setup/backup.md)"
+echo -e " 10. On Windows: register the Task Scheduler job for WSL auto-start:"
 echo -e "     ${BOLD}powershell.exe -File powershell\\Start-WSLServices.ps1${RESET} (see file for schtasks command)"
-echo -e " 10. Create the Bitwarden Windows Credential Manager entry (see step 6e output above)"
+echo -e " 11. Create the Bitwarden Windows Credential Manager entry (see step 6e output above)"

@@ -410,6 +410,74 @@ function Get-SVHADDomainInfo {
 }
 Export-ModuleMember -Function Get-SVHADDomainInfo
 
+function Format-SVHPhoneNumber {
+    <#
+    .SYNOPSIS  Normalise a phone number string to NNN.NNN.NNNN format.
+    .EXAMPLE   Format-SVHPhoneNumber '(503) 555-1234'   # returns 503.555.1234
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [string]$InputNumber
+    )
+    process {
+        $digits = $InputNumber -replace '[^\d]', ''
+        if ($digits -match '^\d{10}$') {
+            "$($digits.Substring(0,3)).$($digits.Substring(3,3)).$($digits.Substring(6,4))"
+        } else {
+            Write-Warning "Cannot normalise '$InputNumber' — expected 10 digits, got $($digits.Length)"
+            $null
+        }
+    }
+}
+Export-ModuleMember -Function Format-SVHPhoneNumber
+
+function Sync-SVHADMobilePhoneFormat {
+    <#
+    .SYNOPSIS  Normalise the mobile attribute on all enabled AD users to NNN.NNN.NNNN.
+    .DESCRIPTION
+        Reads every enabled user's mobile attribute, applies Format-SVHPhoneNumber,
+        and writes back only if the value changed. Use -WhatIf to preview.
+    .EXAMPLE   Sync-SVHADMobilePhoneFormat -DomainController ACCODC01 -Credential $c -WhatIf
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)][string]$DomainController,
+        [System.Management.Automation.PSCredential]$Credential
+    )
+    $users = Invoke-Command @(RemoteParams $DomainController $Credential) -ScriptBlock {
+        Get-ADUser -Filter { Enabled -eq $true } -Properties mobile |
+            Where-Object { $_.mobile } |
+            Select-Object SamAccountName, mobile
+    }
+
+    $updated = 0; $skipped = 0; $invalid = 0
+
+    foreach ($u in $users) {
+        $formatted = Format-SVHPhoneNumber -InputNumber $u.mobile
+        if (-not $formatted)           { $invalid++; continue }
+        if ($formatted -eq $u.mobile)  { $skipped++; continue }
+
+        if ($PSCmdlet.ShouldProcess($u.SamAccountName, "Update mobile: '$($u.mobile)' → '$formatted'")) {
+            try {
+                Invoke-Command @(RemoteParams $DomainController $Credential) -ScriptBlock {
+                    param($sam, $num)
+                    Set-ADUser -Identity $sam -Replace @{ mobile = $num } -ErrorAction Stop
+                } -ArgumentList $u.SamAccountName, $formatted
+                $updated++
+                Write-Verbose "$($u.SamAccountName): $($u.mobile) → $formatted"
+            } catch {
+                Write-Warning "$($u.SamAccountName): update failed — $_"
+                $invalid++
+            }
+        }
+    }
+
+    Write-Host "Mobile sync: $updated updated, $skipped already correct, $invalid invalid/failed" -ForegroundColor Cyan
+}
+Export-ModuleMember -Function Sync-SVHADMobilePhoneFormat
+
 function Get-SVHADReplication {
     <#
     .SYNOPSIS  Check AD replication status across all domain controllers.

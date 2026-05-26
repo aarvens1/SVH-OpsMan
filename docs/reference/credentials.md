@@ -1,6 +1,8 @@
 # Credential Reference
 
-All credentials for the SVH OpsMan project are stored as custom fields in a single Bitwarden vault item named **SVH OpsMan**. This document details the required credentials for each service.
+All credentials for the SVH OpsMan project are stored as custom fields in a single Bitwarden vault item named **SVH OpsMan**. This document covers how to provision each service integration — app registrations, required permissions, and setup steps.
+
+For the complete list of Bitwarden field names and which credentials are still pending, see [`references/credentials.md`](../../references/credentials.md).
 
 ## Microsoft Graph API
 

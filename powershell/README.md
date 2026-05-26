@@ -318,7 +318,7 @@ Restart-SVHNinjaDevice -DeviceId <id>                  # requires confirmation
 
 Requires: `sa_stevens` credentials (prompted) or `$Cred = Get-Credential`
 
-Uses PSRemoting (WinRM). See `references/setup-winrm.md` for one-time WSL trust setup.
+Uses PSRemoting (WinRM). See `docs/setup/winrm.md` for one-time WSL trust setup.
 
 ```powershell
 $c = Get-Credential sa_stevens@andersen-cost.com
@@ -578,7 +578,7 @@ On Windows natively, interactive auth works normally — a browser window opens 
 
 ### PSRemoting from WSL
 
-WinRM from WSL requires initial trust configuration. Run the one-time setup from `references/setup-winrm.md` before using any `SVH.OnPrem`, `SVH.AD`, or `SVH.Network` PSRemoting functions.
+WinRM from WSL requires initial trust configuration. Run the one-time setup from `docs/setup/winrm.md` before using any `SVH.OnPrem`, `SVH.AD`, or `SVH.Network` PSRemoting functions.
 
 Cross-platform cmdlets that **don't work** in pwsh on Linux (they work fine on Windows):
 - `Resolve-DnsName` → use `Resolve-SVHDns` from `SVH.Network` (pure .NET, works everywhere)

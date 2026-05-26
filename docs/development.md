@@ -2,6 +2,16 @@
 
 This guide is for developers contributing to the SVH OpsMan project. It covers the repository structure, conventions, and instructions for extending the system.
 
+## Three-layer mental model
+
+The repo is organized in three layers. Understanding which layer something belongs to keeps the structure clean as the project grows.
+
+**Layer 1 — Environment:** WSL shell, dotfiles, WinRM trust, Tailscale, systemd services. The foundation. If it's about setting up or configuring the WSL machine itself, it lives here.
+
+**Layer 2 — OpsMan:** The MCP server, collector, PowerShell modules, and TUI. The operational tooling built on top of that foundation.
+
+**Layer 3 — AI Context:** `.claude/`, `.gemini/`, `references/`, and the skill definitions. Everything the AI reads at runtime.
+
 ## Repository Layout
 
 ```
@@ -11,18 +21,29 @@ This guide is for developers contributing to the SVH OpsMan project. It covers t
   hooks/session-start.sh   ← Injects dynamic context at the start of each session
   rules/                   ← Scoped conventions for TypeScript and Obsidian output
   skills/                  ← Skill definitions, loaded on-demand by Claude
+.gemini/
+  GEMINI.md                ← Gemini profile and account strategy
+  skills/                  ← Gemini skill definitions
 collector/
   src/                     ← The on-demand bulk data collector
+docs/
+  setup/                   ← One-time environment config guides (Layer 1)
+  reference/               ← Human reference material (credentials, PS modules, staging data)
+  architecture.md          ← System design and data flow
+  development.md           ← This file
+  getting_started.md       ← End-to-end setup guide
+  user_guide.md            ← Daily workflow and skills reference
+dotfiles/                  ← Shell aliases, Windows Terminal settings, etc.
 mcp-server/
   src/                     ← The custom MCP server that exposes tools to Claude
-systemd/
-  user/                    ← systemd service and timer files for automation
 powershell/
   modules/                 ← The PowerShell module suite for write ops
   connect.ps1              ← Script to load all PS modules and credentials
-references/                ← Triage guides and failure patterns used by skills at runtime
+  README.md                ← Full module reference with example commands
+references/                ← AI runtime lookups: triage gates, failure patterns, creds
 scripts/                   ← Setup and utility scripts
-dotfiles/                  ← Shell aliases, Windows Terminal settings, etc.
+systemd/
+  user/                    ← systemd service and timer files for automation
 staging/                   ← (gitignored) Output of the Collector
 db/                        ← (gitignored) SQLite databases for metrics and run logs
 tui/                       ← The PowerShell TUI application

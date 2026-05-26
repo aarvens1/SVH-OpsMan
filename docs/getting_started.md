@@ -185,7 +185,7 @@ Tailscale provides secure remote access to your lab environment. The setup scrip
 ~/SVH-OpsMan/scripts/tailscale-wsl-setup.sh
 ```
 
-Authenticate via the URL that appears. In the Tailscale admin console, be sure to **disable key expiry** for this new node. For guidance on setting up subnet routers for full site access, see `references/tailscale-udm-setup.md`.
+Authenticate via the URL that appears. In the Tailscale admin console, be sure to **disable key expiry** for this new node. For guidance on setting up subnet routers for full site access, see `docs/setup/tailscale-udm.md`.
 
 ## 12. PowerShell for On-Premise Management
 
