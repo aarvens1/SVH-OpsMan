@@ -171,6 +171,7 @@ Trigger by slash command or by saying any of the listed phrases. Skills load on 
 
 | Skill | Invoke | What it does |
 |-------|--------|-------------|
+| **Handoff** | `/handoff` · "Create a handoff" · "Write a handoff" · "Session handoff" · "Save session context" | Summarises the current session into a `Projects/YYYY-MM-DD-[topic]-handoff.md` note and adds a wikilink + one-sentence summary to today's daily note. Use before context compaction or when switching projects. |
 | **Draft** | `/draft` · "Draft an email" · "Write a message to" | Takes rough notes or bullet points, drafts an email or Teams message in Aaron's voice. Nothing sent — lands in `Drafts/` in Obsidian. |
 | **TicketSmith** | `/ticketsmith` · "Write a ticket for this" · "Clean up this complaint" | Raw user complaint → professional IT ticket: title, problem, impact, steps to reproduce, suggested priority. Accepts pasted text, `.txt`, `.pdf`. |
 | **Scribe** | `/scribe` · "Write this up" · "Document what I did" | Rough technician notes → structured documentation. Styles: standard, concise, detailed, incident-report, how-to. Optionally promotes to Confluence. |
