@@ -1,12 +1,40 @@
 # SVH OpsMan — Claude Code project context
 
-SVH OpsMan is a purpose-built IT operations command station. This repo is its custom MCP server — a TypeScript ESM Node.js process that gives Claude access to SVH's IT systems: Microsoft 365, Azure, Defender, NinjaOne, Wazuh, UniFi, PrinterLogic, and Confluence. Communicates over stdio.
+SVH OpsMan is a purpose-built IT operations command station. Three services run in WSL: an **MCP server** that gives Claude interactive access to SVH's IT systems, a **collector** that runs on-demand and owns all bulk API reads, and a **morning briefing** triggered by a systemd timer. Communicates over stdio.
 
 ## Runtime
 
 - **Platform:** WSL 2 (Ubuntu 24.04) on Windows, running in Windows Terminal
 - **Client:** Claude Code CLI — `claude mcp add` registers MCPs, not Claude Desktop
 - **Secrets:** Bitwarden CLI (`bw`) — unlock vault before starting: `export BW_SESSION=$(bw unlock --raw)`. Required — server will not start without an active session.
+- **Auto-unlock:** `svh-opsman-bw-unlock.service` reads the master password from Windows Credential Manager at login, writes `~/.config/svh-opsman/bw-session`, which `svh-opsman-mcp.service` loads as an EnvironmentFile.
+
+## Architecture
+
+Three tracks, WSL only:
+
+```
+INTERACTIVE                ON-DEMAND               SCHEDULED
+───────────                ─────────               ─────────
+MCP server                 Collector               Briefing timer
+(systemd user svc)         (run manually or        (07:00 Mon–Thu)
+Claude calls tools         by a skill)             claude --print
+directly for targeted      Writes staging/         /day-starter
+queries + writes           and db/ output
+
+BW_SESSION flow:
+  Windows Task Scheduler
+    → wsl --exec systemctl --user start svh-opsman-bw-unlock
+    → bw-auto-unlock.sh reads Windows Credential Manager
+    → writes ~/.config/svh-opsman/bw-session
+    → svh-opsman-mcp.service loads EnvironmentFile
+```
+
+**MCP server owns interactive and write operations.** Targeted API calls (mail search, task update, etc.) happen during a session.
+
+**Collector owns all bulk data collection.** Run manually (`node collector/dist/index.js gather`) or triggered by a skill when fresh data is needed. Writes to `staging/{date}/` + `manifest.json`. Claude checks the manifest before synthesizing — silent failures are not acceptable. No scheduled timer; runs on demand.
+
+**Morning briefing** fires Mon–Thu at 07:00 via `svh-opsman-briefing.timer`. Runs `claude --print "/day-starter"` in the repo directory.
 
 ## Repo layout
 
@@ -17,6 +45,18 @@ SVH OpsMan is a purpose-built IT operations command station. This repo is its cu
   hooks/session-start.sh   ← injects git state, BW status, ops context (day, briefing, incidents)
   rules/                   ← path-scoped conventions (TypeScript, Obsidian output)
   skills/                  ← one directory per skill; Claude loads on demand
+collector/
+  src/
+    index.ts               ← CLI: gather | watch | health [--job=<name>]
+    secrets.ts             ← Bitwarden credential loader (reads BW_SESSION)
+    config.ts              ← lazy getConfig() — env vars read after BW secrets loaded
+    staging.ts             ← staging directory management
+    manifest.ts            ← manifest read/write
+    types.ts               ← shared types (JobResult, Manifest, metrics rows)
+    auth/                  ← token helpers
+    jobs/                  ← one file per data source
+    watch/                 ← writes time-series metrics from latest staging
+    db/                    ← SQLite: schema, runs log, metrics
 mcp-server/
   src/
     index.ts               ← entrypoint; registers all tool groups
@@ -24,7 +64,14 @@ mcp-server/
     auth/                  ← per-service token helpers
     tools/                 ← one file per integrated system
     utils/http.ts          ← axios client factories + formatError
+systemd/
+  user/
+    svh-opsman-bw-unlock.service  ← reads Windows Credential Manager, writes bw-session
+    svh-opsman-mcp.service        ← persistent MCP server (EnvironmentFile=bw-session)
+    svh-opsman-briefing.service   ← oneshot: claude --print "/day-starter"
+    svh-opsman-briefing.timer     ← Mon–Thu 07:00 trigger
 powershell/
+  Start-WSLServices.ps1    ← Windows login Task Scheduler: start WSL + trigger bw-unlock
   connect.ps1              ← dot-source to load credentials + all modules (requires BW_SESSION)
   modules/SVH.*.psm1       ← one module per integrated system; see powershell/README.md
   rolling-cluster-reboot.ps1  ← HCI node drain/reboot orchestration (runs on remote server)
@@ -33,13 +80,28 @@ powershell/
 references/                ← triage and troubleshooting reference docs (auto-synced to vault on session start)
 scripts/
   setup.sh                 ← WSL bootstrap (idempotent; run once on fresh install)
+  bw-auto-unlock.sh        ← reads Windows Credential Manager, unlocks BW, writes bw-session
   wsl-shell-setup.sh       ← installs zsh, tools, pwsh, enables systemd
   tailscale-wsl-setup.sh   ← Tailscale install for WSL node
 dotfiles/
-  bashrc.sh                ← shell aliases/functions (bwu, opsman, clip, wpath, wexp)
+  bashrc.sh                ← shell aliases/functions (bwu, opsman, clip, wpath, wexp, gs=gemini)
   windows-terminal-settings.json ← Windows Terminal profiles + keybindings (import via install-windows.ps1)
   install-windows.ps1      ← one-time Windows install: Cascadia Code NF font, PS profile stub, Windows Terminal settings
   status-refresh.sh        ← background status daemon (writes /tmp/svh-opsman-status.json)
+staging/                   ← collector writes here (gitignored except .gitkeep)
+  {date}/
+    manifest.json
+    graph-mail.json
+    graph-calendar.json
+    graph-audit.json
+    ninja-devices.json
+    ninja-alerts.json
+    wazuh-alerts.json
+    unifi-alerts.json
+    planner-tasks.json
+db/                        ← SQLite databases (gitignored except .gitkeep)
+  runs.db                  ← run log (one row per collect/watch run)
+  metrics.db               ← time-series: disk, alerts, compliance, patch lag
 tui/
   run-tui.sh               ← TUI launcher
   *.py                     ← Textual app (module browser, parameter forms, Obsidian output)
@@ -52,6 +114,7 @@ tui/
 - **No task deletion.** Mark Planner tasks complete at 100% instead. `planner_delete_task` does not exist.
 - **Read-only defaults.** Most tools read only. Write-capable: Mail (send/draft), Teams (send message), Planner (create/update), To Do (create/update), OneDrive (create folder/link), Confluence (create/update pages and comments), Entra (dismiss risky user), Obsidian (read/write), Excalidraw (create/update diagrams).
 - **Diagrams before descriptions.** For network topology, attack paths, asset network position, change impact scope, and project WBS — produce an Excalidraw diagram rather than prose. Save to `Diagrams/<category>/` and embed with `![[filename.excalidraw]]`.
+- **Check the manifest first.** Before any session synthesis using collector data, confirm staging is fresh and no jobs failed silently.
 - **IR Triage only** sends non-draft Teams messages. Build it last for that reason.
 
 ## Work week
@@ -64,7 +127,15 @@ Skills live in `.claude/skills/<name>/SKILL.md` and load on demand. Each skill d
 
 Invoke by name (`/day-starter`) or trigger phrase (e.g., "morning briefing", "X is broken", "write a ticket for this"). Skills are listed with trigger phrases in README.md.
 
-## Adding a new tool
+## Adding a new collector job
+
+1. Create `collector/src/jobs/<service>.ts` — implement the `Job` interface from `jobs/base.ts`
+2. Import and add to `ALL_JOBS` in `collector/src/index.ts`
+3. Add watch-phase extraction in `collector/src/watch/index.ts` if the job produces metrics data
+4. Add credentials to the **SVH OpsMan** Bitwarden item (custom fields)
+5. Document the staging file name above under the staging/ layout
+
+## Adding a new MCP tool
 
 1. Create `mcp-server/src/tools/<service>.ts` — export `register<Service>Tools(server, enabled)`
 2. Add to `mcp-server/src/index.ts` — import, add env-based `enabled` flag, call register
