@@ -25,9 +25,14 @@ import { registerUnifiCloudTools } from "./tools/unifi-cloud.js";
 import { registerUnifiNetworkTools } from "./tools/unifi-network.js";
 import { registerNinjaOneTools } from "./tools/ninjaone.js";
 import { registerWazuhTools } from "./tools/wazuh.js";
+import { registerSynologyTools } from "./tools/synology.js";
 
 // Productivity / knowledge
 import { registerConfluenceTools } from "./tools/confluence.js";
+import { registerGoogleTools } from "./tools/google.js";
+
+// ITSM
+import { registerFreshServiceTools } from "./tools/freshservice.js";
 
 // Specialised
 import { registerPrinterLogicTools } from "./tools/printerlogic.js";
@@ -55,6 +60,8 @@ if (!graphUserId) {
   );
 }
 
+const googleUserId = process.env["GOOGLE_USER_EMAIL"] || undefined;
+
 const services = {
   graph: checkEnv("GRAPH_TENANT_ID", "GRAPH_CLIENT_ID", "GRAPH_CLIENT_SECRET"),
   mde: checkEnv("MDE_TENANT_ID", "MDE_CLIENT_ID", "MDE_CLIENT_SECRET"),
@@ -65,6 +72,9 @@ const services = {
   wazuh: checkEnv("WAZUH_URL", "WAZUH_USERNAME", "WAZUH_PASSWORD"),
   confluence: checkEnv("CONFLUENCE_DOMAIN", "CONFLUENCE_EMAIL", "CONFLUENCE_API_TOKEN"),
   printerlogic: checkEnv("PRINTERLOGIC_URL", "PRINTERLOGIC_API_TOKEN"),
+  google: checkEnv("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REFRESH_TOKEN"),
+  freshservice: checkEnv("FRESHSERVICE_DOMAIN", "FRESHSERVICE_API_KEY"),
+  synology: checkEnv("SYNOLOGY_HOST", "SYNOLOGY_USER", "SYNOLOGY_PASSWORD"),
 };
 
 // Microsoft Graph — covers all Graph-backed services
@@ -89,9 +99,14 @@ registerUnifiCloudTools(server, services.unifiCloud);
 registerUnifiNetworkTools(server, services.unifiController);
 registerNinjaOneTools(server, services.ninjaone);
 registerWazuhTools(server, services.wazuh);
+registerSynologyTools(server, services.synology);
 
 // Productivity / knowledge
 registerConfluenceTools(server, services.confluence);
+registerGoogleTools(server, services.google, googleUserId);
+
+// ITSM
+registerFreshServiceTools(server, services.freshservice);
 
 // Specialised
 registerPrinterLogicTools(server, services.printerlogic);

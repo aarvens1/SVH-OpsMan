@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { getNinjaToken } from "../auth/ninja.js";
+import { getNinjaToken, getNinjaManagementToken } from "../auth/ninja.js";
 import { ninjaClient } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 
@@ -824,6 +824,95 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
           locations: o["locations"],
           policies: o["policies"],
         });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  // ── Write operations (require management scope) ────────────────────────────
+
+  server.registerTool(
+    "ninja_set_maintenance_mode",
+    {
+      description:
+        "Enable or disable maintenance mode on a NinjaOne device. " +
+        "While in maintenance mode, alerts are suppressed and the device is excluded from health checks.",
+      inputSchema: z.object({
+        device_id: z.number().int().describe("NinjaOne device ID"),
+        enabled: z.boolean().describe("true to enable maintenance mode, false to disable"),
+        duration_hours: z
+          .number()
+          .min(0.25)
+          .max(168)
+          .default(4)
+          .describe("Hours to stay in maintenance mode (only used when enabled=true). Max 168 (7 days)."),
+      }),
+    },
+    async ({ device_id, enabled, duration_hours }) => {
+      try {
+        const token = await getNinjaManagementToken();
+        if (enabled) {
+          const end = Math.floor((Date.now() + duration_hours * 3600 * 1000) / 1000);
+          await ninjaClient(token).post(`/device/${device_id}/maintenance`, { end });
+          return ok({ device_id, maintenance: true, ends_at: new Date(end * 1000).toISOString() });
+        } else {
+          await ninjaClient(token).delete(`/device/${device_id}/maintenance`);
+          return ok({ device_id, maintenance: false });
+        }
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "ninja_run_script",
+    {
+      description:
+        "Run a stored script on a NinjaOne device. The script must already exist in the NinjaOne script library. " +
+        "Returns a job ID — use ninja_get_device_details to check job status.",
+      inputSchema: z.object({
+        device_id: z.number().int().describe("NinjaOne device ID"),
+        script_id: z.number().int().describe("NinjaOne script library ID"),
+        run_as: z
+          .enum(["SYSTEM", "LOGGED_ON_USER"])
+          .default("SYSTEM")
+          .describe("Execution context"),
+        parameters: z
+          .string()
+          .optional()
+          .describe("Script parameters as a single string (passed to the script as arguments)"),
+      }),
+    },
+    async ({ device_id, script_id, run_as, parameters }) => {
+      try {
+        const token = await getNinjaManagementToken();
+        const body: Record<string, unknown> = { id: script_id, runAs: run_as };
+        if (parameters) body["parameters"] = parameters;
+        const res = await ninjaClient(token).post(`/device/${device_id}/script/run`, body);
+        return ok(res.data ?? { device_id, script_id, queued: true });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "ninja_reset_alert",
+    {
+      description:
+        "Acknowledge and dismiss an active NinjaOne alert by its UID. " +
+        "Use ninja_get_alerts or ninja_get_fleet_health to find alert UIDs.",
+      inputSchema: z.object({
+        alert_uid: z.string().describe("Alert UID (string identifier, not the numeric device ID)"),
+      }),
+    },
+    async ({ alert_uid }) => {
+      try {
+        const token = await getNinjaManagementToken();
+        await ninjaClient(token).delete(`/alert/${alert_uid}`);
+        return ok({ alert_uid, dismissed: true });
       } catch (e) {
         return err(e);
       }
