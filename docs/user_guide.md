@@ -6,17 +6,22 @@ This guide covers the daily workflow, how to interact with the AI assistants, an
 
 ### Starting a Session
 
-The `opsman` alias is the standard way to start a session. It checks for an active Bitwarden session and launches the Claude Code CLI.
+Two launch modes. Pick based on what you're doing:
 
-1.  **Unlock Bitwarden:** You must have an active Bitwarden session. Use the `bwu` alias or the full command:
-    ```bash
-    export BW_SESSION=$(bw unlock --raw)
-    ```
-2.  **Start OpsMan:**
-    ```bash
-    opsman
-    ```
-    If you are in a PowerShell terminal, this will open a new, dedicated Claude Code tab in Windows Terminal.
+```bash
+opsman        # Normal ops session — full hooks enforced
+opsman-dev    # Dev session — workflow hooks relaxed (see below)
+```
+
+Both check for an active Bitwarden session and start the status-refresh daemon. If BW is locked, unlock first:
+
+```bash
+bwu   # or: export BW_SESSION=$(bw unlock --raw)
+```
+
+**`opsman`** — use for all ops work: investigations, briefings, incidents, posture checks, anything that reads live system data. All hooks enforced.
+
+**`opsman-dev`** — use when working on OpsMan itself: skills, hooks, MCP tools, settings, CLAUDE.md. Sets `CLAUDE_DEV_MODE=1`, which relaxes git workflow blocks (reset --hard, restore, clean) and rm -rf on build artifact directories. Force push, .env files, DROP TABLE, and disk format remain blocked. **Don't use for sessions where live alert or device data is in context** — ops data in a dev session is how real hostnames end up in commits.
 
 ### The Session-Start Hook
 
@@ -74,6 +79,7 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | :---- | :----- | :---------- |
 | **Incident Open** | `/incident-open` · "open an incident" | Formally declares an incident — creates the Obsidian record, drafts a Planner tracking card, and stages a Teams alert. Use after `/troubleshoot` confirms something is worth declaring. |
 | **Troubleshoot** | `/troubleshoot` · "X is broken" | Begins a systematic investigation, forming and testing hypotheses based on a library of known failure patterns. |
+| **Incident Open** | `/incident-open` · "Open an incident for X" | Formally declares an incident: captures severity, affected systems, timeline, and creates the Obsidian note, Planner card, and Teams alert draft. Use after `/troubleshoot` confirms significance. |
 | **Event Log Triage**| `/event-log-triage` · "Check event logs on X"| Queries and correlates logs from Wazuh, NinjaOne, and live PowerShell sessions. |
 | **Event Log Analyzer**| `/event-log-analyzer` · "Analyze this log export"| Parses and analyzes exported log files (`.xml`, `.csv`, `.log`). |
 | **Network Troubleshooter**| `/network-troubleshooter` · "Network issue at [site]"| Traces network paths from UniFi to the endpoint, checking firewall rules, VLANs, and device status. |
@@ -90,7 +96,7 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | **OpsMan Health**| `/opsman-health` · "test my integrations" | Fires a lightweight probe against every configured service and reports pass/fail. Use after MCP server changes or when a tool call fails unexpectedly. |
 | **Vuln Triage**| `/vuln-triage` · CVE ID | Takes a CVE, identifies exposed devices, and recommends a remediation priority. |
 | **Asset Investigation**| `/asset-investigation` · "Tell me about [server/user]"| Compiles a comprehensive report on a specific asset or user from all connected systems. |
-| **User Report**| `/user-report` · "user report for X" | Quick recent-activity snapshot for a user: sign-ins, Defender alerts, Planner tasks, Teams activity, and mail. Faster and lighter than `/asset-investigation`. |
+| **User Report** | `/user-report` · "What has [user] been doing?" | Quick recent-activity snapshot for a user: sign-ins, Entra audit events, Defender alerts, Planner tasks, Teams activity. Lighter than `/asset-investigation` — no diagram, recent activity only. |
 | **Access Review**| `/access-review` · "Audit permissions for X" | Audits roles, group memberships, and sign-in activity for a user, group, or application. |
 | **License Audit**| `/license-audit` · "Are we wasting licenses?" | Analyzes M365 license assignments against user activity and device status to identify waste. |
 
@@ -100,15 +106,26 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | :---- | :----- | :---------- |
 | **Patch Campaign**| `/patch-campaign` · "Plan this month's patching" | Gathers all pending patches, prioritizes them based on TVM data, and drafts a deployment plan. |
 | **Change Record**| `/change-record` · "Document this change" | Creates a structured change record with scope, risk, test plan, and rollback procedures. |
+| **Runbook Gen** | `/runbook-gen` · "Write a runbook for X" | Generates a structured, reusable runbook from a description or rough notes — prerequisites, numbered steps, expected outputs, verification, and rollback. |
 | **Project Creator**| `/project-creator` · "Turn this into a project"| Breaks down a request into a full project plan with deliverables, dependencies, and effort estimates. |
 | **Runbook Gen**| `/runbook-gen` · "write a runbook for" | Generates a structured, reusable runbook from a description or rough notes, with prerequisites, numbered steps, verification, and rollback. |
 | **Meeting Prep**| `/meeting-prep` · "Prep me for my 2pm" | Gathers context from calendar, past meetings (Fathom), and related tasks to prepare a briefing. |
+| **Diagram** | `/diagram` · "Diagram this" | Creates or updates an Excalidraw diagram in Obsidian from a description, sketch, or existing note. Works for architecture, workflows, timelines, org charts. |
 | **Draft** | `/draft` · "Draft an email to..." | Takes bullet points and drafts a polished email or Teams message in your voice. |
 | **TicketSmith** | `/ticketsmith` · "Write a ticket for this"| Converts a raw user complaint into a well-structured IT ticket. |
 | **Scribe** | `/scribe` · "Document what I just did" | Turns rough notes into structured documentation in various styles (e.g., how-to, incident report). |
-| **Diagram** | `/diagram` · "diagram this" | Creates or updates an Excalidraw diagram in Obsidian from a description, sketch, or existing note. |
-| **PowerShell Navigator** | `/powershell-navigator` · "help me with PowerShell" | Discovers and safely executes SVH PowerShell module commands — walks through parameters, previews the command, and runs on approval via Desktop Commander. |
+| **Handoff** | `/handoff` · "Create a handoff" | Writes a session handoff note to Obsidian and adds a summary line to today's daily note. Use before context compaction or when switching projects. |
 | **Gemini Handoff** | `/gemini-handoff` · "Hand this to Gemini" | Writes a sanitized code task spec to `.gemini/handoff.md` for Gemini to pick up. No private data crosses the boundary. |
+
+### Utilities & Maintenance
+
+| Skill | Invoke | Description |
+| :---- | :----- | :---------- |
+| **OpsMan Health** | `/opsman-health` · "Test my integrations" | Fires a lightweight probe against every configured integration and reports pass/fail per service. Run after MCP server changes or when a tool call fails unexpectedly. |
+| **Staging Review** | `/staging-review` · "What's in staging?" | Quick summary of the latest collector staging data — what was gathered, how fresh it is, and any gaps. Faster than running a full day starter. |
+| **Memory Cleanup** | `/memory-cleanup` · "Clean up memory" | Audits and prunes the Claude auto-memory store. Deletes stale entries, moves actionable items to TODO.md, and rebuilds the memory index. |
+| **PowerShell Navigator** | `/powershell-navigator` · "How do I X in PowerShell?" | Conversational interface for finding, understanding, and executing commands from the SVH PowerShell modules. |
+| **PDX Weekend Digest** | `/pdx-weekend-digest` | Curated digest of upcoming weekend events in the Portland, OR area. |
 
 ## Gemini Dev Assistant
 

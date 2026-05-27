@@ -162,3 +162,19 @@ opsman() {
     fi
     cd "$OPSMANDIR" && claude
 }
+
+# opsman-dev — same as opsman but with CLAUDE_DEV_MODE=1.
+# Skips git workflow blocks (reset --hard, restore, clean) and rm -rf guard.
+# Force push, .env, DROP TABLE, and disk format remain blocked.
+opsman-dev() {
+    if ! bw get item "SVH OpsMan" --session "${BW_SESSION:-}" --nointeraction >/dev/null 2>&1; then
+        echo "⚠  Bitwarden session invalid or expired — unlocking..."
+        bwu || return 1
+    fi
+    if ! pgrep -f "dotfiles/status-refresh.sh" >/dev/null 2>&1; then
+        nohup bash "$OPSMANDIR/dotfiles/status-refresh.sh" >/dev/null 2>&1 &
+        disown
+        echo "✓ Status refresh daemon started"
+    fi
+    cd "$OPSMANDIR" && CLAUDE_DEV_MODE=1 claude
+}

@@ -296,7 +296,7 @@ function Get-SVHAppSecrets {
         '$top'    = 200
     }).value
 
-    foreach ($app in $apps) {
+    $results = foreach ($app in $apps) {
         $creds = @(
             $app.passwordCredentials | ForEach-Object { $_ | Add-Member -Force -NotePropertyName credType -NotePropertyValue 'secret'      -PassThru }
             $app.keyCredentials      | ForEach-Object { $_ | Add-Member -Force -NotePropertyName credType -NotePropertyValue 'certificate' -PassThru }
@@ -313,7 +313,8 @@ function Get-SVHAppSecrets {
                 }
             }
         }
-    } | Sort-Object ExpiresAt
+    }
+    $results | Sort-Object ExpiresAt
 }
 Export-ModuleMember -Function Get-SVHAppSecrets
 

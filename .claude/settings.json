@@ -28,7 +28,9 @@
       "Read(.gitignore)"
     ],
     "deny": [
-      "Read(mcp-server/.env)"
+      "Read(mcp-server/.env)",
+      "Write(mcp-server/.env)",
+      "Edit(mcp-server/.env)"
     ]
   },
   "hooks": {
@@ -73,6 +75,14 @@
           }
         ]
       }
+    ]
+  },
+  "autoMode": {
+    "allow": [
+      "$defaults",
+      "Bash(bw get item *)",
+      "Bash(bw get password *)",
+      "Bash(bw list items *)"
     ]
   }
 }

@@ -395,7 +395,8 @@ function Set-SVHEXOForwarding {
     if (-not (Get-Command Set-Mailbox -ErrorAction SilentlyContinue)) {
         throw 'ExchangeOnlineManagement not connected.'
     }
-    if ($PSCmdlet.ShouldProcess($Identity, if ($ClearForwarding) { 'Clear forwarding' } else { "Set forwarding to $ForwardingSmtpAddress" })) {
+    $action = if ($ClearForwarding) { 'Clear forwarding' } else { "Set forwarding to $ForwardingSmtpAddress" }
+    if ($PSCmdlet.ShouldProcess($Identity, $action)) {
         if ($ClearForwarding) {
             Set-Mailbox -Identity $Identity -ForwardingSmtpAddress $null -DeliverToMailboxAndForward $false
         } else {

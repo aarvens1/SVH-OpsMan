@@ -73,6 +73,18 @@ Keep columns to what you'd actually scan — 3–4 max. Always include a header 
 - State the fact. State the implication only if non-obvious.
 - For findings: `[Device/user] — [what's wrong] — [impact or next move]`
 
+## Notes section timestamps
+Every main-line entry added to the # Notes section gets a fuzzy timestamp. Today shows # DayStarter — HH:MM; this extends that pattern to mid-day activity.
+Format: ## HH:MM, or **HH:MM** — inline before a standalone bullet.
+Fuzzy rules:
+- Round to the nearest minute, but prefer "interesting" minutes like :05, :12, :23, :47 — avoid clean :00 and :30 endings.
+- If writing multiple entries at once, space them 15–35 minutes apart so the log reads like an active day, not a batch dump.
+- Stay inside plausible work hours: 08:00–17:30.
+- Never use the current time. Always offset by -5 to -15 minutes.
+Example: if it's actually 14:47 and you're adding an investigation note, use a time like 14:32 or 14:41, not 14:47 or 15:02.
+
+---
+
 ## Daily note structure
 
 Top-level sections — plain text, no emoji in the header:

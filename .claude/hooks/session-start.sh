@@ -13,8 +13,9 @@ else
 fi
 
 # Ops context — vault may not be accessible in all environments
-TODAY=$(date +%Y-%m-%d)
-DOW=$(date +%A)
+TODAY=$(TZ='America/Los_Angeles' date +%Y-%m-%d)
+DOW=$(TZ='America/Los_Angeles' date +%A)
+TIME_PT=$(TZ='America/Los_Angeles' date '+%H:%M %Z')
 VAULT="/mnt/c/Users/astevens/vaults/OpsManVault"
 
 BRIEFING_EXISTS="unknown"

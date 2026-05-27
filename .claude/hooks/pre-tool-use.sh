@@ -23,9 +23,33 @@ block() {
   exit 2
 }
 
+# ── Always-on blocks (never bypassed) ─────────────────────────────────────────
+
 # git push --force or -f
 echo "$COMMAND" | grep -qE 'git push .*(--force\b| -f )' \
   && block "Force push blocked — confirm explicitly if needed."
+
+# Shell reads of .env files
+echo "$COMMAND" | grep -qE '(cat|head|tail|less|more|bat) .*\.env(\s|$)' \
+  && block ".env file access blocked — credentials live in Bitwarden."
+
+# Shell writes to .env files
+echo "$COMMAND" | grep -qiE '(echo|printf|tee)\s.*>\s*[^>]*\.env\b' \
+  && block "Shell writes to .env blocked — credentials live in Bitwarden."
+
+# SQL destructive statements
+echo "$COMMAND" | grep -qiE '\b(DROP\s+(TABLE|DATABASE|SCHEMA|INDEX)|TRUNCATE\s+TABLE)\b' \
+  && block "Destructive SQL blocked — confirm explicitly if needed."
+
+# Windows disk format
+echo "$COMMAND" | grep -qiE '\bformat\s+[a-zA-Z]:\b|\bFormat-Volume\b' \
+  && block "Disk format command blocked — confirm explicitly if needed."
+
+# ── Dev mode bypass (set CLAUDE_DEV_MODE=1 to skip workflow blocks) ───────────
+# Start a dev session: CLAUDE_DEV_MODE=1 claude  (or alias: opsman-dev)
+[ "${CLAUDE_DEV_MODE:-}" = "1" ] && exit 0
+
+# ── Workflow blocks (ops sessions only) ───────────────────────────────────────
 
 # git reset --hard
 echo "$COMMAND" | grep -qE 'git reset .*--hard' \
@@ -43,12 +67,10 @@ echo "$COMMAND" | grep -qE 'git clean .*-[a-zA-Z]*f' \
 echo "$COMMAND" | grep -qE 'git restore [^-]' \
   && block "git restore (discard changes) blocked — use --staged to unstage, or confirm explicitly."
 
-# rm -rf / rm -fr (any flag order)
-echo "$COMMAND" | grep -qE 'rm -[a-zA-Z]*r[a-zA-Z]*f|rm -[a-zA-Z]*f[a-zA-Z]*r' \
-  && block "rm -rf blocked — confirm explicitly if needed."
-
-# Shell reads of .env files (Read tool deny rule covers the Read tool; this covers cat/shell)
-echo "$COMMAND" | grep -qE '(cat|head|tail|less|more|bat) .*\.env(\s|$)' \
-  && block ".env file access blocked — credentials live in Bitwarden."
+# rm -rf — allow common dev artifact dirs, block everything else
+if echo "$COMMAND" | grep -qE 'rm -[a-zA-Z]*r[a-zA-Z]*f|rm -[a-zA-Z]*f[a-zA-Z]*r'; then
+  echo "$COMMAND" | grep -qE 'rm -r[a-zA-Z]* (dist|node_modules|build|coverage|\.next|\.turbo|tmp|cache|out|\.cache|\.tmp|test-output|__pycache__|\.pytest_cache)(/|$)' \
+    || block "rm -rf blocked — confirm explicitly if needed."
+fi
 
 exit 0

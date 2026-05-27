@@ -2,6 +2,12 @@
 
 These apply whenever Claude writes a note to the Obsidian vault.
 
+## Vault root path
+
+**Always use:** `/mnt/c/Users/astevens/vaults/OpsManVault`
+
+This is the live Windows vault that Obsidian reads. The WSL mirror at `/home/wsl_stevens/vaults/OpsManVault` is a read-only sync target — never write to it. When a skill says "read from the Obsidian vault" or "write to the vault", resolve the full path by prepending the vault root above. Do not use `find` to locate vault files — use the explicit path.
+
 ## Frontmatter (required on every note)
 
 ```yaml

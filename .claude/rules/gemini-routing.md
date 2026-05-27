@@ -1,20 +1,37 @@
 # Gemini routing
 
-When a task is pure code work with no private system data requirement, proactively suggest routing it to Gemini rather than doing it inline.
+## Session mode first
+
+Before routing to Gemini, check which Claude mode applies:
+
+- **`opsman`** (normal): Full MCP access, hooks enforced. For ops work — investigations, briefings, incidents, anything reading live system data.
+- **`opsman-dev`** (`CLAUDE_DEV_MODE=1`): Workflow hooks relaxed. For dev work on OpsMan itself — skills, hooks, settings, MCP tools — especially mid-session when context-switching would break flow.
+
+**Do dev work in `opsman-dev` before routing to Gemini** when: the task is small, tied to the current session's context, or requires understanding ops state to do correctly.
 
 ## Route to Gemini when:
-- Scaffolding new files (collector jobs, test files, TypeScript interfaces)
-- Refactoring or documenting existing code without needing live system state
+
+- Scaffolding new files (collector jobs, test files, TypeScript interfaces) — separable, reviewable as a PR
+- Bulk refactoring or documentation passes across many files
+- Writing test suites
 - Running the linter, type checker, or npm audit
-- Git operations (status, diff, commit drafts)
 - Public web lookups (API docs, package versions, error messages, CVE public info)
 - Large-file analysis where Gemini's longer context window is an advantage
+- Any work where you want a clean context with no ops data present
 
-## Keep in Claude when:
+## Keep in Claude (`opsman` or `opsman-dev`) when:
+
 - The task requires live MCP tool calls (NinjaOne, Defender, Wazuh, M365, Bitwarden)
 - The output will go to Obsidian, Planner, Teams, or Confluence
 - The task involves private system data even if the *output* is clean code
-- The user is mid-investigation and switching tools would break flow
+- You're mid-investigation and switching tools would break flow
+- The fix is small and directly caused by something you just discovered in the current session
+
+## The real boundary: data contamination, not capability
+
+The Gemini separation exists to prevent ops data (real device names, hostnames, IPs, user data, alert content) from leaking into committed code. When ops context is in the session and code is being written, that data can end up in commit messages, comments, or variable names.
+
+The discipline: if ops data is live in the session and you're about to write code, use `/gemini-handoff` to sanitize before crossing the boundary — regardless of which session mode you're in.
 
 ## Handoff pattern (Claude → Gemini):
 1. Extract the relevant spec from the private data (field names and types only — no real values)

@@ -20,11 +20,24 @@ export async function loadBitwardenSecrets(): Promise<void> {
     console.error("[svh-opsman] bw sync failed — using cached vault data");
   }
 
-  const raw = execSync(`bw get item "${VAULT_ITEM}" --session "${session}"`, {
-    encoding: "utf8",
-    stdio: ["pipe", "pipe", "pipe"],
-    timeout: 10_000,
-  });
+  let raw: string;
+  try {
+    raw = execSync(`bw get item "${VAULT_ITEM}" --session "${session}" --nointeraction`, {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+      timeout: 10_000,
+    });
+  } catch {
+    throw new Error(
+      `[svh-opsman] BW_SESSION is expired or invalid — run: export BW_SESSION=$(bw unlock --raw)`
+    );
+  }
+
+  if (!raw.trim()) {
+    throw new Error(
+      `[svh-opsman] BW_SESSION is expired or invalid — run: export BW_SESSION=$(bw unlock --raw)`
+    );
+  }
 
   const item = JSON.parse(raw) as { fields?: { name: string; value: string }[] };
   const fields = item.fields ?? [];
