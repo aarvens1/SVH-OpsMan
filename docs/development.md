@@ -91,6 +91,29 @@ tui/
 3.  Define the skill's name, description, allowed tools, and trigger phrases in the frontmatter.
 4.  Write the instructions for the AI in the body of the markdown file, explaining the workflow, which tools to call, and the desired output format.
 
+### Developing TUI Applications
+
+The five TUI applications are built with Python and the [Textual](https://textual.textualize.io/) framework. Each lives in its own directory: `tui/`, `tui_ad/`, `tui_alerts/`, `tui_net/`, and `tui_patches/`.
+
+The main `tui/` app is the most complex, providing a generic interface to the entire PowerShell module suite. The others are special-purpose, focused on a specific domain.
+
+**Setup:**
+The Python dependencies are managed with [Poetry](https://python-poetry.org/).
+
+```bash
+# Install poetry
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Navigate to a TUI directory and install dependencies
+cd tui/
+poetry install
+
+# Run the app
+poetry run python app.py
+```
+
+Each TUI directory is a self-contained application. They share a common pattern but have no shared library code, allowing them to be developed and deployed independently.
+
 ## Testing
 
 The MCP server has a [Vitest](https://vitest.dev/) unit test suite covering utilities and tool logic.

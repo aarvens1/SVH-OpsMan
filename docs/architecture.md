@@ -32,6 +32,15 @@ collector_run · metrics_*
 db_query_execute_sql"]
     end
 
+    subgraph TUI["PowerShell TUIs (Python/Textual)"]
+        direction LR
+        TUI_MAIN["Main TUI"]
+        TUI_AD["AD TUI"]
+        TUI_ALERTS["Alerts TUI"]
+        TUI_NET["Network TUI"]
+        TUI_PATCH["Patching TUI"]
+    end
+
     subgraph External["External MCPs"]
         OBS["Obsidian"]
         GH["GitHub"]
@@ -49,6 +58,8 @@ Metrics → db/metrics.db"]
 
     You --> Custom
     You --> External
+    You --> TUI
+    TUI --> PS
     COL --> STAGING
 ```
 
@@ -61,6 +72,7 @@ The system is built on five key layers:
 3.  **WSL 2 (The Environment):** All components run inside WSL 2 (Ubuntu 24.04) on your Windows machine. This provides a real Linux environment for the Node.js applications and CLI tools, while still allowing seamless interaction with native Windows applications like Obsidian.
 4.  **Bitwarden (The Credential Store):** All API keys and secrets are stored securely in a single Bitwarden item. The MCP server reads these at startup via the `bw` CLI, ensuring no credentials ever touch the filesystem in plaintext.
 5.  **Obsidian (The Output Layer):** A local-first markdown editor that serves as the "staging area" for all AI output. Reports, drafts, and notes are written here for review before being actioned. The **Obsidian Local REST API** plugin enables this interaction.
+6.  **PowerShell TUIs (The Interactive Layer):** A suite of five terminal applications built with Python's Textual framework. They provide a human-friendly, interactive frontend for the underlying PowerShell modules, used for operator-driven administrative tasks that require real-time input and confirmation.
 
 ## Design Decisions
 

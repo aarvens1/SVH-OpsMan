@@ -70,6 +70,7 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | **Week Starter** | `/week-starter` · "What's the week look like" | Reviews the previous week's loose ends and outlines the upcoming week's calendar and tasks. |
 | **Week Ender** | `/week-ender` · "Wrap up the week" | Summarizes the week's accomplishments and stages items for the following week. |
 | **Handoff** | `/handoff` · "session handoff" | Preserves the current session's context, decisions, and open items to an Obsidian note for continuity across sessions. |
+| **Task Review** | `/task-review` · "Let's bust out some tasks" | Full triage across MS To Do and all Planner boards: pulls fresh, organizes by urgency and owner, then executes bulk close/reschedule/dismiss actions. |
 | **Staging Review** | `/staging-review` · "what's in staging" | Quick summary of the latest collector data — what was gathered, how fresh it is, and any failed jobs. |
 | **Memory Cleanup** | `/memory-cleanup` · "clean up memory" | Audits and prunes the auto-memory store; moves actionable items to TODO.md. Called automatically by week-ender. |
 
@@ -139,6 +140,20 @@ Gemini runs alongside Claude in three dedicated accounts. Claude owns ops; Gemin
 | **B — Docs** | Long-context analysis | Bulk documentation passes, reading entire modules, large-file diffs |
 | **C — Research** | Public web lookups | API docs, package versions, error messages, CVE public info |
 
+### Handoff Workflow
+
+Each Gemini handoff is tracked as an Obsidian note in `Handoffs/` with a status lifecycle:
+
+`draft` → `ready` → `in-progress` → `done`
+
+**Queueing a handoff:** Run `/gemini-handoff` — Claude creates a note in `Handoffs/`, adds a link to your daily Activity Log, and prompts you to review the spec. Multiple handoffs can queue as `draft` without blocking each other.
+
+**Pushing to Gemini:** Change the note's `status` to `ready` in Obsidian, then run `/handoff-queue`. Claude writes the spec to `.gemini/handoff.md` and tells you which account and skill to use. If multiple are ready, they process one at a time — run `/handoff-queue` again after each receive.
+
+**Receiving results:** After Gemini writes `.gemini/to-claude.md`, run `/handoff-receive`. Claude integrates the result and closes out the Handoff note.
+
+The data boundary is enforced at creation time: `/gemini-handoff` strips all private data before writing the spec. Field names and types only — no real device names, IPs, UPNs, or credentials.
+
 ### Gemini Skills
 
 | Skill | Account | Invoke |
@@ -165,6 +180,7 @@ Gemini runs alongside Claude in three dedicated accounts. Claude owns ops; Gemin
 
 Gemini accounts have no MCP tool access. Never paste raw NinjaOne responses, Wazuh alerts, M365 mail content, or Bitwarden credentials into a Gemini session. When Gemini needs to know the shape of a private API response, use `/gemini-handoff` in Claude — it strips real values and passes only field names and types.
 
+<<<<<<< HEAD
 ## TUI Apps
 
 The project includes a suite of Textual terminal UIs. All are launched via `tui/run-tui.sh` (requires an active `BW_SESSION`).
@@ -186,6 +202,29 @@ The project includes a suite of Textual terminal UIs. All are launched via `tui/
 -   Risk color-coding for commands (Read, Write, Destructive).
 -   Confirmation step for all destructive actions.
 -   Optionally save command output directly to Obsidian.
+=======
+## PowerShell TUIs
+
+For hands-on administrative tasks, the project includes five Textual User Interface (TUI) applications built with Python's Textual framework. They provide a searchable, form-based interface for the underlying PowerShell modules. An active Bitwarden session is required.
+
+-   **Main TUI:** `tui`
+    -   A general-purpose interface for browsing and executing over 200+ functions from the PowerShell module suite. Features risk color-coding and a command previewer.
+-   **Active Directory TUI:** `tui-ad`
+    -   Specialized for user and group management in Active Directory.
+-   **Alerts TUI:** `tui-alerts`
+    -   For viewing and managing alerts from Defender and Wazuh.
+-   **Network TUI:** `tui-net`
+    -   Focused on network diagnostics and UniFi device management.
+-   **Patching TUI:** `tui-patches`
+    -   For reviewing and approving pending system patches.
+
+Launch them using their respective alias after unlocking Bitwarden (`bwu`). For example:
+
+```bash
+bwu
+tui-ad
+```
+>>>>>>> c3f93a9 (docs: Synchronize documentation with recent features)
 
 ## Windows Terminal Environment
 

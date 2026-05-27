@@ -8,7 +8,7 @@ This repository is Aaron's WSL 2 environment — the shell configuration, IT ops
 WSL shell, dotfiles, WinRM trust, Tailscale subnet routing, and systemd services. The foundation everything else runs on. See `docs/setup/` for one-time configuration guides and `scripts/` for setup automation.
 
 **Layer 2 — OpsMan**
-A custom MCP server that connects Claude to all managed IT systems (NinjaOne, Defender, M365, Azure, UniFi, Confluence, and more), an on-demand data collector for bulk pulls, a PowerShell module suite for write operations, and a TUI for interactive admin work.
+A custom MCP server that connects Claude to all managed IT systems (NinjaOne, Defender, M365, Azure, UniFi, Confluence, and more), an on-demand data collector for bulk pulls, a PowerShell module suite for write operations, and five TUI applications for interactive administration.
 
 **Layer 3 — AI Context**
 Claude and Gemini configuration, skill definitions, and runtime reference files the AI reads during operations. Claude is the Ops Expert — full MCP access, owns incident response and all reporting. Gemini is the Dev Assistant — three accounts (Dev / Docs / Research), no MCP access, owns the development lifecycle.
@@ -17,13 +17,10 @@ Claude and Gemini configuration, skill definitions, and runtime reference files 
 
 ```bash
 # 1. Unlock Bitwarden
-export BW_SESSION=$(bw unlock --raw)
+bwu
 
 # 2. Launch OpsMan
 opsman
-
-# 3. Run morning briefing
-/day-starter
 ```
 
 ## Documentation

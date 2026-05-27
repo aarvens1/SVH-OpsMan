@@ -56,6 +56,14 @@ which claude   # → ~/.local/bin/claude
 claude login   # Authenticate with your Anthropic account
 ```
 
+### 3a. Install Gemini CLI
+
+```bash
+sudo npm install -g @google/gemini-cli
+gemini login
+gemini git host add
+```
+
 ## 4. Configure WSL Shell Environment
 
 This project includes a setup script to configure the WSL shell with `zsh`, `systemd`, and a suite of useful tools.
@@ -193,18 +201,39 @@ The project includes a powerful suite of PowerShell modules for managing on-prem
 
 A one-time setup is required to configure WinRM for PSRemoting from WSL to your Windows servers. For detailed instructions on this and how to use the modules, refer to the **[PowerShell Modules Guide](./reference/powershell.md)**.
 
-## 13. Final Verification
+## 13. PowerShell TUIs
 
-Your setup should now be complete. Verify that the MCP server starts correctly:
+For hands-on administrative tasks, the project includes five Textual User Interface (TUI) applications built with Python's Textual framework. They provide a searchable, form-based interface for the underlying PowerShell modules. An active Bitwarden session is required.
+
+-   **Main TUI:** `tui`
+    -   A general-purpose interface for browsing and executing over 200+ functions from the PowerShell module suite. Features risk color-coding and a command previewer.
+-   **Active Directory TUI:** `tui-ad`
+    -   Specialized for user and group management in Active Directory.
+-   **Alerts TUI:** `tui-alerts`
+    -   For viewing and managing alerts from Defender and Wazuh.
+-   **Network TUI:** `tui-net`
+    -   Focused on network diagnostics and UniFi device management.
+-   **Patching TUI:** `tui-patches`
+    -   For reviewing and approving pending system patches.
+
+Launch them using their respective alias after unlocking Bitwarden (`bwu`). For example:
 
 ```bash
-# Unlock your vault if the session has expired
-export BW_SESSION=$(bw unlock --raw)
-
-
-# Open Claude Code in the project directory
-cd ~/SVH-OpsMan
-claude
+bwu
+tui-ad
 ```
 
-You should see log output confirming that credentials were loaded from Bitwarden and the server is ready. If not, retrace the credential setup steps.
+## 14. Final Verification
+
+Your setup should now be complete. Launch the main `opsman` environment:
+
+```bash
+opsman
+```
+
+This will start the session hooks and drop you into a Claude Code prompt. You should see log output confirming that credentials were loaded from Bitwarden and the server is ready. If not, retrace the credential setup steps.
+
+You can now run your first briefing:
+```
+/day-starter
+```
