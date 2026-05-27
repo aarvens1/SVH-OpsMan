@@ -138,6 +138,10 @@ alias disk-hot='sqlite3 -column -header "$OPSMANDIR/db/metrics.db" "SELECT serve
 
 # ── TUI ───────────────────────────────────────────────────────────────────────
 alias tui='run-tui'
+alias tui-ad='run-tui tui_ad'
+alias tui-alerts='run-tui tui_alerts'
+alias tui-net='run-tui tui_net'
+alias tui-patches='run-tui tui_patches'
 
 # ── OpsMan workspace ──────────────────────────────────────────────────────────
 

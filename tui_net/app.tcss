@@ -1,5 +1,5 @@
-/* SVH PowerShell TUI — app-specific layout (Gruvbox Dark)
- * Shared widget styles live in base.tcss (loads first).
+/* SVH Network Ops TUI — app-specific layout (Gruvbox Dark)
+ * Shared widget styles live in ../tui/base.tcss (loads first).
  */
 
 /* ── Overall layout ────────────────────────────────────────────────────── */
@@ -103,12 +103,6 @@ Screen {
     margin-top: 1;
     layout: horizontal;
     align: left middle;
-}
-
-#output-dest {
-    width: auto;
-    margin-right: 2;
-    height: 3;
 }
 
 #run-btn {

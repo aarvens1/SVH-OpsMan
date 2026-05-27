@@ -40,22 +40,39 @@ Key measurements:
 
 ---
 
-## Color System
+## Color System — Gruvbox Dark
 
-All colors use Textual's built-in semantic tokens — never hardcode hex values. This means apps automatically work in both light and dark mode.
+All colors are explicit hex values from the Gruvbox Dark palette. Never use Textual semantic tokens (`$surface`, `$primary`, etc.) — they are overridden by base.tcss and will not reflect Gruvbox.
 
-| Token | Use |
-|-------|-----|
-| `$surface` | Main panel backgrounds |
-| `$surface-darken-1` | Sidebar, output section background |
-| `$surface-darken-2` | Code/command block backgrounds |
-| `$primary-darken-2` | Border color (standard) |
-| `$primary-darken-3` | Separator lines within panels |
-| `$text` | Primary text |
-| `$text-muted` | Secondary text, optional labels, dimmed help |
-| `$error` | Destructive actions, confirm modal border |
+### Palette reference
 
-Never use `$warning` or `$success` as background colors — they're for Button variants only.
+| Name | Hex | Use |
+|------|-----|-----|
+| BG Hard | `#1d2021` | Screen / output log background (darkest) |
+| BG | `#282828` | Sidebar / header / footer |
+| BG Soft | `#32302f` | Right-panel background |
+| BG1 | `#3c3836` | Detail panel / raised surfaces / input backgrounds |
+| BG2 | `#504945` | Inactive borders / button normal / hover base |
+| BG3 | `#665c54` | Hover states / dim active |
+| Gray | `#928374` | Comments / muted text |
+| FG3 | `#a89984` | Secondary text / footer labels |
+| FG | `#ebdbb2` | Primary text |
+| Orange | `#fe8019` | **PRIMARY accent** — structural borders |
+| Yellow | `#fabd2f` | **FOCUS** — focused inputs, selected tree items |
+| Red | `#fb4934` | Error / destructive |
+| Green | `#b8bb26` | Read / success |
+| Blue | `#83a598` | Info / primary button |
+| Purple | `#d3869b` | Module / category labels |
+| Aqua | `#8ec07c` | Command preview text, secondary success |
+
+### Design decisions
+
+- Orange `#fe8019` for all structural dividers (sidebar right border, header bottom border) — the characteristic Gruvbox warm accent
+- Yellow `#fabd2f` for all focus states — consistent across inputs, tree selection, buttons
+- `round` border on inputs and panels; `tall` for structural separators
+- Background hierarchy: BG Hard → BG → BG Soft → BG1 (darkest to lightest across screen depth)
+
+Never use `$warning` or `$success` as background colors — they're for Button variants only in Textual.
 
 ---
 
@@ -197,9 +214,9 @@ self.sub_title += "  |  ✗ Session Error"
 6. Run via `python3 -m yourapp` from the repo root, or add an entry in `run-tui.sh`.
 
 What to customize vs. keep fixed:
-- **Keep fixed:** Risk encoding, modal pattern, keybinding set, log line conventions, color tokens
-- **Customize freely:** Sidebar content, detail panel layout, sub-title content, panel size ratios
-- **Do not change:** Token names — always use semantic `$surface`/`$primary`/`$error`, never hex
+- **Keep fixed:** Risk encoding, modal pattern, keybinding set, log line conventions, Gruvbox palette
+- **Customize freely:** Sidebar content, detail panel layout, sub-title content, panel size ratios, sidebar width (default 32 — can go up to 40 for wider content)
+- **Do not change:** Palette hex values — always use the documented Gruvbox hex values, never Textual semantic tokens
 
 ---
 
