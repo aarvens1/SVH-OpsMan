@@ -108,7 +108,7 @@ class ParamRow(Horizontal):
 class SVHTui(App):
     """SVH PowerShell TUI — browse and run SVH module functions."""
 
-    CSS_PATH = "app.tcss"
+    CSS_PATH = ["base.tcss", "app.tcss"]
     TITLE = "SVH PowerShell TUI"
     BINDINGS = [
         ("ctrl+f", "focus_search", "Search"),

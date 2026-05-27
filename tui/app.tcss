@@ -11,19 +11,7 @@ Screen {
     height: 1fr;
 }
 
-/* ── Sidebar ─────────────────────────────────────────────────────────────── */
-
-#sidebar {
-    width: 32;
-    layout: vertical;
-    background: $surface-darken-1;
-    border-right: tall $primary-darken-2;
-}
-
-#search {
-    margin: 1 1 0 1;
-    border: tall $primary-darken-2;
-}
+/* ── Sidebar (base styles in base.tcss) ─────────────────────────────────── */
 
 #func-tree {
     margin: 0 0 0 0;
@@ -118,54 +106,4 @@ Screen {
     height: 3;
 }
 
-/* ── Output log ─────────────────────────────────────────────────────────── */
-
-#output-log {
-    height: 1fr;
-    border-top: tall $primary-darken-2;
-    padding: 0 1;
-    scrollbar-gutter: stable;
-}
-
-/* ── Confirmation modal ─────────────────────────────────────────────────── */
-
-ConfirmModal {
-    align: center middle;
-}
-
-#confirm-dialog {
-    background: $surface;
-    border: tall $error;
-    padding: 2 4;
-    width: 72;
-    height: auto;
-}
-
-#confirm-title {
-    color: $error;
-    text-style: bold;
-    margin-bottom: 1;
-    content-align: center middle;
-}
-
-#confirm-cmd {
-    background: $surface-darken-2;
-    padding: 1 2;
-    margin-bottom: 2;
-    color: $text;
-    overflow-x: auto;
-}
-
-#confirm-buttons {
-    align: center middle;
-    height: 3;
-}
-
-#btn-confirm {
-    margin-right: 2;
-    width: 14;
-}
-
-#btn-cancel {
-    width: 14;
-}
+/* ── Output log + Confirmation modal — defined in base.tcss ─────────────── */

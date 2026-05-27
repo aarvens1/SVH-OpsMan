@@ -1,0 +1,75 @@
+/* SVH TUI — base styles shared across all SVH Textual apps.
+ *
+ * Usage: set CSS_PATH = ["base.tcss", "your-app.tcss"] in your App class.
+ * Override any rule in your own stylesheet — base.tcss loads first.
+ */
+
+/* ── Confirmation modal ─────────────────────────────────────────────────── */
+/* Copy the ConfirmModal class from tui/app.py — it needs no changes.       */
+
+ConfirmModal {
+    align: center middle;
+}
+
+#confirm-dialog {
+    background: $surface;
+    border: tall $error;
+    padding: 2 4;
+    width: 72;
+    height: auto;
+}
+
+#confirm-title {
+    color: $error;
+    text-style: bold;
+    margin-bottom: 1;
+    content-align: center middle;
+}
+
+#confirm-cmd {
+    background: $surface-darken-2;
+    padding: 1 2;
+    margin-bottom: 2;
+    color: $text;
+    overflow-x: auto;
+}
+
+#confirm-buttons {
+    align: center middle;
+    height: 3;
+}
+
+#btn-confirm {
+    margin-right: 2;
+    width: 14;
+}
+
+#btn-cancel {
+    width: 14;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+/* Standard left nav: 32 cols wide, dark surface, right border.             */
+/* Copy structure: Vertical(id="sidebar") > Input(id="search") + Tree       */
+
+#sidebar {
+    width: 32;
+    layout: vertical;
+    background: $surface-darken-1;
+    border-right: tall $primary-darken-2;
+}
+
+#search {
+    margin: 1 1 0 1;
+    border: tall $primary-darken-2;
+}
+
+/* ── Output log ─────────────────────────────────────────────────────────── */
+/* Standard RichLog panel at the bottom of the right pane.                  */
+
+#output-log {
+    height: 1fr;
+    border-top: tall $primary-darken-2;
+    padding: 0 1;
+    scrollbar-gutter: stable;
+}

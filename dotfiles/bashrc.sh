@@ -136,6 +136,9 @@ alias alert-trend='sqlite3 -column -header "$OPSMANDIR/db/metrics.db" "SELECT re
 # disk-hot — servers currently above 80% on any drive
 alias disk-hot='sqlite3 -column -header "$OPSMANDIR/db/metrics.db" "SELECT server, drive_letter, used_pct, recorded_at FROM disk_usage WHERE used_pct > 80 ORDER BY used_pct DESC, recorded_at DESC LIMIT 20;"'
 
+# ── TUI ───────────────────────────────────────────────────────────────────────
+alias tui='run-tui'
+
 # ── OpsMan workspace ──────────────────────────────────────────────────────────
 
 # opsman — launch Claude Code in the current terminal:
