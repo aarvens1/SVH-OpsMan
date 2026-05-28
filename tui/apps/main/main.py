@@ -1,4 +1,4 @@
-"""Entry point: python -m tui  or  ./run-tui.sh"""
+"""Entry point: python -m tui.apps.main  or  tui/run-tui.sh"""
 
 from __future__ import annotations
 

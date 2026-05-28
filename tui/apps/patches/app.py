@@ -21,9 +21,9 @@ from textual.widgets import (
     Tree,
 )
 
-from tui.session import PowerShellSession, SessionState
+from tui.apps.main.session import PowerShellSession, SessionState
 
-REPO_ROOT = Path(__file__).parent.parent
+REPO_ROOT = Path(__file__).parent.parent.parent.parent
 CONNECT_SCRIPT = REPO_ROOT / "powershell" / "connect.ps1"
 
 _SEV_COLOR = {
@@ -81,7 +81,7 @@ def _top_severity(patches: list[dict[str, Any]]) -> str:
 class PatchCampaign(App):
     """SVH Patch Campaign Manager — browse pending patches across the server fleet."""
 
-    CSS_PATH = ["../tui/base.tcss", "app.tcss"]
+    CSS_PATH = ["../../base.tcss", "app.tcss"]
     TITLE = "SVH Patch Campaign"
 
     BINDINGS = [

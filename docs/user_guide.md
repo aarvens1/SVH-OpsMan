@@ -148,18 +148,27 @@ Gemini runs alongside Claude in three dedicated accounts. Claude owns ops; Gemin
 
 Gemini accounts have no MCP tool access. Never paste raw NinjaOne responses, Wazuh alerts, M365 mail content, or Bitwarden credentials into a Gemini session. When Gemini needs to know the shape of a private API response, use `/gemini-handoff` in Claude — it strips real values and passes only field names and types.
 
-## PowerShell TUI
+## TUI Apps
 
-For hands-on administrative tasks, the project includes a Textual User Interface (TUI) for the PowerShell modules. It provides a searchable, form-based interface for all 237 functions.
+The project includes a suite of Textual terminal UIs. All are launched via `tui/run-tui.sh` (requires an active `BW_SESSION`).
 
--   **Start:** `tui/run-tui.sh` (requires an active `BW_SESSION`)
--   **Features:**
-    -   Browse and search all 237 functions by module.
-    -   Fill parameters in a simple form.
-    -   Preview the command before execution.
-    -   Risk color-coding for commands (Read, Write, Destructive).
-    -   Confirmation step for all destructive actions.
-    -   Optionally save command output directly to Obsidian.
+| App | Alias | Description |
+| :-- | :---- | :---------- |
+| `main` | `tui` | PowerShell Navigator — searchable form-based browser for all 237 module functions |
+| `ad` | `tui-ad` | Active Directory user management |
+| `alerts` | `tui-alerts` | Alert triage across Wazuh and NinjaOne |
+| `net` | `tui-net` | Network ops via SVH.Network functions |
+| `patches` | `tui-patches` | Patch campaign management |
+
+**Start:** `tui/run-tui.sh [app]` — defaults to `main` if no app is specified.
+
+**PowerShell Navigator features:**
+-   Browse and search all 237 functions by module.
+-   Fill parameters in a simple form.
+-   Preview the command before execution.
+-   Risk color-coding for commands (Read, Write, Destructive).
+-   Confirmation step for all destructive actions.
+-   Optionally save command output directly to Obsidian.
 
 ## Windows Terminal Environment
 

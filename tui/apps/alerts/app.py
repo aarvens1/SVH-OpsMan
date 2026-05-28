@@ -22,9 +22,9 @@ from textual.widgets import (
 )
 from rich.text import Text
 
-from tui.session import PowerShellSession, SessionState
+from tui.apps.main.session import PowerShellSession, SessionState
 
-CONNECT_SCRIPT = Path(__file__).parent.parent / "powershell" / "connect.ps1"
+CONNECT_SCRIPT = Path(__file__).parent.parent.parent.parent / "powershell" / "connect.ps1"
 
 # ── Alert source definitions ──────────────────────────────────────────────────
 
@@ -126,7 +126,7 @@ _PLAIN_CMDS = {"Get-SVHCriticalAlertSummary"}
 class AlertTriage(App):
     """SVH Alert Triage — real-time security alert browser."""
 
-    CSS_PATH = ["../tui/base.tcss", "app.tcss"]
+    CSS_PATH = ["../../base.tcss", "app.tcss"]
     TITLE = "SVH Alert Triage"
     BINDINGS = [
         ("ctrl+f", "focus_search",       "Search"),

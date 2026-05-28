@@ -46,11 +46,16 @@ systemd/
   user/                    ← systemd service and timer files for automation
 staging/                   ← (gitignored) Output of the Collector
 db/                        ← (gitignored) SQLite databases for metrics and run logs
-tui/                       ← The PowerShell TUI (reference implementation)
-tui_ad/                    ← Active Directory TUI
-tui_alerts/                ← Alerts TUI
-tui_net/                   ← Network TUI
-tui_patches/               ← Patch management TUI
+tui/
+  apps/
+    main/                  ← PowerShell Navigator TUI (reference implementation)
+    ad/                    ← Active Directory TUI
+    alerts/                ← Alerts TUI
+    net/                   ← Network TUI
+    patches/               ← Patch management TUI
+  base.tcss                ← Shared Gruvbox styles
+  STYLE_GUIDE.md           ← TUI design system
+  run-tui.sh               ← Launcher script
 ```
 
 ## Key Conventions

@@ -24,10 +24,10 @@ from textual.widgets import (
 )
 from rich.text import Text
 
-from tui.obsidian import save_output
-from tui.session import PowerShellSession, SessionState
+from tui.apps.main.obsidian import save_output
+from tui.apps.main.session import PowerShellSession, SessionState
 
-CONNECT_SCRIPT = Path(__file__).parent.parent / "powershell" / "connect.ps1"
+CONNECT_SCRIPT = Path(__file__).parent.parent.parent.parent / "powershell" / "connect.ps1"
 
 _DEFAULT_DC = os.environ.get("SVH_DC", "ACCODC01")
 
@@ -314,7 +314,7 @@ class ParamRow(Horizontal):
 class ADTui(App):
     """SVH AD Manager — Active Directory user management TUI."""
 
-    CSS_PATH = ["../tui/base.tcss", "app.tcss"]
+    CSS_PATH = ["../../base.tcss", "app.tcss"]
     TITLE = "SVH AD Manager"
     BINDINGS = [
         ("ctrl+f", "focus_search", "Search"),
