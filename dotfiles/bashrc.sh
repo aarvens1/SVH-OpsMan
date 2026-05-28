@@ -143,6 +143,10 @@ alias tui-alerts='run-tui alerts'
 alias tui-net='run-tui net'
 alias tui-patches='run-tui patches'
 
+# ── OpsMan update ─────────────────────────────────────────────────────────────
+# Pull latest, rebuild both packages, restart MCP + status daemon
+alias opsman-update='bash "$OPSMANDIR/scripts/update.sh"'
+
 # ── OpsMan workspace ──────────────────────────────────────────────────────────
 
 # opsman — launch Claude Code in the current terminal:
