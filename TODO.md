@@ -37,6 +37,12 @@ Once BW credentials are in place, test at least one tool per service:
 
 ---
 
+## Docs — needs verification
+
+- [ ] `docs/getting_started.md` Step 3 — verify Claude Code install command (`claude install stable` looks non-standard; may need to update to the correct install method before the setup guide is reliable)
+
+---
+
 ## Optional / later
 
 - [ ] TTL cache on `ninja_list_servers` and `admin_get_service_health` — reduces repeat calls in day-starter sessions

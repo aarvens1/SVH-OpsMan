@@ -95,7 +95,7 @@ Logs: `journalctl --user -u svh-opsman-backup` or `~/.local/share/svh-opsman/bac
 The vault lives at `/mnt/c/Users/astevens/vaults/OpsManVault/`. Open it in Obsidian via:
 
 ```
-\\wsl$\Ubuntu\home\wsl_stevens\vaults\OpsManVault
+C:\Users\astevens\vaults\OpsManVault
 ```
 
-In Obsidian: **Open folder as vault** → navigate to that UNC path.
+In Obsidian: **Open folder as vault** → navigate to that path.

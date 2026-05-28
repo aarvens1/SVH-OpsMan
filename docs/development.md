@@ -46,7 +46,11 @@ systemd/
   user/                    ← systemd service and timer files for automation
 staging/                   ← (gitignored) Output of the Collector
 db/                        ← (gitignored) SQLite databases for metrics and run logs
-tui/                       ← The PowerShell TUI application
+tui/                       ← The PowerShell TUI (reference implementation)
+tui_ad/                    ← Active Directory TUI
+tui_alerts/                ← Alerts TUI
+tui_net/                   ← Network TUI
+tui_patches/               ← Patch management TUI
 ```
 
 ## Key Conventions
@@ -122,7 +126,7 @@ Gemini uses a repository-specific **SSH Deploy Key** (`~/.ssh/svh_opsman_gemini_
 
 ### Multiple Gemini Accounts
 
-The `dotfiles/bashrc.sh` file includes aliases for managing multiple Gemini accounts (e.g., `gemini-work`, `gemini-personal`) by using different configuration directories.
+Three Gemini accounts run in parallel — **A (Dev)**, **B (Docs)**, and **C (Research)** — configured in `dotfiles/bashrc.sh`. The full account strategy and routing rules are in `.gemini/GEMINI.md`. Keep context clean: never cross-pollinate tasks between accounts.
 
 ## Dev Tools
 

@@ -206,12 +206,12 @@ self.sub_title += "  |  ✗ Session Error"
 
 ## Starting a new SVH TUI
 
-1. Create `yourapp/` package alongside `tui/` in the repo root.
+1. Create `tui_<name>/` package alongside `tui/` in the repo root (e.g. `tui_alerts/`, `tui_net/`).
 2. Copy `tui/__init__.py`, `tui/__main__.py`, `tui/base.tcss` as starting points.
 3. Set `CSS_PATH = ["base.tcss", "app.tcss"]` in your `App` class.
 4. Write `app.tcss` for your layout — start from the skeleton above.
 5. Reuse `ConfirmModal` verbatim for any destructive operations.
-6. Run via `python3 -m yourapp` from the repo root, or add an entry in `run-tui.sh`.
+6. Run via `python3 -m tui_<name>` from the repo root, or add an entry in `run-tui.sh`.
 
 What to customize vs. keep fixed:
 - **Keep fixed:** Risk encoding, modal pattern, keybinding set, log line conventions, Gruvbox palette
