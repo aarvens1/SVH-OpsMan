@@ -50,9 +50,9 @@ bw login       # Log in for the first time
 ### Claude Code CLI
 
 ```bash
-claude install stable
+npm install -g @anthropic-ai/claude-code
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
-which claude   # → ~/.local/bin/claude
+which claude   # → e.g. /usr/local/bin/claude
 claude login   # Authenticate with your Anthropic account
 ```
 
@@ -96,6 +96,8 @@ cd ~/SVH-OpsMan/collector
 npm install
 npm run build
 ```
+
+To keep OpsMan current after initial setup, use `opsman-update` — it pulls, rebuilds both packages only if dependencies changed, and restarts the MCP service. See the [User Guide](./user_guide.md#keeping-opsman-updated) for details.
 
 ## 6. Configure Obsidian
 

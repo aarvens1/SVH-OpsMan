@@ -23,6 +23,20 @@ bwu   # or: export BW_SESSION=$(bw unlock --raw)
 
 **`opsman-dev`** — use when working on OpsMan itself: skills, hooks, MCP tools, settings, CLAUDE.md. Sets `CLAUDE_DEV_MODE=1`, which relaxes git workflow blocks (reset --hard, restore, clean) and rm -rf on build artifact directories. Force push, .env files, DROP TABLE, and disk format remain blocked. **Don't use for sessions where live alert or device data is in context** — ops data in a dev session is how real hostnames end up in commits.
 
+### Keeping OpsMan Updated
+
+```bash
+opsman-update
+```
+
+Pulls the latest commits, rebuilds both packages (`mcp-server` and `collector`) only if `package-lock.json` changed, then restarts the `svh-opsman-mcp` systemd service and the status-refresh daemon. Safe to re-run at any time.
+
+```bash
+opsman-update --skip-pull   # rebuild + restart without fetching from remote
+```
+
+Run this after pulling changes that touch `mcp-server/`, `collector/`, or any skill file. The MCP service restart means the next Claude Code session picks up the new build automatically.
+
 ### The Session-Start Hook
 
 Each time you start a session, a hook runs to inject contextual information into the AI's prompt, such as the current git branch, Bitwarden status, and a summary of recent operational activity. This gives the AI immediate awareness of the current state without you having to provide it.
@@ -115,6 +129,7 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | **Draft** | `/draft` · "Draft an email to..." | Takes bullet points and drafts a polished email or Teams message in your voice. |
 | **TicketSmith** | `/ticketsmith` · "Write a ticket for this"| Converts a raw user complaint into a well-structured IT ticket. |
 | **Scribe** | `/scribe` · "Document what I just did" | Turns rough notes into structured documentation in various styles (e.g., how-to, incident report). |
+| **Brain Dump** | `/brain-dump` · "brain dump" · "log this" | Zero-friction capture. Appends a timestamped bullet to `Inbox.md` in the vault. No structure, no frontmatter — just a line with a timestamp. |
 | **Handoff** | `/handoff` · "Create a handoff" | Writes a session handoff note to Obsidian and adds a summary line to today's daily note. Use before context compaction or when switching projects. |
 | **Gemini Handoff** | `/gemini-handoff` · "Hand this to Gemini" | Writes a sanitized code task spec to `.gemini/handoff.md` for Gemini to pick up. No private data crosses the boundary. |
 
@@ -180,7 +195,6 @@ The data boundary is enforced at creation time: `/gemini-handoff` strips all pri
 
 Gemini accounts have no MCP tool access. Never paste raw NinjaOne responses, Wazuh alerts, M365 mail content, or Bitwarden credentials into a Gemini session. When Gemini needs to know the shape of a private API response, use `/gemini-handoff` in Claude — it strips real values and passes only field names and types.
 
-<<<<<<< HEAD
 ## TUI Apps
 
 The project includes a suite of Textual terminal UIs. All are launched via `tui/run-tui.sh` (requires an active `BW_SESSION`).
@@ -202,29 +216,6 @@ The project includes a suite of Textual terminal UIs. All are launched via `tui/
 -   Risk color-coding for commands (Read, Write, Destructive).
 -   Confirmation step for all destructive actions.
 -   Optionally save command output directly to Obsidian.
-=======
-## PowerShell TUIs
-
-For hands-on administrative tasks, the project includes five Textual User Interface (TUI) applications built with Python's Textual framework. They provide a searchable, form-based interface for the underlying PowerShell modules. An active Bitwarden session is required.
-
--   **Main TUI:** `tui`
-    -   A general-purpose interface for browsing and executing over 200+ functions from the PowerShell module suite. Features risk color-coding and a command previewer.
--   **Active Directory TUI:** `tui-ad`
-    -   Specialized for user and group management in Active Directory.
--   **Alerts TUI:** `tui-alerts`
-    -   For viewing and managing alerts from Defender and Wazuh.
--   **Network TUI:** `tui-net`
-    -   Focused on network diagnostics and UniFi device management.
--   **Patching TUI:** `tui-patches`
-    -   For reviewing and approving pending system patches.
-
-Launch them using their respective alias after unlocking Bitwarden (`bwu`). For example:
-
-```bash
-bwu
-tui-ad
-```
->>>>>>> c3f93a9 (docs: Synchronize documentation with recent features)
 
 ## Windows Terminal Environment
 
