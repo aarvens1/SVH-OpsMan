@@ -1,64 +1,77 @@
 ---
 name: gemini-handoff
-description: Hand off a pure-code task to Gemini by writing a structured spec to .gemini/handoff.md. Trigger phrases: "hand this to Gemini", "gemini can do this part", "hand off to Gemini", "send this to Gemini", "let Gemini handle this".
-when_to_use: When the next step is pure code work (scaffolding, refactoring, testing, type generation) that doesn't require live MCP tool calls or raw private system data. Do NOT use when the task needs live Ninja/Defender/M365 data — pass a sanitized schema or shape instead.
-allowed-tools: "mcp__time__*"
+description: Creates a handoff note in Obsidian (status: draft) with a sanitized spec for Gemini. Trigger phrases: "/gemini-handoff", "hand this to Gemini", "send this to Gemini".
+when_to_use: When the next step is pure code work (scaffolding, refactoring, testing, type generation) that doesn't require live MCP tool calls or raw private system data.
+allowed-tools: ["mcp__obsidian__*", "mcp__time__*"]
 ---
 
-You are writing a handoff spec from Claude to Gemini. The task must be completable using only what's in the project files plus whatever clean artifact you provide here.
+# Gemini Handoff — Create Draft Note
 
-**Step 1 — Extract the task**
+Your primary goal is to create a handoff note in the Obsidian vault at `Handoffs/`. This note acts as a draft queue item. You do NOT write to `.gemini/handoff.md` yourself; that is the job of the `/handoff-queue` skill, which runs later.
 
-From the conversation, identify:
-- **Task**: what Gemini needs to do (one sentence)
-- **Context**: file paths, class names, interfaces, API shapes — everything Gemini needs that isn't obvious from reading the code
-- **Inputs**: any data or schema derived from private sources, passed here as a clean artifact (e.g. a JSON response shape from a NinjaOne call — field names and types only, no real device data)
-- **Expected output**: which files Gemini should create or modify
-- **Constraints**: naming conventions, import patterns, test framework, style rules
-- **Suggested Gemini skill**: the `.gemini/skills/` skill best suited to the task
-- **Suggested account**: Dev (active coding), Docs (large-file analysis), Research (web lookup)
+**Step 1 — Extract and Sanitize the Task**
 
-**Step 2 — Sanitize**
+From the conversation, identify and sanitize the core task details. This process is critical for maintaining the data boundary.
 
-Before writing, confirm the spec contains none of:
-- Raw API responses with hostnames, IPs, or real user identities
-- Alert content, log excerpts, or credentials
-- Anything that couldn't appear in a public repo
+1.  **Task Summary:** A one-sentence summary of what Gemini needs to do.
+2.  **Task Slug:** Create a 3-5 word kebab-case slug from the summary (e.g., `redesign-daily-note-activity-log`).
+3.  **Target Account & Skill:** Determine the correct Gemini account (`dev`, `docs`, or `research`) and the specific `gemini_skill` to be used (e.g., `claude-handoff`, `api-spec`).
+4.  **Full Spec:** The detailed, sanitized instructions for Gemini. This includes context, inputs (as clean data shapes), expected output, and constraints.
 
-Strip to abstract shape only (field names, TypeScript types, synthetic example values). If a field is sensitive, replace the value with a descriptive placeholder: `"deviceName": "<string>"`.
+**Crucially, you must strip all private data** before writing the spec. Convert real data into abstract shapes (e.g., TypeScript types, JSON schemas with placeholder values like `"<string>"`). Ensure no real hostnames, IPs, UPNs, or credentials are included.
 
-**Step 3 — Write .gemini/handoff.md**
+**Step 2 — Write the Handoff Note in Obsidian**
 
-Overwrite the file — this is a queue, not a log. One pending task at a time.
+1.  Get the current timestamp using `mcp__time__get_current_time`. Format it as `YYYY-MM-DD-HH:MM`.
+2.  Construct the filename: `Handoffs/YYYY-MM-DD-HH:MM-<task-slug>.md`.
+3.  Write the note to the Obsidian vault using the structure below. The `status` must be `draft`.
 
+```markdown
+---
+date: YYYY-MM-DD
+created: YYYY-MM-DDTHH:MM:SS
+skill: gemini-handoff
+status: draft
+target: <dev | docs | research>
+gemini_skill: <gemini_skill>
+task_slug: <task-slug>
+tags: [handoff, gemini]
+related_briefing: "[[Briefings/Daily/YYYY-MM-DD]]"
+---
+
+# Handoff — <task-slug>
+
+*Queued from [[Briefings/Daily/YYYY-MM-DD]] at HH:MM*
+
+## Summary
+[One paragraph: what was asked for, what Gemini will do, which account and skill]
+
+## How to push this handoff
+1. Review the spec below — edit anything that needs to be adjusted
+2. Change `status: draft` to `status: ready` in the frontmatter above
+3. Run `/handoff-queue` in Claude Code
+
+## Spec
+
+[Full sanitized spec — same content that would go to .gemini/handoff.md. Identical format.]
+
+---
+
+## Result
+
+*Pending*
 ```
-# Gemini Handoff — YYYY-MM-DD HH:MM
 
-**Task:** [one sentence]
-**Suggested skill:** `[skill-name]`
-**Suggested account:** Dev | Docs | Research
+**Step 3 — Link Handoff in Daily Note**
 
-## Context
+Add a wikilink to the newly created handoff note in today's daily note.
 
-[file paths, class names, interfaces — terse bullets, no prose]
+1.  Use `edit_block` to target the `<!-- DAY-STARTER-END -->` sentinel in `Briefings/Daily/YYYY-MM-DD.md`.
+2.  Insert the following line, linking to the new handoff file:
+    `→ [[Handoffs/YYYY-MM-DD-HH:MM-task-slug]] — [one sentence describing the task]`
 
-## Spec / inputs
+**Step 4 — Reply to User**
 
-[clean artifact: TypeScript types, JSON shapes, field descriptions — no private data]
+Confirm to the user that the handoff has been created as a draft.
 
-## Expected output
-
-[files to create or modify, with paths relative to project root]
-
-## Constraints
-
-[naming conventions, import paths, test framework, anything non-obvious from reading the code]
-
-## Reply channel
-
-When done, write your result summary to `.gemini/to-claude.md` so Claude can review and integrate.
-```
-
-**Step 4 — Reply**
-
-Confirm the write. State the task in one sentence. Note which account and skill to use. Confirm no private data is in the file.
+> Handoff created: `[[Handoffs/YYYY-MM-DD-HH:MM-task-slug]]` — review the spec, change status to `ready`, then run `/handoff-queue`.

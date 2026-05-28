@@ -28,7 +28,7 @@ The day-starter already established the morning baseline. This step gathers only
 
 Run in parallel:
 - `planner_get_user_tasks` (user_id: `astevens@shoestringvalley.com`, open_only: true) — Aaron's tasks across all boards. Cross-reference against the morning briefing to identify what closed and what's still open.
-- `todo_list_task_lists` then `todo_list_tasks` — unchecked personal To Do items. (If HTTP 400, skip and note "To Do unavailable.")
+- `todo_list_task_lists` (user_id: `user.entra_id` from config) then `todo_list_tasks` (user_id: `user.entra_id` from config) — unchecked personal To Do items. **Always use the Entra object ID, not the UPN** — the UPN returns HTTP 403 with application credentials.
 - `mde_list_alerts` + `wazuh_search_alerts` — security alerts still active. Compare against morning briefing — note only what's new or still unresolved. (If Wazuh unavailable, skip and note it.)
 - `entra_list_risky_users` — any still-open risky users.
 - `entra_get_sign_in_logs` (risk_only: true, hours: since last_day_starter, top: 500) — risky sign-ins that occurred during the day. Surface only: new accounts not in the morning briefing, or escalation of accounts already flagged this morning. If nothing new: one line. Use hours computed from last_day_starter timestamp, not the full ender lookback window.
@@ -41,50 +41,22 @@ Run in parallel:
 - `gmail_list_recent` — personal Gmail inbox since `last_day_starter`. Unread messages and anything flagged needing a reply.
 - `gtasks_list_task_lists` then `gtasks_list_tasks` for each list — Google Tasks status: what's still open or overdue.
 
-## Step 2 — Append to today's note
+## Step 2 — Write to today's note
 
-**Do NOT read today's daily note before writing.** Reading before appending is what causes overwrites when the Obsidian tool returns metadata-only instead of file content. Your comparison of morning vs. current state comes from the Step 1 tool results — not from re-reading the note.
+This is a two-phase write.
 
-**Always use `mode: append`.** Never `mode: rewrite`. The day-starter content is already in the file; appending adds after it.
+**Phase 1: Inject Evening Tasks into Activity Log**
 
-The daily note already contains a `# 🌆 Day Ender` placeholder section created by day-starter. Appended content lands there naturally.
+First, use `edit_block` to insert the drafted Planner actions for the evening into the `# Activity Log`. This ensures they are co-located with the morning's tasks.
 
-The day-ender's job is close-out, not repetition. Do not re-run the infra tables or team board. Write only what changed, what's still live, and what needs to move to tomorrow.
+-   **`old_string`**: `\n# Day Ender\n`
+-   **`new_string`**: `\n### Evening Tasks — HH:MM\n[task blocks]\n\n# Day Ender\n`
 
+The `[task blocks]` placeholder should be replaced with the full `### 📝 Draft Planner actions` content, including all the format documentation. The section content itself is unchanged, only its location.
+
+The full content to inject is:
 ```markdown
-## ✅ Closed today
-- [What actually got done — based on Planner task state from Step 1 vs. what was open this morning]
-
-## 🔄 Still open — yours
-- [Aaron's tasks only. One line each: task + one-line next action. Not the team board. If the task has a related investigation, incident, or change note, link to it: `→ [[Investigations/YYYY-MM-DD-topic]]`]
-
-## 🔴 Active issues at EOD
-- [Only alerts or infra problems still live right now, or new since morning. If everything cleared: "✅ No active issues at EOD." Link to any open incident notes: `→ [[Incidents/Active/YYYY-MM-DD-name]]`]
-
-## 📨 Communications close-out
-- [Emails needing a response from the mail search. External senders and flagged items first. Unresolved DMs or @mentions.]
-
-## Personal close-out
-- [Personal Gmail: unread messages needing a reply tonight, from `gmail_list_recent`. One line per thread: sender + subject. If nothing: "No personal mail needing attention."]
-- [Google Tasks: open or overdue tasks from `gtasks_list_tasks`. Format: `[list] — [task]` + due. If nothing overdue: "No overdue Google Tasks."]
-
-## 🌅 First move tomorrow
-- [Single item — most time-sensitive or highest-impact.]
-
-## 📌 Carry Forward
-**Open (must action):**
-- [Item + suggested first move — only things not already captured in Planner]
-
-**Context to hold:**
-- [Brief fact worth knowing tomorrow that isn't in Planner]
-
-**Watching:**
-- [Item that doesn't need action but should stay on radar]
-```
-
-Keep the Carry Forward section tight — 25 lines max. Only include items that would otherwise fall off between sessions. Skip anything already tracked in Planner.
-
-### 📝 Draft Planner actions
+### Evening Tasks — HH:MM
 
 Always include this section. Nothing is created or changed until Aaron explicitly confirms. Format each task as an editable named subsection — Aaron can change any field in place, then say "push these to Planner."
 
@@ -142,10 +114,50 @@ Checklist items are **what** needs to happen, not **how**. Each should be a shor
 - **Due:** [YYYY-MM-DD or leave blank]
 - **Notes:** [1–2 sentences of context]
 ```
+```
+
+**Phase 2: Append close-out narrative**
+
+After injecting the evening tasks, append the close-out narrative to the end of the file. **Always use `mode: append`.** Never `mode: rewrite`.
+
+The appended content must NOT include the Draft Planner actions section, as it now lives in the Activity Log.
+
+```markdown
+## ✅ Closed today
+- [What actually got done — based on Planner task state from Step 1 vs. what was open this morning]
+
+## 🔄 Still open — yours
+- [Aaron's tasks only. One line each: task + one-line next action. Not the team board. If the task has a related investigation, incident, or change note, link to it: `→ [[Investigations/YYYY-MM-DD-topic]]`]
+
+## 🔴 Active issues at EOD
+- [Only alerts or infra problems still live right now, or new since morning. If everything cleared: "✅ No active issues at EOD." Link to any open incident notes: `→ [[Incidents/Active/YYYY-MM-DD-name]]`]
+
+## 📨 Communications close-out
+- [Emails needing a response from the mail search. External senders and flagged items first. Unresolved DMs or @mentions.]
+
+## Personal close-out
+- [Personal Gmail: unread messages needing a reply tonight, from `gmail_list_recent`. One line per thread: sender + subject. If nothing: "No personal mail needing attention."]
+- [Google Tasks: open or overdue tasks from `gtasks_list_tasks`. Format: `[list] — [task]` + due. If nothing overdue: "No overdue Google Tasks."]
+
+## 🌅 First move tomorrow
+- [Single item — most time-sensitive or highest-impact.]
+
+## 📌 Carry Forward
+**Open (must action):**
+- [Item + suggested first move — only things not already captured in Planner]
+
+**Context to hold:**
+- [Brief fact worth knowing tomorrow that isn't in Planner]
+
+**Watching:**
+- [Item that doesn't need action but should stay on radar]
+```
+
+Keep the Carry Forward section tight — 25 lines max. Only include items that would otherwise fall off between sessions. Skip anything already tracked in Planner.
 
 **Processing and cleanup:**
 
-After Aaron confirms and you execute any block — CREATE pushed to Planner, UPDATE pushed to Planner, TODO pushed to To Do, REMOVE discarded — immediately remove that subsection from the daily note using `edit_block`. When all blocks in the section have been processed, remove the `### 📝 Draft Planner actions` section header as well.
+After Aaron confirms and you execute any block (CREATE, UPDATE, TODO, REMOVE), the `edit_block` call to remove the processed subsection must target the block inside the `### Evening Tasks` subsection of the `# Activity Log`.
 
 If any Draft Planner action blocks remain in the daily note at the end of the session (i.e. Aaron did not confirm them), update `has_pending_tasks` to `true` in the daily note's frontmatter using `edit_block`.
 

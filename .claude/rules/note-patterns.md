@@ -91,7 +91,7 @@ Top-level sections — plain text, no emoji in the header:
 
 ```markdown
 # Day Starter — HH:MM
-# Notes
+# Activity Log
 # Day Ender
 ```
 

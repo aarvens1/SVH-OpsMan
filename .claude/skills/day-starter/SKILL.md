@@ -2,7 +2,7 @@
 name: day-starter
 description: Morning briefing. Covers the period since the last Day Ender ran (on Mondays) or since the last Day Starter ran (other days), with a 120-hour cap. Falls back to 120h if no state exists (no shorter default). Override with "last N days/hours" or "reset" to use defaults. Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
 when_to_use: Use at the start of each workday to get a prioritized digest of what needs attention.
-allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__collector_run mcp__svh-opsman__metrics_disk_over_threshold mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_get_backup_usage mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__* mcp__svh-opsman__synology_m365_backup_status mcp__svh-opsman__synology_m365_backup_logs mcp__svh-opsman__gmail_list_recent mcp__svh-opsman__gmail_search mcp__svh-opsman__gmail_get_message mcp__svh-opsman__gmail_send mcp__svh-opsman__gcal_list_events mcp__svh-opsman__gcal_get_event mcp__svh-opsman__gcal_list_calendars mcp__svh-opsman__gcal_create_event mcp__svh-opsman__gcal_update_event mcp__svh-opsman__gtasks_list_task_lists mcp__svh-opsman__gtasks_list_tasks mcp__svh-opsman__gtasks_create_task mcp__svh-opsman__gtasks_complete_task mcp__svh-opsman__gdrive_list_files mcp__svh-opsman__gdrive_search mcp__svh-opsman__gdrive_read_file mcp__svh-opsman__gdrive_create_folder mcp__svh-opsman__gdrive_upload_text"
+allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__collector_run mcp__svh-opsman__metrics_disk_over_threshold mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_get_backup_usage mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__* mcp__svh-opsman__synology_m365_backup_status mcp__svh-opsman__synology_m365_backup_logs mcp__svh-opsman__gmail_list_recent mcp__svh-opsman__gmail_search mcp__svh-opsman__gmail_get_message mcp__svh-opsman__gmail_send mcp__svh-opsman__gcal_list_events mcp__svh-opsman__gcal_get_event mcp__svh-opsman__gcal_list_calendars mcp__svh-opsman__gcal_create_event mcp__svh-opsman__gcal_update_event mcp__svh-opsman__gtasks_list_task_lists mcp__svh-opsman_... [truncated]
 ---
 
 # Day Starter
@@ -117,7 +117,7 @@ Run these in parallel:
   - Copilot Audit for IT team: `wP9PL7YWCEqGbG6o4aYVT2QADaLq`
 
   This is the source for **IT team boards** and **Projects**.
-- `todo_list_task_lists` (user_id: "astevens@shoestringvalley.com") then `todo_list_tasks` (user_id: "astevens@shoestringvalley.com") for each list — personal To Do task lists, anything open or due today. Always pass `user_id` explicitly — the `/me` fallback requires delegated auth and returns HTTP 400 with application credentials.
+- `todo_list_task_lists` (user_id: `user.entra_id` from config) then `todo_list_tasks` (user_id: `user.entra_id` from config) for each list — personal To Do task lists, anything open or due today. **Always use the Entra object ID, not the UPN** — the UPN returns HTTP 403 with application credentials; the /me fallback returns HTTP 400.
 - `mail_search` — use the exact `last_day_ender` timestamp from the state file as the lower bound: query `received>={last_day_ender_iso}` (e.g. `received>=2026-05-12T17:11:02Z`). If no day-ender timestamp exists, fall back to `received>={lookback_start_iso}`. Focus on external senders, anything flagged, or subjects suggesting action. Skip routine system notifications (NinjaOne bursts, Planner digests, marketing). Always note how many emails were found and whether there is a `@odata.nextLink` indicating more pages — if there is, fetch the next page until you have all mail in the window.
 - For DMs: call `teams_list_my_chats` (top: 50) to get all recent chat threads. Filter the returned list to threads where `lastMessage.createdDateTime >= lookback_start`. Fetch `teams_get_chat_messages` (top: 10, as a **number not a string**) only for those threads — do not fetch threads with no activity in the window. Note: Teams self-chat (Aaron messaging himself) returns HTTP 404 via application auth — skip it and note the limitation; Aaron's self-notes should be captured via email or a dedicated IT Team channel post instead.
 - For IT Team channels: `teams_list_teams` → `teams_list_channels` (team_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) → `teams_list_messages` on General, Changes, Infrastructure, and Alerts channels. **After fetching, filter messages to only those where `createdDateTime >= lookback_start` before writing to the note.** Do not surface older messages as current activity — if a channel had no posts in the lookback window, write "*No posts since [lookback_start].*" Skip high-volume notification channels (Support).
@@ -142,25 +142,35 @@ Include To Do items alongside Planner tasks. Show due-today and overdue first, t
 
 ## Step 2b — Carry forward open items from yesterday
 
-Read the previous business day's briefing note (`Briefings/Daily/YYYY-MM-DD.md`). Check two locations:
-- The `# Day Ender` section (last top-level section) for open items
-- The `### Deferred` subsection within `### Draft Planner actions` for explicitly deferred tasks
+Read the previous business day's briefing note (`Briefings/Daily/YYYY-MM-DD.md`).
 
-Look for:
+**Part 1: Carry forward unresolved tasks from Activity Log**
 
-1. **"🔄 Still open"** items in the EOD section — explicitly unresolved items from the day-ender
-2. **"📝 Draft Planner actions"** that were written as CREATE, UPDATE, or TODO but not yet confirmed/pushed — surface them again so Aaron can act on them or discard. Skip any REMOVE blocks — those need no action.
-3. **"🟡 Worth watching"** items that had a clear suggested action and weren't resolved
+1.  Check the frontmatter of yesterday's note for `has_pending_tasks: true`.
+2.  If `true`, read the content of yesterday's `# Activity Log` section.
+3.  Find any task blocks starting with `#### CREATE —`, `#### UPDATE —`, or `#### TODO —`. These are tasks that were drafted but not pushed.
+4.  If any are found, create a `### Carried from YYYY-MM-DD` subsection in **today's** `# Activity Log`. This new subsection must be placed *before* the `### Morning Tasks` section.
+5.  Copy the complete, unresolved task blocks from yesterday's note into this new subsection, preserving their content exactly.
+6.  If `has_pending_tasks` is `false` or the flag is missing, skip this part entirely.
 
-Write a **"Carried from yesterday"** section in the new note, placed immediately after **Needs attention now**. Format each item as:
+**Part 2: Carry forward open narrative items**
 
+In parallel with Part 1, check two locations in yesterday's note for narrative items to carry forward:
+- The `# Day Ender` section for any "🔄 Still open" or "🟡 Worth watching" items.
+- The `# Activity Log` section for a `### Deferred` subsection containing items marked for CARRYOVER.
+
+Write a **"Carried from yesterday"** section in the main body of the new `# Day Starter` content (this is separate from the task-block carry-over in the Activity Log). Place it immediately after **Needs attention now**.
+
+Format each narrative item as:
 ```
 - **[Item title]** *(→ [[Briefings/Daily/YYYY-MM-DD]])* — [one-sentence status or action needed]
 ```
 
-Skip items that are already surfacing today via Planner task list or current security alerts (they're accounted for). Only surface items that might otherwise fall off.
+Combine all narrative items (from Day Ender and the Deferred list) into this single section.
 
-If yesterday's note doesn't exist or the EOD section is missing (day-ender wasn't run), note it in the section: "*No EOD note found for [date] — open items may need manual review.*"
+**Important:** Do not duplicate items. If a carried-forward task is already appearing in today's lists from a live `planner_get_user_tasks` call or as a current security alert, do not include it in the "Carried from yesterday" narrative section. This section is only for items that would otherwise be lost between sessions.
+
+If yesterday's note doesn't exist or key sections are missing, note this in the narrative section: "*No EOD note found for [date] — open items may need manual review.*"
 
 ## Step 2c — Suppress cleared items
 
@@ -209,9 +219,92 @@ has_pending_tasks: false
 
 ---
 
-# Notes
+# Activity Log
 
-*Links to active investigations, meeting notes, and mid-day findings go here. If it has a note in the vault, link to it — don't duplicate the content.*
+### Morning Tasks — HH:MM
+
+Always include this section. Nothing is created or changed until Aaron explicitly confirms. Format each task as an editable named subsection — Aaron can change any field in place, then say "push these to Planner."
+
+Default destination for new tasks:
+- **IT Sysadmin Tasks** (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`) — operational/sysadmin follow-ups, security findings, infrastructure issues
+- **Personal To Do** — smaller personal action items not appropriate for the team board
+
+**CREATE format** (one subsection per task):
+
+```
+#### CREATE — [task title]
+- **Plan:** [plan name] (`plan_id`)
+- **Bucket:** [bucket name or leave blank]
+- **Due:** YYYY-MM-DD
+- **Priority:** [Urgent / Important / Medium / Low]
+- **Assigned:** Aaron Stevens
+- **Tag:** Aaron (category23)
+- **Notes:** [1–2 sentences of context. Include process suggestions or approach notes here — not in the checklist.]
+- **Checklist:**
+  - [ ] [what needs to happen — outcome, not steps]
+  - [ ] [what needs to happen]
+  - [ ] [what needs to happen]
+```
+
+**Tag field** — always include. Default is `Aaron (category23)` for IT Sysadmin Tasks. When assigned to Sam, use `Sam (category21)`. The category number must match the plan's label mapping — use `planner_get_plan_details` to verify on plans other than IT Sysadmin Tasks.
+
+**Priority field** — always include. Map to Graph API integer when pushing: Urgent=0, Important=1, Medium=3, Low=5.
+
+Checklist items are **what** needs to happen, not **how**. Each should be a short outcome phrase (5–10 words). Keep 3–5 items max. Put process guidance, suggestions, and approach notes in the Notes field.
+
+**When pushing a CREATE block**, pass `priority` (integer), `notes`, `labels` (category key), and `checklist_items` to `planner_create_task` — all in a single call. Do not make a separate `planner_update_task_notes` call unless the create fails.
+
+**UPDATE format** (one subsection per task):
+
+```
+#### UPDATE — "[existing task title]"
+- **Plan:** [plan name]
+- **Change:** [what to update: new due date / set percent complete / new assignee / etc.]
+- **Notes:** [optional — reason for the update]
+```
+
+**REMOVE format** (discard a draft — no Planner action, just delete the block):
+
+```
+#### REMOVE — [task title or brief reason]
+- **Reason:** [optional — why this draft is being dropped]
+```
+
+**TODO format** (routes to personal To Do instead of Planner):
+
+```
+#### TODO — [task title]
+- **List:** [To Do list name — or leave blank for default]
+- **Due:** [YYYY-MM-DD or leave blank]
+- **Notes:** [1–2 sentences of context]
+```
+
+**IGNORE format** (discard a draft — no Planner action, remove from note):
+
+```
+#### IGNORE — [task title or brief reason]
+```
+
+Same outcome as REMOVE — remove the block. No entry anywhere. Use when Aaron explicitly dismisses a draft.
+
+**CARRYOVER format** (defer to tomorrow — remove block, add deferred entry):
+
+```
+#### CARRYOVER — [task title]
+- **Reason:** [why it's being deferred]
+```
+
+Remove the full block from the note. Add a one-line entry to a `### Deferred` subsection within `### Draft Planner actions`:
+
+```
+- 📌 **[task title]** — [reason]. Full context in [[Briefings/Daily/YYYY-MM-DD]].
+```
+
+Step 2b (carry forward) reads the `### Deferred` list from yesterday's note alongside the Day Ender section.
+
+**Processing and cleanup:**
+
+After Aaron confirms and you execute any block — CREATE pushed to Planner, UPDATE pushed to Planner, TODO pushed to To Do, REMOVE/IGNORE discarded, CARRYOVER deferred — immediately remove that subsection from the daily note using `edit_block`. When all action blocks in the section have been processed (only the `### Deferred` list may remain), remove the section header if nothing remains.
 
 ---
 
@@ -340,91 +433,6 @@ If all jobs are healthy and recent: `✅ X of X servers backed up since [lookbac
 
 **Confluence — Recent changes**
 List any pages in INF, PROC, POL, SITE modified in the last N hours that look like incident docs, outage notes, policy changes, or runbook updates. If nothing matches: state "No pages modified in the last N hours in INF/PROC/POL/SITE."
-
-### 📝 Draft Planner actions
-
-Always include this section. Nothing is created or changed until Aaron explicitly confirms. Format each task as an editable named subsection — Aaron can change any field in place, then say "push these to Planner."
-
-Default destination for new tasks:
-- **IT Sysadmin Tasks** (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`) — operational/sysadmin follow-ups, security findings, infrastructure issues
-- **Personal To Do** — smaller personal action items not appropriate for the team board
-
-**CREATE format** (one subsection per task):
-
-```
-#### CREATE — [task title]
-- **Plan:** [plan name] (`plan_id`)
-- **Bucket:** [bucket name or leave blank]
-- **Due:** YYYY-MM-DD
-- **Priority:** [Urgent / Important / Medium / Low]
-- **Assigned:** Aaron Stevens
-- **Tag:** Aaron (category23)
-- **Notes:** [1–2 sentences of context. Include process suggestions or approach notes here — not in the checklist.]
-- **Checklist:**
-  - [ ] [what needs to happen — outcome, not steps]
-  - [ ] [what needs to happen]
-  - [ ] [what needs to happen]
-```
-
-**Tag field** — always include. Default is `Aaron (category23)` for IT Sysadmin Tasks. When assigned to Sam, use `Sam (category21)`. The category number must match the plan's label mapping — use `planner_get_plan_details` to verify on plans other than IT Sysadmin Tasks.
-
-**Priority field** — always include. Map to Graph API integer when pushing: Urgent=0, Important=1, Medium=3, Low=5.
-
-Checklist items are **what** needs to happen, not **how**. Each should be a short outcome phrase (5–10 words). Keep 3–5 items max. Put process guidance, suggestions, and approach notes in the Notes field.
-
-**When pushing a CREATE block**, pass `priority` (integer), `notes`, `labels` (category key), and `checklist_items` to `planner_create_task` — all in a single call. Do not make a separate `planner_update_task_notes` call unless the create fails.
-
-**UPDATE format** (one subsection per task):
-
-```
-#### UPDATE — "[existing task title]"
-- **Plan:** [plan name]
-- **Change:** [what to update: new due date / set percent complete / new assignee / etc.]
-- **Notes:** [optional — reason for the update]
-```
-
-**REMOVE format** (discard a draft — no Planner action, just delete the block):
-
-```
-#### REMOVE — [task title or brief reason]
-- **Reason:** [optional — why this draft is being dropped]
-```
-
-**TODO format** (routes to personal To Do instead of Planner):
-
-```
-#### TODO — [task title]
-- **List:** [To Do list name — or leave blank for default]
-- **Due:** [YYYY-MM-DD or leave blank]
-- **Notes:** [1–2 sentences of context]
-```
-
-**IGNORE format** (discard a draft — no Planner action, remove from note):
-
-```
-#### IGNORE — [task title or brief reason]
-```
-
-Same outcome as REMOVE — remove the block. No entry anywhere. Use when Aaron explicitly dismisses a draft.
-
-**CARRYOVER format** (defer to tomorrow — remove block, add deferred entry):
-
-```
-#### CARRYOVER — [task title]
-- **Reason:** [why it's being deferred]
-```
-
-Remove the full block from the note. Add a one-line entry to a `### Deferred` subsection within `### Draft Planner actions`:
-
-```
-- 📌 **[task title]** — [reason]. Full context in [[Briefings/Daily/YYYY-MM-DD]].
-```
-
-Step 2b (carry forward) reads the `### Deferred` list from yesterday's note alongside the Day Ender section.
-
-**Processing and cleanup:**
-
-After Aaron confirms and you execute any block — CREATE pushed to Planner, UPDATE pushed to Planner, TODO pushed to To Do, REMOVE/IGNORE discarded, CARRYOVER deferred — immediately remove that subsection from the daily note using `edit_block`. When all action blocks in the section have been processed (only the `### Deferred` list may remain), remove the section header if nothing remains.
 
 ## Step 4 — Update state file
 
