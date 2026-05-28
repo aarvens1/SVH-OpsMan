@@ -37,6 +37,12 @@ Once BW credentials are in place, test at least one tool per service:
 
 ---
 
+## Docs — needs verification
+
+- [ ] `docs/getting_started.md` Step 3 — verify Claude Code install command (`claude install stable` looks non-standard; may need to update to the correct install method before the setup guide is reliable)
+
+---
+
 ## Obsidian Vault Cleanup — from 2026-05-28 audit
 
 Full vault review was done on 2026-05-28. Everything below came out of that session.
