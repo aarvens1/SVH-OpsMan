@@ -42,13 +42,13 @@ Produce:
 
 ## Step 4 — Impact diagram
 
-Create `Diagrams/Changes/CHG-YYYY-NNN.excalidraw` showing:
+Create `Diagrams/Changes/CHG-YYYY-NNN.md` showing:
 - What's changing (centre)
 - What depends on it (upstream)
 - What it affects (downstream)
 - What's explicitly out of scope (greyed out)
 
-Embed in the note with `![[CHG-YYYY-NNN.excalidraw]]`.
+Embed in the note with `![[CHG-YYYY-NNN.md]]`.
 
 ## Output
 

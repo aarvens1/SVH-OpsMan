@@ -40,13 +40,13 @@ Continue to Step 4.
 ## Step 4 — Draw the WBS diagram
 
 Before writing the Obsidian note, create the Excalidraw diagram:
-- Save to `Diagrams/Projects/[project-name].excalidraw`
+- Save to `Diagrams/Projects/[project-name].md`
 - Show phases/buckets as swimlane rows or grouped zones
 - Tasks as boxes inside their phase/bucket
 - Dependencies as arrows between tasks
 - Color: blue for in-scope tasks, grey for out-of-scope/deferred, red for blocked/dependent on external
 
-Embed in the project note with `![[project-name.excalidraw]]`.
+Embed in the project note with `![[project-name.md]]`.
 
 ## Step 5 — Write the project note with staged draft
 
@@ -65,7 +65,7 @@ has_pending_tasks: true
 Sections:
 - **Scope** — one paragraph
 - **Deliverables** — bulleted list
-- **WBS diagram** — `![[project-name.excalidraw]]`
+- **WBS diagram** — `![[project-name.md]]`
 - **Dependencies** — table: Task → Depends on → Blocker type
 - **Timeline** — phases with target dates
 - **Confluence link** — once created
