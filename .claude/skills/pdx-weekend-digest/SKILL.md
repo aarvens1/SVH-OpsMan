@@ -1,7 +1,8 @@
 ---
 name: pdx-weekend-digest
-description: Curated digest of Portland-area weekend events suitable for a 3-year-old. Researches pdxparent.com, Red Tricycle, OMSI, Oregon Zoo, Multnomah Library, and other family resources. Delivers 5–8 vetted picks grouped by day with times, location, cost, and a Top Pick callout. Output saved to Obsidian vault.
-trigger: "pdx weekend", "portland toddler events", "what can we do this weekend", "weekend events for [kid/toddler]"
+description: Curated digest of Portland-area weekend events suitable for a 3-year-old. Researches pdxparent.com, Red Tricycle, OMSI, Oregon Zoo, Multnomah Library, and other family resources. Delivers 5–8 vetted picks grouped by day with times, location, cost, and a Top Pick callout. Output saved to Obsidian vault. Trigger phrases: "pdx weekend", "portland toddler events", "what can we do this weekend", "weekend events for [kid/toddler]".
+when_to_use: Use on any day when Aaron wants a curated list of Portland family activities for the upcoming weekend.
+allowed-tools: "Bash WebFetch WebSearch mcp__obsidian__* mcp__time__*"
 ---
 
 Build a curated digest of the best upcoming weekend events in the Portland, Oregon area that are suitable for a 3-year-old child.
