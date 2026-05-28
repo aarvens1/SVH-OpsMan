@@ -39,7 +39,7 @@ Run in parallel:
 - `unifi_list_clients` — is this device visible? Which VLAN, switch, AP?
 
 **Diagram:**
-Create `Diagrams/Assets/[name].excalidraw` showing:
+Create `Diagrams/Assets/[name].md` showing:
 - Host → switch/port → VLAN → upstream firewall → adjacent devices/servers it talks to
 - Active firewall rules that apply to it
 
@@ -79,4 +79,4 @@ Populate `ninja_device_id` and `mde_machine_id` from the API responses whenever 
 
 This is a **persistent note** — each investigation appends a dated section rather than overwriting. When updating an existing note: update the `date` frontmatter to today, then append a `## Investigation — YYYY-MM-DD` section at the bottom with the new findings. Structure: Asset summary → Current state → Recent findings → Open items → History (dated `## Investigation —` sections, newest first).
 
-For servers/workstations: embed the network diagram with `![[name.excalidraw]]`.
+For servers/workstations: embed the network diagram with `![[name.md]]`.

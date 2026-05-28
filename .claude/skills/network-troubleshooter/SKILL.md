@@ -57,7 +57,7 @@ Create an Excalidraw diagram showing the affected path:
 - Mark where the break is (or suspected break)
 - Include VLAN IDs, relevant firewall rule, and any device states
 
-Save to `Diagrams/Network/[site]-YYYY-MM-DD.excalidraw`.
+Save to `Diagrams/Network/[site]-YYYY-MM-DD.md`.
 
 Write `Investigations/YYYY-MM-DD-network-[site]-[topic].md`:
 
