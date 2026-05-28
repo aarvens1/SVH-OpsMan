@@ -64,11 +64,15 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | **Day Ender** | `/day-ender` · "End of day" | Summarizes the last 12h of work and identifies open items for the next day. Appends to the daily note. |
 | **Week Starter** | `/week-starter` · "What's the week look like" | Reviews the previous week's loose ends and outlines the upcoming week's calendar and tasks. |
 | **Week Ender** | `/week-ender` · "Wrap up the week" | Summarizes the week's accomplishments and stages items for the following week. |
+| **Handoff** | `/handoff` · "session handoff" | Preserves the current session's context, decisions, and open items to an Obsidian note for continuity across sessions. |
+| **Staging Review** | `/staging-review` · "what's in staging" | Quick summary of the latest collector data — what was gathered, how fresh it is, and any failed jobs. |
+| **Memory Cleanup** | `/memory-cleanup` · "clean up memory" | Audits and prunes the auto-memory store; moves actionable items to TODO.md. Called automatically by week-ender. |
 
 ### Incident Response & Troubleshooting
 
 | Skill | Invoke | Description |
 | :---- | :----- | :---------- |
+| **Incident Open** | `/incident-open` · "open an incident" | Formally declares an incident — creates the Obsidian record, drafts a Planner tracking card, and stages a Teams alert. Use after `/troubleshoot` confirms something is worth declaring. |
 | **Troubleshoot** | `/troubleshoot` · "X is broken" | Begins a systematic investigation, forming and testing hypotheses based on a library of known failure patterns. |
 | **Event Log Triage**| `/event-log-triage` · "Check event logs on X"| Queries and correlates logs from Wazuh, NinjaOne, and live PowerShell sessions. |
 | **Event Log Analyzer**| `/event-log-analyzer` · "Analyze this log export"| Parses and analyzes exported log files (`.xml`, `.csv`, `.log`). |
@@ -83,8 +87,10 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | :---- | :----- | :---------- |
 | **Posture Check**| `/posture-check` · "State of the land" | Generates a Green/Yellow/Red scorecard for Identity, Endpoints, Patching, and other key areas. |
 | **On-Prem Health**| `/onprem-health` · "How are the servers?" | Sweeps NinjaOne, backups, patch status, and runs live PowerShell checks against on-premise infrastructure. |
+| **OpsMan Health**| `/opsman-health` · "test my integrations" | Fires a lightweight probe against every configured service and reports pass/fail. Use after MCP server changes or when a tool call fails unexpectedly. |
 | **Vuln Triage**| `/vuln-triage` · CVE ID | Takes a CVE, identifies exposed devices, and recommends a remediation priority. |
 | **Asset Investigation**| `/asset-investigation` · "Tell me about [server/user]"| Compiles a comprehensive report on a specific asset or user from all connected systems. |
+| **User Report**| `/user-report` · "user report for X" | Quick recent-activity snapshot for a user: sign-ins, Defender alerts, Planner tasks, Teams activity, and mail. Faster and lighter than `/asset-investigation`. |
 | **Access Review**| `/access-review` · "Audit permissions for X" | Audits roles, group memberships, and sign-in activity for a user, group, or application. |
 | **License Audit**| `/license-audit` · "Are we wasting licenses?" | Analyzes M365 license assignments against user activity and device status to identify waste. |
 
@@ -95,10 +101,13 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | **Patch Campaign**| `/patch-campaign` · "Plan this month's patching" | Gathers all pending patches, prioritizes them based on TVM data, and drafts a deployment plan. |
 | **Change Record**| `/change-record` · "Document this change" | Creates a structured change record with scope, risk, test plan, and rollback procedures. |
 | **Project Creator**| `/project-creator` · "Turn this into a project"| Breaks down a request into a full project plan with deliverables, dependencies, and effort estimates. |
+| **Runbook Gen**| `/runbook-gen` · "write a runbook for" | Generates a structured, reusable runbook from a description or rough notes, with prerequisites, numbered steps, verification, and rollback. |
 | **Meeting Prep**| `/meeting-prep` · "Prep me for my 2pm" | Gathers context from calendar, past meetings (Fathom), and related tasks to prepare a briefing. |
 | **Draft** | `/draft` · "Draft an email to..." | Takes bullet points and drafts a polished email or Teams message in your voice. |
 | **TicketSmith** | `/ticketsmith` · "Write a ticket for this"| Converts a raw user complaint into a well-structured IT ticket. |
 | **Scribe** | `/scribe` · "Document what I just did" | Turns rough notes into structured documentation in various styles (e.g., how-to, incident report). |
+| **Diagram** | `/diagram` · "diagram this" | Creates or updates an Excalidraw diagram in Obsidian from a description, sketch, or existing note. |
+| **PowerShell Navigator** | `/powershell-navigator` · "help me with PowerShell" | Discovers and safely executes SVH PowerShell module commands — walks through parameters, previews the command, and runs on approval via Desktop Commander. |
 | **Gemini Handoff** | `/gemini-handoff` · "Hand this to Gemini" | Writes a sanitized code task spec to `.gemini/handoff.md` for Gemini to pick up. No private data crosses the boundary. |
 
 ## Gemini Dev Assistant
@@ -131,6 +140,9 @@ Gemini runs alongside Claude in three dedicated accounts. Claude owns ops; Gemin
 | `log-analyzer` | B | "Analyze this log file" |
 | `web-research` | C | "Quick Google: what's the Graph API for sign-in logs?" |
 | `claude-handoff` | A | "Pick up the Claude handoff" |
+| `config-validator` | A | "Validate my tsconfig" |
+| `db-query` | A | "Query metrics.db for..." |
+| `shell-script-converter` | A | "Convert this script to PowerShell" |
 
 ### Data Boundary
 
@@ -138,11 +150,11 @@ Gemini accounts have no MCP tool access. Never paste raw NinjaOne responses, Waz
 
 ## PowerShell TUI
 
-For hands-on administrative tasks, the project includes a Textual User Interface (TUI) for the PowerShell modules. It provides a searchable, form-based interface for all 200+ functions.
+For hands-on administrative tasks, the project includes a Textual User Interface (TUI) for the PowerShell modules. It provides a searchable, form-based interface for all 237 functions.
 
 -   **Start:** `tui/run-tui.sh` (requires an active `BW_SESSION`)
 -   **Features:**
-    -   Browse and search all functions by module.
+    -   Browse and search all 237 functions by module.
     -   Fill parameters in a simple form.
     -   Preview the command before execution.
     -   Risk color-coding for commands (Read, Write, Destructive).

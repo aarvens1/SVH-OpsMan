@@ -422,7 +422,7 @@ Restart-SVHWazuhAgents                                         # all — require
 
 ### SVH.UniFi
 
-Requires: `UNIFI_CLIENT_ID`, `UNIFI_CLIENT_SECRET` (cloud), `UNIFI_CONTROLLER_URL`, `UNIFI_USERNAME`, `UNIFI_PASSWORD` (controller)
+Requires: `UNIFI_API_KEY` (cloud), `UNIFI_{SITE}_URL`, `UNIFI_{SITE}_KEY` (per site — e.g. `UNIFI_SVH_URL`, `UNIFI_SVH_KEY`)
 
 ```powershell
 # Read
