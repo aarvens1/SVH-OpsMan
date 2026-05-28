@@ -1,0 +1,113 @@
+/* SVH Network Ops TUI — app-specific layout (Gruvbox Dark)
+ * Shared widget styles live in ../tui/base.tcss (loads first).
+ */
+
+/* ── Overall layout ────────────────────────────────────────────────────── */
+
+Screen {
+    layout: vertical;
+}
+
+#main {
+    layout: horizontal;
+    height: 1fr;
+}
+
+/* ── Sidebar (base rules in base.tcss) ─────────────────────────────────── */
+
+#func-tree {
+    height: 1fr;
+    scrollbar-gutter: stable;
+}
+
+/* ── Right panel ───────────────────────────────────────────────────────── */
+
+#right {
+    layout: vertical;
+    width: 1fr;
+    background: #32302f;
+}
+
+#detail {
+    height: 40%;
+    padding: 1 2;
+    border-bottom: tall #3c3836;
+    background: #3c3836;
+}
+
+#output-section {
+    height: 1fr;
+    layout: vertical;
+    background: #1d2021;
+}
+
+/* ── Detail widgets ────────────────────────────────────────────────────── */
+
+#func-name {
+    margin-bottom: 0;
+    padding: 0 0 1 0;
+    border-bottom: solid #504945;
+    color: #ebdbb2;
+}
+
+#func-synopsis {
+    color: #928374;
+    margin: 1 0 0 0;
+}
+
+#func-example {
+    margin-bottom: 1;
+    color: #665c54;
+}
+
+#params-container {
+    margin-top: 1;
+    height: auto;
+}
+
+.param-row {
+    height: 3;
+    layout: horizontal;
+    margin-bottom: 0;
+}
+
+.param-label {
+    width: 26;
+    content-align: left middle;
+    height: 3;
+    color: #928374;
+    padding-top: 1;
+}
+
+.param-label.-mandatory {
+    color: #ebdbb2;
+}
+
+.param-input {
+    width: 1fr;
+}
+
+#cmd-preview {
+    margin-top: 1;
+    background: #282828;
+    color: #8ec07c;
+    border: round #504945;
+}
+
+#cmd-preview:focus {
+    border: round #fabd2f;
+}
+
+#actions-row {
+    height: 3;
+    margin-top: 1;
+    layout: horizontal;
+    align: left middle;
+}
+
+#run-btn {
+    width: 16;
+    height: 3;
+}
+
+/* ── Output log + modal — defined in base.tcss ─────────────────────────── */

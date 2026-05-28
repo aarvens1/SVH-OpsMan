@@ -2,7 +2,7 @@
 name: day-ender
 description: End-of-day wrap-up. Covers the period since the last day-starter or day-ender ran, with a 24-hour cap. Falls back to 12h if no state exists. Override with "last N hours" or "reset" to use defaults. Trigger phrases: "day ender", "wrap up today", "end of day", "EOD".
 when_to_use: Use at the end of each workday to close out the day cleanly.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__obsidian__* mcp__time__* mcp__svh-opsman__gmail_list_recent mcp__svh-opsman__gmail_search mcp__svh-opsman__gmail_get_message mcp__svh-opsman__gmail_send mcp__svh-opsman__gcal_list_events mcp__svh-opsman__gcal_get_event mcp__svh-opsman__gcal_create_event mcp__svh-opsman__gcal_update_event mcp__svh-opsman__gtasks_list_task_lists mcp__svh-opsman__gtasks_list_tasks mcp__svh-opsman__gtasks_create_task mcp__svh-opsman__gtasks_complete_task mcp__svh-opsman__gdrive_list_files mcp__svh-opsman__gdrive_search mcp__svh-opsman__gdrive_read_file"
 ---
 
 # Day Ender
@@ -33,11 +33,13 @@ Run in parallel:
 - `entra_list_risky_users` — any still-open risky users.
 - `entra_get_sign_in_logs` (risk_only: true, hours: since last_day_starter, top: 500) — risky sign-ins that occurred during the day. Surface only: new accounts not in the morning briefing, or escalation of accounts already flagged this morning. If nothing new: one line. Use hours computed from last_day_starter timestamp, not the full ender lookback window.
 - `entra_get_audit_logs` (security_events_only: true, hours: since last_day_starter, top: 200) — security-category directory changes since morning. Surface only genuinely new events not visible at day-start: role assignments, MFA changes, app consent, policy changes, user creation/deletion.
-- `ninja_list_servers` → `ninja_list_device_alerts` in parallel for all devices — compare against morning alerts. Note only alerts that are new since morning or still active from morning.
-- `unifi_list_sites` — check for active issues only: offlineDevice > 0, criticalNotification > 0, or primary WAN downtime. Compare against morning snapshot.
+- Ninja devices: call `staging_status` — if fresh, use `staging_read { file: "ninja-alerts" }` for the EOD comparison (faster). Fall back to `ninja_list_servers` → `ninja_list_device_alerts` if staging is stale. Note only alerts new since morning or still active.
+- UniFi: call `staging_read { file: "unifi-alerts" }` if staging is fresh. Fall back to `unifi_list_sites` if stale. Check for active issues only: offlineDevice > 0, criticalNotification > 0, or primary WAN downtime.
 - `mail_search` — search for emails received since `last_day_starter` timestamp (from the state file). Focus on external senders, flagged items, and anything needing a reply. This is the explicit EOD mail check — do not skip it.
 - For DMs: `teams_list_my_chats` → `teams_get_chat_messages` (top: 10, as a **number not a string**) for threads with activity since `last_day_starter`. IT Team channels: `teams_list_teams` → `teams_list_channels` → `teams_list_messages` on General, Changes, Infrastructure, Alerts. Filter to messages after `last_day_starter`.
 - `confluence_search_pages` — pages modified today in INF, PROC, POL, SITE.
+- `gmail_list_recent` — personal Gmail inbox since `last_day_starter`. Unread messages and anything flagged needing a reply.
+- `gtasks_list_task_lists` then `gtasks_list_tasks` for each list — Google Tasks status: what's still open or overdue.
 
 ## Step 2 — Append to today's note
 
@@ -61,6 +63,10 @@ The day-ender's job is close-out, not repetition. Do not re-run the infra tables
 
 ## 📨 Communications close-out
 - [Emails needing a response from the mail search. External senders and flagged items first. Unresolved DMs or @mentions.]
+
+## Personal close-out
+- [Personal Gmail: unread messages needing a reply tonight, from `gmail_list_recent`. One line per thread: sender + subject. If nothing: "No personal mail needing attention."]
+- [Google Tasks: open or overdue tasks from `gtasks_list_tasks`. Format: `[list] — [task]` + due. If nothing overdue: "No overdue Google Tasks."]
 
 ## 🌅 First move tomorrow
 - [Single item — most time-sensitive or highest-impact.]
@@ -149,3 +155,16 @@ After the Obsidian note is appended, update `System/briefing-state.md` in the Ob
 - Set `last_day_ender` to the current ISO timestamp (with timezone offset, e.g. `2026-05-12T17:00:00-07:00`).
 - Preserve all other fields (`last_day_starter`, `last_week_starter`, `last_week_ender`).
 - Use `mode: rewrite` since this is a state file, not a daily note.
+
+## Step 4 — Run OneDrive backup
+
+After updating the state file, run the OneDrive backup. This writes `last_onedrive_backup` to the state file on success.
+
+Run in a Bash tool call:
+```bash
+bash ~/SVH-OpsMan/scripts/backup.sh --onedrive-only
+```
+
+Wait for it to complete (typically 3–8 minutes on first run, under a minute on subsequent runs). Report the result inline:
+- **Success** — note "✅ OneDrive backup complete" at the end of your response.
+- **Failure** — note it as `⚠️ OneDrive backup failed — check log at ~/.local/share/svh-opsman/backup-YYYY-MM-DD.log` and surface it in **Active issues at EOD** in the daily note via `edit_block`.

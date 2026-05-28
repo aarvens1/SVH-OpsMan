@@ -1,6 +1,8 @@
-/* SVH PowerShell TUI — Textual stylesheet */
+/* SVH PowerShell TUI — app-specific layout (Gruvbox Dark)
+ * Shared widget styles live in base.tcss (loads first).
+ */
 
-/* ── Overall layout ─────────────────────────────────────────────────────── */
+/* ── Overall layout ────────────────────────────────────────────────────── */
 
 Screen {
     layout: vertical;
@@ -11,62 +13,51 @@ Screen {
     height: 1fr;
 }
 
-/* ── Sidebar ─────────────────────────────────────────────────────────────── */
-
-#sidebar {
-    width: 32;
-    layout: vertical;
-    background: $surface-darken-1;
-    border-right: tall $primary-darken-2;
-}
-
-#search {
-    margin: 1 1 0 1;
-    border: tall $primary-darken-2;
-}
+/* ── Sidebar (base rules in base.tcss) ─────────────────────────────────── */
 
 #func-tree {
-    margin: 0 0 0 0;
     height: 1fr;
     scrollbar-gutter: stable;
 }
 
-/* ── Right panel ─────────────────────────────────────────────────────────── */
+/* ── Right panel ───────────────────────────────────────────────────────── */
 
 #right {
     layout: vertical;
     width: 1fr;
+    background: #32302f;
 }
 
 #detail {
     height: 40%;
     padding: 1 2;
-    border-bottom: tall $primary-darken-2;
-    background: $surface;
+    border-bottom: tall #3c3836;
+    background: #3c3836;
 }
 
 #output-section {
     height: 1fr;
     layout: vertical;
-    padding: 0 0;
-    background: $surface-darken-1;
+    background: #1d2021;
 }
 
-/* ── Detail widgets ─────────────────────────────────────────────────────── */
+/* ── Detail widgets ────────────────────────────────────────────────────── */
 
 #func-name {
     margin-bottom: 0;
     padding: 0 0 1 0;
-    border-bottom: solid $primary-darken-3;
+    border-bottom: solid #504945;
+    color: #ebdbb2;
 }
 
 #func-synopsis {
-    color: $text-muted;
+    color: #928374;
     margin: 1 0 0 0;
 }
 
 #func-example {
     margin-bottom: 1;
+    color: #665c54;
 }
 
 #params-container {
@@ -84,12 +75,12 @@ Screen {
     width: 26;
     content-align: left middle;
     height: 3;
-    color: $text-muted;
+    color: #928374;
     padding-top: 1;
 }
 
 .param-label.-mandatory {
-    color: $text;
+    color: #ebdbb2;
 }
 
 .param-input {
@@ -98,6 +89,13 @@ Screen {
 
 #cmd-preview {
     margin-top: 1;
+    background: #282828;
+    color: #8ec07c;
+    border: round #504945;
+}
+
+#cmd-preview:focus {
+    border: round #fabd2f;
 }
 
 #actions-row {
@@ -118,54 +116,4 @@ Screen {
     height: 3;
 }
 
-/* ── Output log ─────────────────────────────────────────────────────────── */
-
-#output-log {
-    height: 1fr;
-    border-top: tall $primary-darken-2;
-    padding: 0 1;
-    scrollbar-gutter: stable;
-}
-
-/* ── Confirmation modal ─────────────────────────────────────────────────── */
-
-ConfirmModal {
-    align: center middle;
-}
-
-#confirm-dialog {
-    background: $surface;
-    border: tall $error;
-    padding: 2 4;
-    width: 72;
-    height: auto;
-}
-
-#confirm-title {
-    color: $error;
-    text-style: bold;
-    margin-bottom: 1;
-    content-align: center middle;
-}
-
-#confirm-cmd {
-    background: $surface-darken-2;
-    padding: 1 2;
-    margin-bottom: 2;
-    color: $text;
-    overflow-x: auto;
-}
-
-#confirm-buttons {
-    align: center middle;
-    height: 3;
-}
-
-#btn-confirm {
-    margin-right: 2;
-    width: 14;
-}
-
-#btn-cancel {
-    width: 14;
-}
+/* ── Output log + modal — defined in base.tcss ─────────────────────────── */

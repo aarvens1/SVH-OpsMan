@@ -10,6 +10,7 @@ Entra object IDs and UPNs for the core IT team. Use these for Planner assignment
 | Sam Maxon | smaxon@shoestringvalley.com | `8f46a470-62ee-4fc9-b312-7f43ae167205` | |
 | Peter Kinnari | pkinnari@shoestringvalley.com | `762c138f-eedc-40b6-b8bb-e3228227b254` | Frequent task creator/assigner |
 | Brian Bates | bbates@shoestringvalley.com | `a2668f9e-54a4-499a-b12d-febbf7699c2b` | Director of IT |
+
 ## Obsidian vault paths
 
 | Vault | Path |

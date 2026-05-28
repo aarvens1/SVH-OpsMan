@@ -43,7 +43,7 @@ This loads `SVH.Core` first, which initialises the credential store, then loads 
 | SVH.Network (AD DNS, Windows DHCP) | `da_stevens@andersen-cost.com` |
 | Desktop Commander diagnostics (event logs, processes, network) | `ra_stevens@andersen-cost.com` |
 
-PSRemoting functions require a one-time WinRM trust setup from WSL — see `references/setup-winrm.md`.
+PSRemoting functions require a one-time WinRM trust setup from WSL — see `docs/setup/winrm.md`.
 
 `ra_stevens` is a constrained service account — `Remote Management Users` + `Event Log Readers` only.
 Credentials are stored in BW as `DC_REMOTE_USER` / `DC_REMOTE_PASSWORD` (env vars, not interactive).

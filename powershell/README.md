@@ -33,6 +33,19 @@ pwsh
 
 ---
 
+## MCP access (via Claude)
+
+Two read-only tools in the `svh-opsman` MCP server expose the module suite to Claude for interactive discovery. No live pwsh session is required — they parse the `.psm1` files and `Get-Help` output directly.
+
+| Tool | Purpose |
+|------|---------|
+| `powershell_discover_commands` | Search all modules for functions matching a topic keyword |
+| `powershell_get_command_parameters` | Return full parameter details for a named command |
+
+Use the TUI (Option A above) for interactive execution.
+
+---
+
 ## Modules
 
 | Module | What it covers | Auth |
@@ -305,7 +318,7 @@ Restart-SVHNinjaDevice -DeviceId <id>                  # requires confirmation
 
 Requires: `sa_stevens` credentials (prompted) or `$Cred = Get-Credential`
 
-Uses PSRemoting (WinRM). See `references/setup-winrm.md` for one-time WSL trust setup.
+Uses PSRemoting (WinRM). See `docs/setup/winrm.md` for one-time WSL trust setup.
 
 ```powershell
 $c = Get-Credential sa_stevens@andersen-cost.com
@@ -409,7 +422,7 @@ Restart-SVHWazuhAgents                                         # all — require
 
 ### SVH.UniFi
 
-Requires: `UNIFI_CLIENT_ID`, `UNIFI_CLIENT_SECRET` (cloud), `UNIFI_CONTROLLER_URL`, `UNIFI_USERNAME`, `UNIFI_PASSWORD` (controller)
+Requires: `UNIFI_API_KEY` (cloud), `UNIFI_{SITE}_URL`, `UNIFI_{SITE}_KEY` (per site — e.g. `UNIFI_SVH_URL`, `UNIFI_SVH_KEY`)
 
 ```powershell
 # Read
@@ -565,7 +578,7 @@ On Windows natively, interactive auth works normally — a browser window opens 
 
 ### PSRemoting from WSL
 
-WinRM from WSL requires initial trust configuration. Run the one-time setup from `references/setup-winrm.md` before using any `SVH.OnPrem`, `SVH.AD`, or `SVH.Network` PSRemoting functions.
+WinRM from WSL requires initial trust configuration. Run the one-time setup from `docs/setup/winrm.md` before using any `SVH.OnPrem`, `SVH.AD`, or `SVH.Network` PSRemoting functions.
 
 Cross-platform cmdlets that **don't work** in pwsh on Linux (they work fine on Windows):
 - `Resolve-DnsName` → use `Resolve-SVHDns` from `SVH.Network` (pure .NET, works everywhere)

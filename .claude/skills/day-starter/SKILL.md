@@ -1,8 +1,8 @@
 ---
 name: day-starter
-description: Morning briefing. Covers the period since the last Day Ender ran (on Mondays) or since the last Day Starter ran (other days), with a 72-hour cap. Falls back to 24h (72h on Monday) if no state exists. Override with "last N days/hours" or "reset" to use defaults. Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
+description: Morning briefing. Covers the period since the last Day Ender ran (on Mondays) or since the last Day Starter ran (other days), with a 120-hour cap. Falls back to 120h if no state exists (no shorter default). Override with "last N days/hours" or "reset" to use defaults. Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
 when_to_use: Use at the start of each workday to get a prioritized digest of what needs attention.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__collector_run mcp__svh-opsman__metrics_disk_over_threshold mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_get_backup_usage mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__* mcp__svh-opsman__synology_m365_backup_status mcp__svh-opsman__synology_m365_backup_logs mcp__svh-opsman__gmail_list_recent mcp__svh-opsman__gmail_search mcp__svh-opsman__gmail_get_message mcp__svh-opsman__gmail_send mcp__svh-opsman__gcal_list_events mcp__svh-opsman__gcal_get_event mcp__svh-opsman__gcal_list_calendars mcp__svh-opsman__gcal_create_event mcp__svh-opsman__gcal_update_event mcp__svh-opsman__gtasks_list_task_lists mcp__svh-opsman__gtasks_list_tasks mcp__svh-opsman__gtasks_create_task mcp__svh-opsman__gtasks_complete_task mcp__svh-opsman__gdrive_list_files mcp__svh-opsman__gdrive_search mcp__svh-opsman__gdrive_read_file mcp__svh-opsman__gdrive_create_folder mcp__svh-opsman__gdrive_upload_text"
 ---
 
 # Day Starter
@@ -13,13 +13,13 @@ allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list
 
 1. Call `mcp__time__get_current_time` to get the current timestamp and day of week.
 2. Check whether the user specified an explicit override in their invocation:
-   - **"reset"** or **"default"**: skip the state file. Use 24h (72h if Monday). Write current timestamp to state after the run.
+   - **"reset"** or **"default"**: skip the state file. Use 120h. Write current timestamp to state after the run.
    - **"last N days"** / **"last N hours"** / any explicit time range: use that window. Write current timestamp to state after the run.
 3. If no override, read `System/briefing-state.md` from the Obsidian vault:
    - If the file doesn't exist or can't be parsed: treat as no state.
    - **If today is Monday and `last_day_ender` is present**: set the window to `now − last_day_ender`. This anchors to Thursday's EOD wrap so nothing in the Thu-afternoon → weekend gap falls through. Log "Monday: anchoring to last Day Ender (TIMESTAMP)" in the note. Skip the `last_day_starter` check below.
-   - If `last_day_starter` is present and **≤ 72 hours ago**: set the window to `now − last_day_starter`.
-   - If `last_day_starter` is missing or **> 72 hours ago**: fall back to defaults — 24h (72h if Monday). Log "No recent state found — using default window" in the note.
+   - If `last_day_starter` is present and **≤ 120 hours ago**: set the window to `now − last_day_starter`.
+   - If `last_day_starter` is missing or **> 120 hours ago**: use 120h from current time. Never fall back to a shorter window. Log "No recent state — using 120h window" in the note.
 4. Note the computed window (e.g., "14h 22m") — use it consistently as **N hours** in all data queries below.
 
 ### State file format
@@ -32,10 +32,42 @@ last_day_starter: 2026-05-12T08:30:00-07:00
 last_day_ender: 2026-05-12T17:00:00-07:00
 last_week_starter: 2026-05-11T08:45:00-07:00
 last_week_ender: 2026-05-08T09:55:00-07:00
+last_onedrive_backup: 2026-05-12T17:05:00-07:00
+last_gdrive_backup: 2026-05-08T10:00:00-07:00
 ---
 ```
 
 Preserve all other fields when updating `last_day_starter`. If the file doesn't exist yet, create it with only the `last_day_starter` field.
+
+### Backup currency check
+
+After reading the state file, evaluate backup status and surface any failures in **Needs attention now**:
+
+- **OneDrive**: if `last_onedrive_backup` is missing, OR `last_onedrive_backup < last_day_ender` (backup predates the most recent Day Ender run), flag it:
+  `⚠️ OneDrive backup overdue — last backup: [DATE or "never"] / last Day Ender: [DATE]`
+- If `last_onedrive_backup >= last_day_ender`: do not surface this. Record a healthy state only.
+
+The OneDrive backup runs at the end of each Day Ender. If this check fires on a Monday, compare against `last_day_ender` — if the last backup was before Thursday EOD, flag it.
+
+## Step 1a — Check and refresh staging
+
+Call `staging_status` first.
+
+- If `fresh: true` (< 2h old): proceed directly to Step 1 using staging data where noted.
+- If `fresh: false` or no staging data exists: call `collector_run` (no job arg — runs all jobs). Wait for it to complete, then note the result in **Data gaps** if any jobs failed.
+
+After staging is confirmed (fresh or just refreshed), the infrastructure-heavy parts of Step 1 read from `staging_read` instead of calling live APIs:
+- Ninja devices/alerts → `staging_read { file: "ninja-devices" }` and `staging_read { file: "ninja-alerts" }`
+- Wazuh alerts → `staging_read { file: "wazuh-alerts" }` (fall back to `wazuh_search_alerts` if the staging job failed)
+- UniFi alerts → `staging_read { file: "unifi-alerts" }` (fall back to `unifi_list_sites` if the staging job failed)
+- Tenant audit log → `staging_read { file: "graph-audit" }` (fall back to `entra_get_audit_logs` if the staging job failed)
+
+The following always use live APIs regardless of staging state (real-time security signals that must not be stale):
+- `entra_list_risky_users`
+- `entra_get_sign_in_logs`
+- `mde_list_alerts`
+- `admin_list_service_incidents`
+- All Planner/To Do/Mail/Calendar/Teams queries
 
 ## Step 1 — Security & monitoring
 
@@ -65,7 +97,7 @@ On Mondays, include this note verbatim in the Obsidian briefing under **🔴 Nee
 
 Do NOT attempt to run this as an MCP tool — `Get-SVHComplianceGap` is a PowerShell module function, not an MCP-exposed endpoint. Just surface the reminder.
 
-## Step 2 — Tasks & calendar
+## Step 2 — Tasks, calendar & personal
 
 Run these in parallel:
 
@@ -90,6 +122,11 @@ Run these in parallel:
 - For DMs: call `teams_list_my_chats` (top: 50) to get all recent chat threads. Filter the returned list to threads where `lastMessage.createdDateTime >= lookback_start`. Fetch `teams_get_chat_messages` (top: 10, as a **number not a string**) only for those threads — do not fetch threads with no activity in the window. Note: Teams self-chat (Aaron messaging himself) returns HTTP 404 via application auth — skip it and note the limitation; Aaron's self-notes should be captured via email or a dedicated IT Team channel post instead.
 - For IT Team channels: `teams_list_teams` → `teams_list_channels` (team_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) → `teams_list_messages` on General, Changes, Infrastructure, and Alerts channels. **After fetching, filter messages to only those where `createdDateTime >= lookback_start` before writing to the note.** Do not surface older messages as current activity — if a channel had no posts in the lookback window, write "*No posts since [lookback_start].*" Skip high-volume notification channels (Support).
 - `confluence_search_pages` — search for pages modified in the last N hours in active global spaces (INF, PROC, POL, SITE). Flag anything that looks like a new incident document, outage note, policy change, or major runbook update. Skip personal and archived spaces.
+
+Also run in parallel for the personal digest:
+- `gcal_list_events` (Google Calendar, calendar_id: "primary") — today's personal Google Calendar events.
+- `gmail_list_recent` — personal Gmail inbox from the last N hours. Unread and flagged messages only.
+- `gtasks_list_task_lists` — then `gtasks_list_tasks` for each returned list — Google Tasks due today or overdue.
 
 ### Separating your tasks from team tasks
 
@@ -240,6 +277,18 @@ Sourced from `entra_get_audit_logs` and `entra_get_sign_in_logs` pulled in Step 
 ### Next moves
 2–3 concrete recommendations (e.g., "Dismiss risky user X after reviewing sign-in logs", "Prep agenda for 2pm call").
 
+### Personal
+
+Personal life digest sourced from Google Calendar, Gmail, and Google Tasks (gathered in Step 2).
+
+**Personal calendar** — today's Google Calendar events in time order. Flag any that conflict with the work calendar or need prep. If nothing scheduled: "No personal events today."
+
+**Personal inbox** — unread Gmail messages needing attention or a reply. One line per thread: sender + subject + one-sentence summary. Skip marketing, newsletters, and automated notifications. If nothing: "No personal mail needing attention."
+
+**Google Tasks** — tasks due today or overdue across all lists. Format: `[list name] — [task title]` + due date. If nothing due: "No Google Tasks due today."
+
+If any Google tools fail (auth error, timeout), note it inline with `*Google [service]: unavailable this session.*` and skip that subsection.
+
 ### Infrastructure
 
 **Always include this section — even when clean.** An explicit all-clear is useful signal. Never skip or merge into other sections.
@@ -281,7 +330,13 @@ Notes:
 Flag any row where offlineDevice > 0, criticalNotification > 0, or wanDowntime: true on the primary WAN. Note: WAN2 showing `wanDowntime` with count=288 is a persistent pattern for offline secondary/failover links — do not flag it as an active incident; note it once at the bottom of the table. If all sites are clean: `✅ All sites — no offline devices or WAN issues.`
 
 **Backups**
-From `ninja_list_all_backups`: flag any job with status `failed` or `unknown`, and any job where `lastRunTime` > 24h ago (stale). Show a compact table only for flagged jobs: Device | Plan | Status | Last Run. If all jobs are healthy and recent: `✅ All backup jobs current.`
+Run `ninja_list_all_backups` and `ninja_get_backup_usage` in parallel.
+
+Lead with the summary line: **X of N servers backed up since [lookback_start]** — count servers that have at least one successful job within the lookback window vs. total servers in the fleet. Follow with storage from `ninja_get_backup_usage`: **X TB used / Y TB total (Z%)**.
+
+Flag any job where: status is `failed` or `unknown`; `lastRunTime` is outside the lookback window (stale); or the job has never run. Show a table only for flagged jobs: Device | Plan | Status | Last Run. Call out any servers with no backup record at all.
+
+If all jobs are healthy and recent: `✅ X of X servers backed up since [lookback_start]. Storage: X TB / Y TB (Z%).`
 
 **Confluence — Recent changes**
 List any pages in INF, PROC, POL, SITE modified in the last N hours that look like incident docs, outage notes, policy changes, or runbook updates. If nothing matches: state "No pages modified in the last N hours in INF/PROC/POL/SITE."

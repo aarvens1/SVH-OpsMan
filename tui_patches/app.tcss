@@ -1,0 +1,100 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   tui_patches/app.tcss — Patch Campaign Manager layout overrides
+   Loads after ../tui/base.tcss; only define what differs or is new here.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Screen structure ───────────────────────────────────────────────────── */
+
+Screen {
+    layout: vertical;
+}
+
+#main {
+    layout: horizontal;
+    height: 1fr;
+}
+
+/* ── Sidebar (36-col override of base.tcss #sidebar which is 32) ────────── */
+
+#sidebar {
+    width: 36;
+    layout: vertical;
+    background: #282828;
+    border-right: tall #fe8019;
+}
+
+#search {
+    margin: 1 1 0 1;
+    border: round #504945;
+    background: #32302f;
+}
+
+#search:focus {
+    border: round #fabd2f;
+}
+
+#device-tree {
+    height: 1fr;
+    scrollbar-gutter: stable;
+}
+
+/* ── Right panel ────────────────────────────────────────────────────────── */
+
+#right {
+    layout: vertical;
+    width: 1fr;
+    background: #32302f;
+}
+
+/* ── Detail panel (top 45%) ─────────────────────────────────────────────── */
+
+#detail {
+    height: 45%;
+    padding: 1 2;
+    border-bottom: tall #3c3836;
+    background: #3c3836;
+    layout: vertical;
+}
+
+#device-title {
+    padding: 0 0 1 0;
+    border-bottom: solid #504945;
+    color: #ebdbb2;
+    margin-bottom: 0;
+}
+
+#device-meta {
+    color: #928374;
+    margin: 0 0 1 0;
+}
+
+#patch-list {
+    height: 1fr;
+    background: #282828;
+    padding: 0 1;
+    scrollbar-gutter: stable;
+}
+
+#detail-actions {
+    height: 3;
+    layout: horizontal;
+    align: left middle;
+    margin-top: 1;
+}
+
+#btn-history {
+    width: 18;
+    margin-right: 1;
+}
+
+#btn-tvm {
+    width: 18;
+}
+
+/* ── Output section (bottom 1fr) ────────────────────────────────────────── */
+
+#output-section {
+    height: 1fr;
+    layout: vertical;
+    background: #1d2021;
+}

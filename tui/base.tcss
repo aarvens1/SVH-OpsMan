@@ -1,0 +1,390 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   SVH TUI — Gruvbox Dark theme  (base.tcss)
+   Load order: CSS_PATH = ["../tui/base.tcss", "app.tcss"]
+   ─────────────────────────────────────────────────────────────────────────────
+   Palette reference
+     BG Hard  #1d2021   screen / output log background
+     BG       #282828   sidebar / header / footer
+     BG Soft  #32302f   right-panel background
+     BG1      #3c3836   detail panel / raised surface
+     BG2      #504945   inactive borders / button normal
+     BG3      #665c54   hover states
+     BG4      #7c6f64   dim active
+     Gray     #928374   comments / muted text
+     FG3      #a89984   secondary text / footer labels
+     FG       #ebdbb2   primary text
+     Orange   #fe8019   PRIMARY accent — borders, structure
+     Yellow   #fabd2f   focus / selected
+     Red      #fb4934   error / destructive
+     Green    #b8bb26   read / success
+     Blue     #83a598   info / primary button
+     Purple   #d3869b   module / category labels
+     Aqua     #8ec07c   secondary success
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ── Screen ────────────────────────────────────────────────────────────── */
+
+Screen {
+    background: #1d2021;
+    color: #ebdbb2;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+Header {
+    background: #282828;
+    color: #ebdbb2;
+    border-bottom: tall #fe8019;
+}
+
+Header .header--title {
+    color: #fabd2f;
+    text-style: bold;
+}
+
+Header .header--subtitle {
+    color: #a89984;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+Footer {
+    background: #282828;
+    color: #a89984;
+    border-top: tall #3c3836;
+}
+
+FooterKey {
+    background: #3c3836;
+    color: #ebdbb2;
+}
+
+FooterKey .footer-key--key {
+    background: #504945;
+    color: #fe8019;
+    text-style: bold;
+}
+
+FooterKey .footer-key--description {
+    color: #928374;
+}
+
+FooterKey:hover {
+    background: #504945;
+}
+
+FooterKey:hover .footer-key--key {
+    background: #665c54;
+    color: #fabd2f;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+
+Scrollbar {
+    background: #282828;
+}
+
+Scrollbar > .scrollbar--bar {
+    color: #504945;
+    background: #504945;
+}
+
+Scrollbar > .scrollbar--bar:hover {
+    color: #fe8019;
+    background: #fe8019;
+}
+
+/* ── Tree ──────────────────────────────────────────────────────────────── */
+
+Tree {
+    background: #282828;
+    color: #ebdbb2;
+    scrollbar-gutter: stable;
+}
+
+Tree > .tree--label {
+    color: #d5c4a1;
+}
+
+Tree > .tree--guides {
+    color: #504945;
+}
+
+Tree > .tree--guides-hover {
+    color: #665c54;
+}
+
+Tree > .tree--cursor {
+    background: #504945;
+    color: #fabd2f;
+    text-style: bold;
+}
+
+Tree > .tree--highlight {
+    background: #32302f;
+}
+
+Tree > .tree--highlight-line {
+    background: #32302f;
+}
+
+/* ── Input ─────────────────────────────────────────────────────────────── */
+
+Input {
+    background: #3c3836;
+    color: #ebdbb2;
+    border: tall #504945;
+}
+
+Input:focus {
+    background: #32302f;
+    border: tall #fabd2f;
+    color: #ebdbb2;
+}
+
+Input.-invalid {
+    border: tall #fb4934;
+}
+
+Input.-invalid:focus {
+    border: tall #fb4934;
+}
+
+Input > .input--placeholder {
+    color: #665c54;
+}
+
+/* ── Checkbox ──────────────────────────────────────────────────────────── */
+
+Checkbox {
+    background: transparent;
+    color: #a89984;
+    border: none;
+    padding: 0 1;
+    height: auto;
+}
+
+Checkbox.-on {
+    color: #b8bb26;
+}
+
+Checkbox:focus {
+    background: #3c3836;
+    border: none;
+}
+
+Checkbox > .toggle--label {
+    color: #a89984;
+}
+
+/* ── Button ────────────────────────────────────────────────────────────── */
+
+Button {
+    background: #3c3836;
+    color: #d5c4a1;
+    border: tall #504945;
+    text-style: bold;
+    min-width: 10;
+}
+
+Button:hover {
+    background: #504945;
+    color: #ebdbb2;
+    border: tall #665c54;
+}
+
+Button:focus {
+    border: tall #fabd2f;
+    background: #3c3836;
+}
+
+Button.-primary {
+    background: #076678;
+    color: #83a598;
+    border: tall #458588;
+}
+
+Button.-primary:hover {
+    background: #458588;
+    color: #1d2021;
+}
+
+Button.-success {
+    background: #98971a;
+    color: #1d2021;
+    border: tall #b8bb26;
+}
+
+Button.-success:hover {
+    background: #b8bb26;
+    color: #1d2021;
+}
+
+Button.-warning {
+    background: #b57614;
+    color: #1d2021;
+    border: tall #d79921;
+}
+
+Button.-warning:hover {
+    background: #d79921;
+    color: #1d2021;
+}
+
+Button.-error {
+    background: #9d0006;
+    color: #fb4934;
+    border: tall #cc241d;
+}
+
+Button.-error:hover {
+    background: #cc241d;
+    color: #ebdbb2;
+}
+
+Button:disabled {
+    background: #282828;
+    color: #504945;
+    border: tall #3c3836;
+    text-style: none;
+}
+
+/* ── RadioSet / RadioButton ────────────────────────────────────────────── */
+
+RadioSet {
+    background: transparent;
+    border: none;
+    padding: 0;
+    height: auto;
+}
+
+RadioButton {
+    background: transparent;
+    color: #928374;
+    border: none;
+    padding: 0 1;
+}
+
+RadioButton.-on {
+    color: #fabd2f;
+}
+
+RadioButton:focus {
+    background: #3c3836;
+}
+
+RadioButton > .toggle--label {
+    color: #a89984;
+}
+
+RadioButton.-on > .toggle--label {
+    color: #fabd2f;
+}
+
+/* ── Static / Label ────────────────────────────────────────────────────── */
+
+Static {
+    color: #ebdbb2;
+    background: transparent;
+}
+
+Label {
+    color: #a89984;
+    background: transparent;
+}
+
+/* ── RichLog ───────────────────────────────────────────────────────────── */
+
+RichLog {
+    background: #1d2021;
+    color: #ebdbb2;
+    scrollbar-gutter: stable;
+}
+
+/* ── VerticalScroll ────────────────────────────────────────────────────── */
+
+VerticalScroll {
+    background: #3c3836;
+    scrollbar-gutter: stable;
+}
+
+/* ── Shared structural blocks ──────────────────────────────────────────── */
+
+/* Sidebar: 32-col dark nav with orange right border.
+   Compose: Vertical(id="sidebar") → Input(id="search") + Tree(id="...") */
+
+#sidebar {
+    width: 32;
+    layout: vertical;
+    background: #282828;
+    border-right: tall #fe8019;
+}
+
+#search {
+    margin: 1 1 0 1;
+    border: round #504945;
+    background: #32302f;
+    color: #ebdbb2;
+}
+
+#search:focus {
+    border: round #fabd2f;
+    background: #282828;
+}
+
+/* Standard output log at bottom of right pane */
+
+#output-log {
+    height: 1fr;
+    border-top: tall #3c3836;
+    padding: 0 1;
+    scrollbar-gutter: stable;
+    background: #1d2021;
+    color: #ebdbb2;
+}
+
+/* ── Confirmation modal ────────────────────────────────────────────────── */
+/* Copy ConfirmModal from tui/app.py — it needs no modifications.          */
+
+ConfirmModal {
+    align: center middle;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+#confirm-dialog {
+    background: #32302f;
+    border: round #fb4934;
+    padding: 2 4;
+    width: 72;
+    height: auto;
+}
+
+#confirm-title {
+    color: #fb4934;
+    text-style: bold;
+    margin-bottom: 1;
+    content-align: center middle;
+}
+
+#confirm-cmd {
+    background: #1d2021;
+    padding: 1 2;
+    margin-bottom: 2;
+    color: #ebdbb2;
+    overflow-x: auto;
+    border: round #504945;
+}
+
+#confirm-buttons {
+    align: center middle;
+    height: 3;
+}
+
+#btn-confirm {
+    margin-right: 2;
+    width: 14;
+}
+
+#btn-cancel {
+    width: 14;
+}

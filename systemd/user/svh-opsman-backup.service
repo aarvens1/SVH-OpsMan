@@ -1,0 +1,14 @@
+[Unit]
+Description=SVH OpsMan — nightly WSL backup (OneDrive + Google Drive)
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/SVH-OpsMan
+ExecStart=%h/SVH-OpsMan/scripts/backup.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=svh-opsman-backup
+
+[Install]
+WantedBy=default.target

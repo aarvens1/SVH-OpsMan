@@ -1,0 +1,114 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   SVH AD Manager — app-specific layout rules
+   Base theme (Gruvbox Dark) loaded from ../tui/base.tcss
+   ─────────────────────────────────────────────────────────────────────────────
+   Only layout-specific rules here. Widget styles (Input, Button, Tree, etc.)
+   come from base.tcss — do not duplicate them.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Main split ────────────────────────────────────────────────────────────── */
+
+#main {
+    layout: horizontal;
+    height: 1fr;
+}
+
+/* ── Right panel ───────────────────────────────────────────────────────────── */
+
+#right {
+    layout: vertical;
+    width: 1fr;
+    background: #32302f;
+}
+
+/* ── Detail panel (top 40%) ────────────────────────────────────────────────── */
+
+#detail {
+    height: 40%;
+    padding: 1 2;
+    border-bottom: tall #3c3836;
+    background: #3c3836;
+    overflow-y: auto;
+}
+
+#op-title {
+    margin-bottom: 0;
+    padding: 0 0 1 0;
+    border-bottom: solid #504945;
+    color: #ebdbb2;
+}
+
+#op-desc {
+    color: #928374;
+    margin: 1 0 0 0;
+}
+
+/* ── Parameter inputs ──────────────────────────────────────────────────────── */
+
+#params-container {
+    margin-top: 1;
+    height: auto;
+}
+
+.param-row {
+    height: 3;
+    layout: horizontal;
+}
+
+.param-label {
+    width: 26;
+    content-align: left middle;
+    height: 3;
+    color: #928374;
+    padding-top: 1;
+}
+
+.param-label.-mandatory {
+    color: #ebdbb2;
+}
+
+.param-input {
+    width: 1fr;
+}
+
+/* ── Command preview ───────────────────────────────────────────────────────── */
+
+#cmd-preview {
+    margin-top: 1;
+    background: #282828;
+    color: #8ec07c;
+    border: round #504945;
+}
+
+#cmd-preview:focus {
+    border: round #fabd2f;
+}
+
+/* ── Actions row ───────────────────────────────────────────────────────────── */
+
+#actions-row {
+    height: 3;
+    margin-top: 1;
+    layout: horizontal;
+    align: left middle;
+}
+
+#run-btn {
+    width: 16;
+    height: 3;
+}
+
+/* ── Output section ────────────────────────────────────────────────────────── */
+
+#output-section {
+    height: 1fr;
+    layout: vertical;
+    background: #1d2021;
+}
+
+/* ── Op tree ───────────────────────────────────────────────────────────────── */
+
+#op-tree {
+    height: 1fr;
+    scrollbar-gutter: stable;
+}

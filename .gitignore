@@ -2,3 +2,18 @@
 .claude/push-log
 .claude/briefing-state
 __pycache__/
+
+# Collector runtime data
+staging/*/
+db/*.db
+
+# Build output
+collector/dist/
+mcp-server/dist/
+
+# Dependencies
+collector/node_modules/
+mcp-server/node_modules/
+
+# BW session file — never commit
+.config/svh-opsman/bw-session

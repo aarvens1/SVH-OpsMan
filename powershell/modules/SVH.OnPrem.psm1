@@ -186,6 +186,104 @@ function Get-SVHHyperVVMs {
 }
 Export-ModuleMember -Function Get-SVHHyperVVMs
 
+function Get-SVHHyperVInventory {
+    <#
+    .SYNOPSIS  Full host + VM inventory across one or more Hyper-V hosts.
+    .DESCRIPTION
+        For each host: CPU load, RAM usage, drive utilisation, domain enrollment.
+        For each VM: power state, IPs, and guest RAM/CPU/disk via a nested PSRemoting
+        hop into the guest (requires WinRM in the guest). Pass -SkipGuestMetrics to
+        skip the nested hop and return host+VM state only.
+    .EXAMPLE   Get-SVHHyperVInventory -ComputerName SVH-HV01,SVH-HV02 -Credential $c
+    .EXAMPLE   Get-SVHHyperVInventory -ComputerName SVH-HV01 -Credential $c -SkipGuestMetrics
+    #>
+    [CmdletBinding()]
+    [OutputType([PSObject])]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [string[]]$ComputerName,
+        [switch]$SkipGuestMetrics,
+        [System.Management.Automation.PSCredential]$Credential
+    )
+    process {
+        foreach ($computer in $ComputerName) {
+            Write-Verbose "[OnPrem] Collecting Hyper-V inventory from $computer"
+            try {
+                Invoke-Command @(RemoteParams $computer $Credential) -ScriptBlock {
+                    param($skipGuest, $creds)
+
+                    $os      = Get-CimInstance Win32_OperatingSystem
+                    $totalGB = [math]::Round($os.TotalVisibleMemorySize / 1MB, 2)
+                    $freeGB  = [math]::Round($os.FreePhysicalMemory / 1MB, 2)
+                    $usedGB  = [math]::Round($totalGB - $freeGB, 2)
+                    $cpuPct  = (Get-CimInstance Win32_Processor | Measure-Object LoadPercentage -Average).Average
+                    $drives  = Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' | ForEach-Object {
+                        $sz = [math]::Round($_.Size/1GB,2); $fr = [math]::Round($_.FreeSpace/1GB,2)
+                        "$($_.DeviceID) $([math]::Round($sz-$fr,1))/$sz GB ($([math]::Round(($sz-$fr)/$sz*100,1))%)"
+                    }
+
+                    $hostInfo = [PSCustomObject]@{
+                        Hostname     = $env:COMPUTERNAME
+                        DomainJoined = (Get-CimInstance Win32_ComputerSystem).PartOfDomain
+                        RAMUsedGB    = $usedGB
+                        RAMTotalGB   = $totalGB
+                        RAMPct       = [math]::Round($usedGB / $totalGB * 100, 1)
+                        CPUPct       = $cpuPct
+                        Drives       = $drives -join '; '
+                    }
+
+                    $vms = @()
+                    if (Get-Command Get-VM -ErrorAction SilentlyContinue) {
+                        foreach ($vm in Get-VM) {
+                            $ips = ($vm | Get-VMNetworkAdapter).IPAddresses |
+                                   Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+$' }
+
+                            $guest = $null
+                            if (-not $skipGuest -and $vm.State -eq 'Running') {
+                                try {
+                                    $guest = Invoke-Command -VMName $vm.Name -Credential $creds -ErrorAction Stop -ScriptBlock {
+                                        $g      = Get-CimInstance Win32_OperatingSystem
+                                        $tKB    = $g.TotalVisibleMemorySize; $fKB = $g.FreePhysicalMemory
+                                        $dList  = Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' | ForEach-Object {
+                                            $sz = [math]::Round($_.Size/1GB,2); $fr = [math]::Round($_.FreeSpace/1GB,2)
+                                            "$($_.DeviceID) $([math]::Round($sz-$fr,1))/$sz GB"
+                                        }
+                                        [PSCustomObject]@{
+                                            RAMUsedGB  = [math]::Round(($tKB-$fKB)/1MB,2)
+                                            RAMTotalGB = [math]::Round($tKB/1MB,2)
+                                            RAMPct     = [math]::Round(($tKB-$fKB)/$tKB*100,1)
+                                            CPUPct     = (Get-CimInstance Win32_Processor | Measure-Object LoadPercentage -Average).Average
+                                            Drives     = $dList -join '; '
+                                        }
+                                    }
+                                } catch {}
+                            }
+
+                            $vms += [PSCustomObject]@{
+                                VMName       = $vm.Name
+                                State        = $vm.State
+                                IPs          = $ips -join ', '
+                                RAMUsedGB    = $guest?.RAMUsedGB
+                                RAMTotalGB   = $guest?.RAMTotalGB
+                                RAMPct       = $guest?.RAMPct
+                                CPUPct       = $guest?.CPUPct
+                                Drives       = $guest?.Drives
+                                GuestMetrics = $null -ne $guest
+                            }
+                        }
+                    }
+
+                    [PSCustomObject]@{ Host = $hostInfo; VMs = $vms }
+                } -ArgumentList $SkipGuestMetrics.IsPresent, $Credential |
+                    ForEach-Object { $_ | Add-Member -NotePropertyName HyperVHost -NotePropertyValue $computer -Force -PassThru }
+            } catch {
+                Write-Warning "[OnPrem] $computer inventory failed: $_"
+            }
+        }
+    }
+}
+Export-ModuleMember -Function Get-SVHHyperVInventory
+
 # ── VERIFY: Failover Cluster ──────────────────────────────────────────────────
 
 function Get-SVHClusterState {

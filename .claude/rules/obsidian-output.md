@@ -39,11 +39,15 @@ Extra fields by note type:
 | Access reviews | `Reviews/Access/` |
 | Patch reviews | `Reviews/Patches/` |
 | Vulnerabilities | `Vulnerabilities/` |
-| Excalidraw diagrams | `Diagrams/<category>/[name].excalidraw` |
+| Excalidraw diagrams | `Diagrams/<category>/[name].md` |
 
 ## Diagrams
 
-For network topology, attack paths, asset network position, change impact scope, and project WBS — produce an Excalidraw diagram rather than a prose description. Save to `Diagrams/<category>/` and embed with `![[filename.excalidraw]]`.
+For network topology, attack paths, asset network position, change impact scope, and project WBS — produce an Excalidraw diagram rather than a prose description. Save to `Diagrams/<category>/` and embed with `![[filename.md]]`.
+
+**File extension rule:** All Excalidraw files must use `.md` extension, never `.excalidraw`. Correct: `FGT-Site-Topology.md`. Wrong: `FGT-Site-Topology.excalidraw`.
+
+**Full diagram spec:** See `.claude/rules/excalidraw.md` — color palette, AP style, client count indicators, arrow weights, file wrapper format, and Python generation approach.
 
 ## Visual style
 

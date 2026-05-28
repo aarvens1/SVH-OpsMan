@@ -1,0 +1,10 @@
+[Unit]
+Description=SVH OpsMan — morning briefing timer (07:00 Mon–Thu)
+
+[Timer]
+OnCalendar=Mon-Thu 07:00:00
+Persistent=false
+Unit=svh-opsman-briefing.service
+
+[Install]
+WantedBy=timers.target

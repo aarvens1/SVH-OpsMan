@@ -663,6 +663,65 @@ function Set-SVHUserLicense {
 }
 Export-ModuleMember -Function Set-SVHUserLicense
 
+function Get-SVHStaleEntraDevices {
+    <#
+    .SYNOPSIS  Find Entra-registered devices that have not signed in within N days.
+    .DESCRIPTION
+        Uses approximateLastSignInDateTime on the device object. Replaces the old
+        AzureADDeviceCleanup script (AzureAD v1 module). Pair with Remove-SVHEntraDevice
+        to clean up stale objects after confirming the device is decommissioned.
+    .EXAMPLE   Get-SVHStaleEntraDevices -DaysInactive 180
+    .EXAMPLE   Get-SVHStaleEntraDevices -DaysInactive 365 | Remove-SVHEntraDevice -WhatIf
+    #>
+    [CmdletBinding()]
+    [OutputType([PSObject])]
+    param(
+        [int]$DaysInactive = 180,
+        [switch]$DisabledOnly,
+        [int]$Top = 500
+    )
+    $cutoff  = (Get-Date).AddDays(-$DaysInactive).ToUniversalTime().ToString('o')
+    $filters = @("approximateLastSignInDateTime le $cutoff")
+    if ($DisabledOnly) { $filters += 'accountEnabled eq false' }
+
+    (gGet '/devices' @{
+        '$filter' = $filters -join ' and '
+        '$select' = 'id,displayName,deviceId,operatingSystem,operatingSystemVersion,accountEnabled,approximateLastSignInDateTime,registrationDateTime,trustType'
+        '$top'    = $Top
+    }).value | ForEach-Object {
+        $days = if ($_.approximateLastSignInDateTime) {
+            [int]((Get-Date) - [datetime]$_.approximateLastSignInDateTime).TotalDays
+        } else { 999 }
+        $_ | Add-Member -NotePropertyName DaysSinceSignIn -NotePropertyValue $days -Force -PassThru
+    } | Sort-Object DaysSinceSignIn -Descending
+}
+Export-ModuleMember -Function Get-SVHStaleEntraDevices
+
+function Remove-SVHEntraDevice {
+    <#
+    .SYNOPSIS  Delete a stale or decommissioned Entra device object.
+    .NOTES     Requires Device.ReadWrite.All. Permanent — confirm the device is
+               genuinely decommissioned before removing.
+    .EXAMPLE   Get-SVHStaleEntraDevices -DaysInactive 365 | Remove-SVHEntraDevice -WhatIf
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    param(
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Alias('id')]
+        [string]$DeviceId,
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [string]$DisplayName
+    )
+    process {
+        $label = if ($DisplayName) { "$DisplayName ($DeviceId)" } else { $DeviceId }
+        if ($PSCmdlet.ShouldProcess($label, 'Delete Entra device object')) {
+            gDel "/devices/$DeviceId"
+            Write-Verbose "Deleted Entra device: $label"
+        }
+    }
+}
+Export-ModuleMember -Function Remove-SVHEntraDevice
+
 function Sync-SVHIntuneDevice {
     <#
     .SYNOPSIS  Trigger an Intune sync for a managed device.

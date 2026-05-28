@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
-# Launch the SVH PowerShell TUI.
+# Launch an SVH TUI.  Usage: run-tui [module]
+# module defaults to 'tui' (PowerShell Navigator).
+# Other modules: tui_ad, tui_alerts, tui_net, tui_patches
 # Requires: BW_SESSION set, pwsh installed, python3 + textual available.
 
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 
-# Check BW_SESSION
+# Check BW_SESSION — prompt to unlock if not set
 if [ -z "${BW_SESSION:-}" ]; then
-  echo "❌  BW_SESSION is not set." >&2
-  echo "    Unlock Bitwarden first:" >&2
-  echo "" >&2
-  echo "    export BW_SESSION=\$(bw unlock --raw)" >&2
-  exit 1
+  echo "🔒  Bitwarden is locked. Enter your master password to unlock:" >&2
+  BW_SESSION=$(bw unlock --raw)
+  if [ -z "$BW_SESSION" ]; then
+    echo "❌  Bitwarden unlock failed." >&2
+    exit 1
+  fi
+  export BW_SESSION
 fi
 
 # Check pwsh
@@ -29,5 +33,6 @@ if ! python3 -c "import textual" &>/dev/null; then
   exit 1
 fi
 
-cd "$REPO_DIR"
-exec python3 -m tui
+MODULE="${1:-tui}"
+cd "$REPO_DIR/.."
+exec python3 -m "$MODULE"

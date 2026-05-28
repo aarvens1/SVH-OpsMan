@@ -128,6 +128,100 @@ npm run build --silent
 ok "mcp-server built → dist/"
 cd "$REPO_DIR"
 
+# ── 6b. Build collector ───────────────────────────────────────────────────────
+step "collector build"
+if [ -d "$REPO_DIR/collector" ]; then
+  cd "$REPO_DIR/collector"
+  npm install --silent
+  npm run build --silent
+  ok "collector built → dist/"
+  cd "$REPO_DIR"
+else
+  warn "collector/ not found — skipping"
+fi
+
+# ── 6c. Runtime directories ───────────────────────────────────────────────────
+step "Runtime directories"
+mkdir -p "$HOME/.config/svh-opsman" "$HOME/.local/share/svh-opsman"
+chmod 700 "$HOME/.config/svh-opsman"
+ok "~/.config/svh-opsman and ~/.local/share/svh-opsman ready"
+
+# ── 6d. systemd (WSL) ────────────────────────────────────────────────────────
+step "systemd WSL user services"
+
+# Check/set systemd=true in /etc/wsl.conf
+if ! grep -q "^systemd=true" /etc/wsl.conf 2>/dev/null; then
+  if ! grep -q "\[boot\]" /etc/wsl.conf 2>/dev/null; then
+    echo -e "\n[boot]\nsystemd=true" | sudo tee -a /etc/wsl.conf >/dev/null
+  else
+    sudo sed -i '/\[boot\]/a systemd=true' /etc/wsl.conf
+  fi
+  warn "systemd=true added to /etc/wsl.conf — restart WSL to apply: wsl --shutdown"
+else
+  ok "systemd=true already set in /etc/wsl.conf"
+fi
+
+# Install user service units
+USER_SYSTEMD="$HOME/.config/systemd/user"
+mkdir -p "$USER_SYSTEMD"
+for unit in bw-unlock mcp briefing.timer briefing; do
+  src="$REPO_DIR/systemd/user/svh-opsman-${unit}.service"
+  timer_src="$REPO_DIR/systemd/user/svh-opsman-${unit}"
+  # Handle .timer files specially
+  if [[ "$unit" == "briefing.timer" ]]; then
+    cp "$REPO_DIR/systemd/user/svh-opsman-briefing.timer" "$USER_SYSTEMD/"
+    ok "svh-opsman-briefing.timer installed"
+    continue
+  fi
+  [ -f "$src" ] && cp "$src" "$USER_SYSTEMD/" && ok "svh-opsman-${unit}.service installed"
+done
+
+# Reload and enable
+if systemctl --user is-system-running &>/dev/null 2>&1 || systemctl --user status &>/dev/null 2>&1; then
+  systemctl --user daemon-reload
+  systemctl --user enable svh-opsman-bw-unlock.service svh-opsman-mcp.service svh-opsman-briefing.timer 2>/dev/null
+  ok "systemd user units enabled"
+else
+  warn "systemd not running yet — enable units manually after WSL restart:"
+  warn "  systemctl --user daemon-reload"
+  warn "  systemctl --user enable svh-opsman-bw-unlock svh-opsman-mcp svh-opsman-briefing.timer"
+fi
+
+# ── 6e. Bitwarden Windows Credential Manager entry ───────────────────────────
+step "Windows Credential Manager (manual)"
+warn "To enable auto-unlock, store your BW master password on the Windows host."
+warn "Run these commands once from a ${BOLD}Windows PowerShell${RESET} terminal:"
+warn "  ${CYAN}\$cred = Get-Credential -UserName 'svh-opsman' -Message 'Enter Bitwarden master password'${RESET}"
+warn "  ${CYAN}New-StoredCredential -Target 'svh-opsman' -UserName 'svh-opsman' \`
+    -Password \$cred.GetNetworkCredential().Password -Persist LocalMachine${RESET}"
+warn "(This requires the CredentialManager module: Install-Module CredentialManager)"
+
+# ── 6f. Backup timer ─────────────────────────────────────────────────────────
+step "Backup timer (rclone)"
+if ! command -v rclone &>/dev/null; then
+  sudo apt-get install -y -qq rclone
+  ok "rclone installed"
+else
+  ok "rclone $(rclone --version 2>/dev/null | head -1 | awk '{print $2}') already installed"
+fi
+
+chmod +x "$REPO_DIR/scripts/backup.sh"
+
+if systemctl --user is-system-running &>/dev/null 2>&1 || systemctl --user status &>/dev/null 2>&1; then
+  cp "$REPO_DIR/systemd/user/svh-opsman-backup.service" "$USER_SYSTEMD/"
+  cp "$REPO_DIR/systemd/user/svh-opsman-backup.timer"   "$USER_SYSTEMD/"
+  systemctl --user daemon-reload
+  ok "svh-opsman-backup.service and .timer installed (not enabled — backup is triggered by Day Ender and Week Ender)"
+else
+  warn "systemd not running — install backup units manually after WSL restart:"
+  warn "  cp systemd/user/svh-opsman-backup.{service,timer} ~/.config/systemd/user/"
+  warn "  systemctl --user daemon-reload"
+fi
+warn "Backup runs automatically at the end of each Day Ender (OneDrive) and Week Ender (Google Drive)."
+warn "To run manually: bash scripts/backup.sh"
+warn "Action required: configure rclone remotes if not already done:"
+warn "  rclone config   (add 'onedrive' and 'gdrive' — see docs/setup/backup.md)"
+
 # ── 7. Hook permissions ───────────────────────────────────────────────────────
 step "Hook permissions"
 chmod +x "$REPO_DIR/.claude/hooks/"*.sh 2>/dev/null && ok "Hooks marked executable" || true
@@ -224,3 +318,7 @@ echo -e "  5. ${BOLD}cd mcp-server && npm start${RESET}  — verify the server s
 echo -e "  6. On Windows: ${BOLD}dotfiles\\install-windows.ps1${RESET}  — install font + Windows Terminal settings"
 echo -e "  7. Open the repo in Claude Code: ${BOLD}claude${RESET}  — or type: ${BOLD}opsman${RESET}"
 echo -e "  8. PowerShell TUI: ${BOLD}tui/run-tui.sh${RESET}  — browse and run module functions in terminal"
+echo -e "  9. Configure rclone remotes for backup: ${BOLD}rclone config${RESET}  (see docs/setup/backup.md)"
+echo -e " 10. On Windows: register the Task Scheduler job for WSL auto-start:"
+echo -e "     ${BOLD}powershell.exe -File powershell\\Start-WSLServices.ps1${RESET} (see file for schtasks command)"
+echo -e " 11. Create the Bitwarden Windows Credential Manager entry (see step 6e output above)"
