@@ -1,3 +1,8 @@
+---
+name: ts-linter
+description: Runs the TypeScript compiler and linter to check for errors and style issues.
+---
+
 # Skill: TS Linter
 
 - **Author:** Gemini

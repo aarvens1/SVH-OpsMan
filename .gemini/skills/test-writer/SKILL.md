@@ -1,3 +1,8 @@
+---
+name: test-writer
+description: Scaffolds test files for existing source code.
+---
+
 # Skill: Test Writer
 
 - **Author:** Gemini

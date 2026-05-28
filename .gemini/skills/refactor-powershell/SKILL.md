@@ -1,3 +1,8 @@
+---
+name: refactor-powershell
+description: Analyzes and refactors PowerShell modules (.psm1 files).
+---
+
 # Skill: PowerShell Refactorer
 
 - **Author:** Gemini

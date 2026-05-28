@@ -1,3 +1,8 @@
+---
+name: shell-script-converter
+description: Converts simple shell scripts to PowerShell or TypeScript.
+---
+
 # Skill: Shell Script Converter
 
 - **Author:** Gemini

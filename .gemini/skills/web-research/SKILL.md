@@ -1,3 +1,8 @@
+---
+name: web-research
+description: Quick public web lookups using Google Search grounding. The go-to for API docs, package versions, error messages, and technology questions.
+---
+
 # Skill: Web Research
 
 - **Author:** Gemini

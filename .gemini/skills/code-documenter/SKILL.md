@@ -1,3 +1,8 @@
+---
+name: code-documenter
+description: Adds documentation comments to code files.
+---
+
 # Skill: Code Documenter
 
 - **Author:** Gemini

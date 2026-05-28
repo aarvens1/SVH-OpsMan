@@ -1,3 +1,8 @@
+---
+name: claude-handoff
+description: Reads a task spec written by Claude and executes it. Writes results back to `.gemini/to-claude.md`.
+---
+
 # Skill: Claude Handoff
 
 - **Author:** Gemini

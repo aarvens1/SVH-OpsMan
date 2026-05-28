@@ -1,3 +1,8 @@
+---
+name: api-spec
+description: Generates TypeScript interfaces and Zod schemas from a JSON example or field list. Typically used after Claude provides a sanitized API response shape.
+---
+
 # Skill: API Spec
 
 - **Author:** Gemini

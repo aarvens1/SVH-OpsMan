@@ -1,3 +1,8 @@
+---
+name: git-helper
+description: Provides a conversational interface for common Git operations.
+---
+
 # Skill: Git Helper
 
 - **Author:** Gemini

@@ -1,3 +1,8 @@
+---
+name: config-validator
+description: Validates project configuration files.
+---
+
 # Skill: Config Validator
 
 - **Author:** Gemini

@@ -1,3 +1,8 @@
+---
+name: code-reviewer
+description: Reviews TypeScript, PowerShell, or shell code for correctness, quality, and security issues. Operates on local files or git diffs — no private system data needed.
+---
+
 # Skill: Code Reviewer
 
 - **Author:** Gemini

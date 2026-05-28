@@ -1,3 +1,8 @@
+---
+name: log-analyzer
+description: Analyzes structured and unstructured log files.
+---
+
 # Skill: Log Analyzer
 
 - **Author:** Gemini

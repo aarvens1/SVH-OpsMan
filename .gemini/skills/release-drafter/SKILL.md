@@ -1,3 +1,8 @@
+---
+name: release-drafter
+description: Drafts release notes based on git history.
+---
+
 # Skill: Release Drafter
 
 - **Author:** Gemini

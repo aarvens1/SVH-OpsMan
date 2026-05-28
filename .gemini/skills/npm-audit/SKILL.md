@@ -1,3 +1,8 @@
+---
+name: npm-audit
+description: Runs npm audit across the project's packages, interprets the results, and proposes fixes.
+---
+
 # Skill: NPM Audit
 
 - **Author:** Gemini

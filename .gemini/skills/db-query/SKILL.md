@@ -1,3 +1,8 @@
+---
+name: db-query
+description: Runs SQL queries against the project's SQLite database.
+---
+
 # Skill: DB Query
 
 - **Author:** Gemini

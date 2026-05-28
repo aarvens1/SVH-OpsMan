@@ -1,3 +1,8 @@
+---
+name: create-collector-job
+description: Scaffolds a new collector job within the SVH-OpsMan project.
+---
+
 # Skill: Create Collector Job
 
 - **Author:** Gemini

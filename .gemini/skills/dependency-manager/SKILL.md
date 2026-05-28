@@ -1,3 +1,8 @@
+---
+name: dependency-manager
+description: Manages project dependencies via npm.
+---
+
 # Skill: Dependency Manager
 
 - **Author:** Gemini
