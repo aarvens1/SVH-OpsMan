@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Launch an SVH TUI.  Usage: run-tui [module]
-# module defaults to 'tui' (PowerShell Navigator).
-# Other modules: tui_ad, tui_alerts, tui_net, tui_patches
+# Launch an SVH TUI.  Usage: run-tui [app]
+# app defaults to 'main' (PowerShell Navigator).
+# Other apps: ad, alerts, net, patches
 # Requires: BW_SESSION set, pwsh installed, python3 + textual available.
 
 set -euo pipefail
@@ -33,6 +33,7 @@ if ! python3 -c "import textual" &>/dev/null; then
   exit 1
 fi
 
-MODULE="${1:-tui}"
+APP="${1:-main}"
+MODULE="tui.apps.${APP}"
 cd "$REPO_DIR/.."
 exec python3 -m "$MODULE"

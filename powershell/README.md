@@ -14,7 +14,7 @@ export BW_SESSION=$(bw unlock --raw)
 tui/run-tui.sh
 ```
 
-The TUI starts a persistent pwsh session, loads all modules, and shows a searchable browser for all 237 functions. Fill parameters in a form, preview the generated command, and run it — with a confirmation dialog before any destructive operation. Output stays in the terminal or saves to Obsidian. See `tui/` and `USER_GUIDE.md §9.1` for full docs.
+The TUI starts a persistent pwsh session, loads all modules, and shows a searchable browser for all 237 functions. Fill parameters in a form, preview the generated command, and run it — with a confirmation dialog before any destructive operation. Output stays in the terminal or saves to Obsidian. See `tui/STYLE_GUIDE.md` and `docs/user_guide.md` for full docs.
 
 **Option B — raw pwsh session**
 

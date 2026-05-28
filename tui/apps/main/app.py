@@ -1,4 +1,4 @@
-"""SVH Network Ops TUI — Textual application for SVH.Network functions."""
+"""SVH PowerShell TUI — Textual application."""
 
 from __future__ import annotations
 
@@ -17,38 +17,25 @@ from textual.widgets import (
     Header,
     Input,
     Label,
+    RadioButton,
+    RadioSet,
     RichLog,
     Static,
     Tree,
 )
 from rich.text import Text
 
-from tui.parser import PSFunction, PSParam, parse_modules
-from tui.session import PowerShellSession, SessionState
+from .obsidian import save_output
+from .parser import PSFunction, PSParam, parse_modules
+from .session import PowerShellSession, SessionState
 
 REPO_ROOT = Path(__file__).parent.parent
 MODULES_DIR = REPO_ROOT / "powershell" / "modules"
 CONNECT_SCRIPT = REPO_ROOT / "powershell" / "connect.ps1"
 
-_RISK_COLOR   = {"read": "green",   "write": "yellow",   "destructive": "red"}
-_RISK_LABEL   = {"read": "Read",    "write": "Write",    "destructive": "⚠ Destructive"}
-_RISK_VARIANT = {"read": "success", "write": "warning",  "destructive": "error"}
-
-# Fixed category definitions: (label, predicate)
-# Order matters — Connectivity is tested last so Resolve-SVHDns isn't caught by "Dns"
-_CONNECTIVITY_NAMES = frozenset({
-    "Resolve-SVHDns",
-    "Get-SVHDnsLookup",
-    "Test-SVHPort",
-    "Test-SVHNetworkPath",
-    "Get-SVHNetworkAdapters",
-})
-
-_CATEGORIES = [
-    ("DNS",          lambda f: "Dns" in f.name and f.name not in _CONNECTIVITY_NAMES),
-    ("DHCP",         lambda f: "Dhcp" in f.name),
-    ("Connectivity", lambda f: f.name in _CONNECTIVITY_NAMES),
-]
+_RISK_COLOR = {"read": "green", "write": "yellow", "destructive": "red"}
+_RISK_LABEL = {"read": "Read", "write": "Write", "destructive": "⚠ Destructive"}
+_RISK_VARIANT = {"read": "success", "write": "warning", "destructive": "error"}
 
 
 # ── Confirmation modal ─────────────────────────────────────────────────────────
@@ -101,8 +88,7 @@ class ParamRow(Horizontal):
         if p.aliases:
             suffix += f"  ({', '.join(p.aliases[:2])})"
 
-        label_classes = "param-label -mandatory" if p.mandatory else "param-label"
-        yield Label(f"{p.name}{suffix}", classes=label_classes)
+        yield Label(f"{p.name}{suffix}", classes="param-label")
 
         widget_id = f"param-{p.name}"
         if p.is_switch or p.type == "bool":
@@ -119,25 +105,24 @@ class ParamRow(Horizontal):
 
 # ── Main application ───────────────────────────────────────────────────────────
 
-class NetworkTui(App):
-    """SVH Network Ops TUI — browse and run SVH.Network functions."""
+class SVHTui(App):
+    """SVH PowerShell TUI — browse and run SVH module functions."""
 
-    CSS_PATH = ["../tui/base.tcss", "app.tcss"]
-    TITLE = "SVH Network Ops"
+    CSS_PATH = ["../../base.tcss", "app.tcss"]
+    TITLE = "SVH PowerShell TUI"
     BINDINGS = [
         ("ctrl+f", "focus_search", "Search"),
         ("ctrl+l", "clear_output", "Clear"),
-        ("ctrl+r", "action_run_command", "Run"),
+        ("ctrl+r", "run_command", "Run"),
         ("ctrl+q", "quit", "Quit"),
-        ("escape", "action_blur_input", "Blur"),
+        ("escape", "blur_input", "Blur"),
     ]
 
     selected_func: reactive[Optional[PSFunction]] = reactive(None)
 
     def __init__(self) -> None:
         super().__init__()
-        # Organized: {category_label: [PSFunction]}
-        self._categories: dict[str, list[PSFunction]] = {}
+        self._modules: dict[str, list[PSFunction]] = {}
         self._all_funcs: list[PSFunction] = []
         self._session = PowerShellSession(CONNECT_SCRIPT)
 
@@ -149,7 +134,7 @@ class NetworkTui(App):
             # Sidebar: search + function tree
             with Vertical(id="sidebar"):
                 yield Input(placeholder="/ Search functions…", id="search")
-                yield Tree("Network", id="func-tree")
+                yield Tree("Modules", id="func-tree")
 
             # Right panel: detail + output
             with Vertical(id="right"):
@@ -160,6 +145,9 @@ class NetworkTui(App):
                     yield Vertical(id="params-container")
                     yield Input(placeholder="Command preview (editable)", id="cmd-preview")
                     with Horizontal(id="actions-row"):
+                        with RadioSet(id="output-dest"):
+                            yield RadioButton("Console", value=True)
+                            yield RadioButton("Obsidian")
                         yield Button("▶  Run", id="run-btn", variant="primary")
 
                 with Vertical(id="output-section"):
@@ -170,48 +158,22 @@ class NetworkTui(App):
     # ── Startup ───────────────────────────────────────────────────────────────
 
     def on_mount(self) -> None:
-        self._load_funcs()
+        self._load_modules()
         self._start_session()
 
-    def _load_funcs(self) -> None:
-        """Parse SVH.Network module and build categorized tree."""
-        modules = parse_modules(MODULES_DIR)
-        network_funcs: list[PSFunction] = modules.get("SVH.Network", [])
-
-        # Bucket each function into the first matching category
-        buckets: dict[str, list[PSFunction]] = {label: [] for label, _ in _CATEGORIES}
-        uncategorized: list[PSFunction] = []
-
-        for func in network_funcs:
-            placed = False
-            for label, predicate in _CATEGORIES:
-                if predicate(func):
-                    buckets[label].append(func)
-                    placed = True
-                    break
-            if not placed:
-                uncategorized.append(func)
-
-        # Sort each bucket alphabetically
-        for label in buckets:
-            buckets[label].sort(key=lambda f: f.name)
-        uncategorized.sort(key=lambda f: f.name)
-
-        self._categories = {k: v for k, v in buckets.items() if v}
-        if uncategorized:
-            self._categories["Other"] = uncategorized
-
-        # Build the tree
+    def _load_modules(self) -> None:
+        self._modules = parse_modules(MODULES_DIR)
         tree = self.query_one("#func-tree", Tree)
         tree.root.expand()
-        for category_label, funcs in self._categories.items():
-            node = tree.root.add(category_label, expand=True)
+        for module_name, funcs in self._modules.items():
+            node = tree.root.add(module_name, expand=False)
             for func in funcs:
                 node.add_leaf(func.name, data=func)
             self._all_funcs.extend(funcs)
 
         n_funcs = len(self._all_funcs)
-        self.sub_title = f"{n_funcs} functions · SVH.Network"
+        n_mods = len(self._modules)
+        self.sub_title = f"{n_funcs} functions · {n_mods} modules"
 
     @work
     async def _start_session(self) -> None:
@@ -224,7 +186,7 @@ class NetworkTui(App):
                 log.write(Text(line, style="dim"))
 
         if self._session.state == SessionState.CONNECTED:
-            log.write(Text("✓ Session ready — SVH.Network loaded.", style="green bold"))
+            log.write(Text("✓ Session ready — all SVH modules loaded.", style="green bold"))
             self.sub_title = self.sub_title + "  |  ● Connected"
         else:
             log.write(Text(
@@ -233,8 +195,6 @@ class NetworkTui(App):
                 style="red bold",
             ))
             self.sub_title = self.sub_title + "  |  ✗ Session Error"
-
-        log.scroll_end(animate=False)
 
     # ── Function tree selection ────────────────────────────────────────────────
 
@@ -278,16 +238,17 @@ class NetworkTui(App):
         query = event.value.lower().strip()
         tree = self.query_one("#func-tree", Tree)
 
+        # Rebuild tree content filtered by query
         tree.root.remove_children()
-        for category_label, funcs in self._categories.items():
+        for module_name, funcs in self._modules.items():
             matches = [
                 f for f in funcs
                 if not query
                 or query in f.name.lower()
-                or query in category_label.lower()
+                or query in module_name.lower()
             ]
             if matches:
-                node = tree.root.add(category_label, expand=bool(query) or True)
+                node = tree.root.add(module_name, expand=bool(query))
                 for f in matches:
                     node.add_leaf(f.name, data=f)
 
@@ -387,7 +348,14 @@ class NetworkTui(App):
         else:
             log.write(Text(output.rstrip()))
 
-        log.scroll_end(animate=False)
+        # Optionally save to Obsidian
+        dest = self.query_one("#output-dest", RadioSet)
+        if dest.pressed_index == 1 and self.selected_func:
+            try:
+                note = save_output(self.selected_func.name, command, output)
+                log.write(Text(f"→ Saved: {note.name}", style="green dim"))
+            except Exception as exc:
+                log.write(Text(f"→ Obsidian save failed: {exc}", style="yellow"))
 
     # ── Actions ───────────────────────────────────────────────────────────────
 
@@ -403,9 +371,7 @@ class NetworkTui(App):
             focused.blur()
 
     def _log(self, msg: str, style: str = "white") -> None:
-        log = self.query_one("#output-log", RichLog)
-        log.write(Text(msg, style=style))
-        log.scroll_end(animate=False)
+        self.query_one("#output-log", RichLog).write(Text(msg, style=style))
 
     # ── Teardown ──────────────────────────────────────────────────────────────
 

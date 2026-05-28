@@ -206,12 +206,12 @@ self.sub_title += "  |  ✗ Session Error"
 
 ## Starting a new SVH TUI
 
-1. Create `tui_<name>/` package alongside `tui/` in the repo root (e.g. `tui_alerts/`, `tui_net/`).
-2. Copy `tui/__init__.py`, `tui/__main__.py`, `tui/base.tcss` as starting points.
-3. Set `CSS_PATH = ["base.tcss", "app.tcss"]` in your `App` class.
+1. Create `tui/apps/<name>/` (e.g. `tui/apps/myapp/`).
+2. Copy `tui/apps/main/__init__.py`, `tui/apps/main/__main__.py` as starting points.
+3. Set `CSS_PATH = ["../../base.tcss", "app.tcss"]` in your `App` class.
 4. Write `app.tcss` for your layout — start from the skeleton above.
 5. Reuse `ConfirmModal` verbatim for any destructive operations.
-6. Run via `python3 -m tui_<name>` from the repo root, or add an entry in `run-tui.sh`.
+6. Run via `python3 -m tui.apps.<name>` from the repo root, or `tui/run-tui.sh <name>`.
 
 What to customize vs. keep fixed:
 - **Keep fixed:** Risk encoding, modal pattern, keybinding set, log line conventions, Gruvbox palette
@@ -224,7 +224,7 @@ What to customize vs. keep fixed:
 
 | File | Purpose |
 |------|---------|
-| `tui/app.py` | Reference implementation — the PowerShell TUI |
-| `tui/app.tcss` | App-specific layout styles |
+| `tui/apps/main/app.py` | Reference implementation — the PowerShell TUI |
+| `tui/apps/main/app.tcss` | App-specific layout styles |
 | `tui/base.tcss` | Shared styles: modal, sidebar, output log |
 | `tui/STYLE_GUIDE.md` | This document |
