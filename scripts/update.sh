@@ -28,7 +28,7 @@ if [ "$SKIP_PULL" = false ]; then
     step "Git pull"
     cd "$REPO_DIR"
     BEFORE=$(git rev-parse HEAD)
-    git pull --rebase
+    git pull --rebase --autostash
     AFTER=$(git rev-parse HEAD)
     if [ "$BEFORE" = "$AFTER" ]; then
         ok "Already up to date ($(git rev-parse --short HEAD))"
