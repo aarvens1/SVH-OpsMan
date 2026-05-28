@@ -76,3 +76,14 @@ The hook layer is the only enforcement that cannot be overridden by model reason
 | Stop | `session-stop.sh` | Writes session state to `.gemini/session-state.md` |
 
 Rules in `.claude/rules/` are advisory — they contribute to behavior but can be overridden by model reasoning under pressure. Hooks cannot. If a safety requirement must hold, it belongs in a hook.
+
+---
+
+## Vault Maintenance Skills
+
+On-demand skills for keeping the Obsidian vault consistent. Run manually — not automated.
+
+| Skill | When to run |
+|-------|-------------|
+| `/backlink-update` | After any session that creates, moves, or re-organizes notes in `Assets/`, `Sites/`, or `Infrastructure/`. Scans only recently-changed files and adds missing return links to their targets. |
+| `/asset-investigation` | When a new device appears in NinjaOne or Defender with no `Assets/` note yet. |
