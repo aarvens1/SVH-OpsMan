@@ -38,16 +38,23 @@ The Dev account is structurally isolated: no `BW_SESSION` (the MCP server fails 
 
 **The data boundary is the rule that matters:** real device names, hostnames, IPs, UPNs, credentials, and alert content must not cross into a Dev session. When ops context is live in a Claude Ops session and the next step is code work, sanitize the spec before pasting across — extract field names and types only.
 
-## Lane 3: Gemini
+## Lane 3: Gemini — Three search tiers
 
-**Route here only for public web research:**
-- API docs lookups ("what's the Graph API endpoint for X")
-- Package versions, npm registry info
-- Error message research
-- CVE public info
-- General "look this up on the internet" tasks
+Gemini does Google-grounded web research with cited sources across three depths. Pick the tier by what the question actually needs. All three accept image input.
 
-Anything that gives Gemini access to ops data (real configs, alert text, private API responses) does not go here. Anything that's code work goes to Claude Dev instead — Gemini A (active coding) is retired; Claude Dev owns that lane now.
+| Tier | Gemini skill | Sources | When to recommend |
+|---|---|---|---|
+| Quick | `web-research` | 1–3 | Single-fact lookup: API docs, package versions, error messages, CVE summaries |
+| Deep | `deep-search` | 5–10 | Multi-source synthesis: comparisons, consensus checks, multi-faceted questions |
+| Research | `research` | 10–30 | Structured deliverable: vendor briefs, technology surveys, decision-support docs |
+
+When Claude is in an Ops session and the user asks a public web question, suggest the appropriate tier:
+
+- "Quick Google" / "look up X" / "what's the version of Y" → quick (`web-research`)
+- "Compare X vs Y" / "what's the consensus on Z" → deep (`deep-search`)
+- "Research brief on …" / "comprehensive look at …" / "write me a brief" → research (`research`)
+
+Don't answer from training data alone when grounded search would be better. Don't paste private data into a Gemini session — sanitize first if the question started in an ops context. Anything that's code work goes to Claude Dev instead — Gemini's dev skills (Account A) are retired.
 
 ## When ops data needs to become a Dev task
 
@@ -59,6 +66,12 @@ The discipline: sanitize before crossing.
 
 There used to be a `/gemini-handoff` skill that wrote a sanitized spec to `.gemini/handoff.md` for an async cycle. The sanitization step is still valuable; the async cycle is not — Claude Dev is interactive. The handoff skills are pending a rewrite (see `TODO.md`); for now, do the sanitization manually when crossing from Ops to Dev.
 
-## Quick Google
+## Quick Google (and beyond)
 
-If the user says "quick Google", "look up", "what's the API for", "latest version of", or asks a public web question: this is Gemini's lane. Don't answer from training data alone when live search would give a better result.
+If the user says "quick Google", "look up", "what's the API for", "latest version of", or asks a public web question: this is Gemini's quick tier (`web-research`). Suggest it.
+
+If the question is broader — comparisons, consensus, multi-faceted — suggest Gemini's `deep-search` (5–10 sources).
+
+If the user wants a deliverable — "write me a brief", "research X", "structured report on Y" — suggest Gemini's `research` (10–30 sources, formal report).
+
+All three tiers cite sources inline and accept image input. Don't answer from training data alone when grounded search would give a better, source-cited result.

@@ -252,7 +252,7 @@ Work is routed across three lanes by quota pool, data exposure, and tool strengt
 | :--- | :------ | :----- | :--------- | :--- |
 | **Claude Ops** | `aa_stevens@shoestringvalley.com` | `opsman` · `opsman-dev` | Yes — full MCP, BW_SESSION | Incidents, briefings, posture, investigations, all vault writes on real data, messages to Teams/Planner/Confluence |
 | **Claude Dev** | `astevens2694@gmail.com` | `claude-dev` | No (by design) | Most OpsMan code work: skills, hooks, MCP server, collector, PowerShell, TUI, tests, type generation, refactors |
-| **Gemini** | Existing Gemini login | Gemini CLI / web | No | Public web research only — quick Google lookups, API docs, package versions, CVE public info |
+| **Gemini** | Existing Gemini login | Gemini CLI / web | No | Google-grounded web research with cited sources, three depth tiers (quick · deep · research). All tiers accept image input |
 
 ### Claude Dev launch
 
@@ -270,9 +270,24 @@ Historically there was a `/gemini-handoff` skill that wrote a sanitized spec to 
 | :-- | :-- |
 | Gemini Account A (active coding) | Claude Dev |
 | Gemini Account B (long-context docs reads, bulk refactors) | Claude Dev |
-| Gemini Account C (web research) | Single remaining Gemini account |
+| Gemini Account C (web research) | Single remaining Gemini account, expanded to three depth tiers |
 
-Most of the previously listed Gemini skills (`test-writer`, `refactor-powershell`, `code-reviewer`, `api-spec`, `ts-linter`, `npm-audit`, `dependency-manager`, `git-helper`, `release-drafter`, `code-documenter`, `log-analyzer`, `config-validator`, `db-query`, `shell-script-converter`) are superseded by Claude Dev. The only Gemini skill that still has a clear role is `web-research`.
+Most of the previously listed Gemini skills (`test-writer`, `refactor-powershell`, `code-reviewer`, `api-spec`, `ts-linter`, `npm-audit`, `dependency-manager`, `git-helper`, `release-drafter`, `code-documenter`, `log-analyzer`, `config-validator`, `db-query`, `shell-script-converter`) are superseded by Claude Dev. They remain on disk during transition — see `TODO.md`.
+
+### Gemini search skills (the three tiers)
+
+| Tier | Skill | Sources | When to use |
+| :--- | :---- | :------ | :---------- |
+| **Quick** | `web-research` | 1–3 | Single-fact lookups: API docs, package versions, error messages, CVE summaries |
+| **Deep** | `deep-search` | 5–10 | Multi-source synthesis: comparisons, consensus checks, multi-faceted questions |
+| **Research** | `research` | 10–30 | Structured deliverable: vendor briefs, technology surveys, decision-support docs |
+
+All three:
+- Cite every factual claim inline with `[N]` markers tied to a numbered Sources list with URLs and access dates
+- Accept image input — paste a screenshot or attach a file alongside the question
+- Refuse to fabricate sources; if quality results aren't available, they say so
+
+Invoke from the Gemini CLI by stating the tier or matching a trigger phrase. Each skill's `SKILL.md` lists its invocation phrases.
 
 ## TUI Apps
 
