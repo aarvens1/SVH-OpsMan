@@ -61,6 +61,7 @@ Projects use a `project/<slug>` tag in their frontmatter (e.g. `project/network-
 | Patch reviews | `Reviews/Patches/` |
 | Task triage / reviews | `Reviews/Tasks/YYYY-MM-DD-triage.md` |
 | Vulnerabilities | `Vulnerabilities/` |
+| Research (filed Gemini search output) | `Research/YYYY-MM-DD-<slug>.md` (filed via `/import-research`) |
 | Excalidraw diagrams | `Diagrams/<category>/[name].md` |
 | Skill reference pages | `Skills/[skill-name].md` (persistent — update in place) |
 

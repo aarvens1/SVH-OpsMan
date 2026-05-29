@@ -97,9 +97,9 @@ Multimodal grounding works the same. With research-tier, an image input can anch
 
 ## Output destination
 
-By default, output to stdout for the user to copy. If the user asks for a file ("save to a file", "write it as a doc"), write to `.gemini/research/YYYY-MM-DD-<slug>.md` in the repo. The user can then move it into the Obsidian vault under `References/` or wherever fits.
+Output to stdout. If the user wants to keep the brief, they copy it and paste into a Claude (Ops) session, then run `/import-research`. That skill files it under `Research/YYYY-MM-DD-<slug>.md` in the Obsidian vault with proper frontmatter and a daily-note link.
 
-The Obsidian vault is Claude's territory — don't write directly to it from a Gemini session.
+The Obsidian vault is Claude's territory — don't write directly to it from a Gemini session. Don't auto-save to `.gemini/` either; the paste-to-Claude path is the single way research lands in the vault.
 
 ---
 
@@ -118,4 +118,4 @@ The Obsidian vault is Claude's territory — don't write directly to it from a G
 - **Google Search grounding** (built-in, multi-query, multi-pass)
 - **Multimodal image input** (built-in)
 - **`ask_user`** — to confirm the research plan before running
-- **`write_file`** — only when explicitly asked to save output
+(No `write_file` — keeping the vault as Claude's territory, paste-to-Claude is the persistence path)

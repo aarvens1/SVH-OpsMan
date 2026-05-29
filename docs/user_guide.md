@@ -289,6 +289,20 @@ All three:
 
 Invoke from the Gemini CLI by stating the tier or matching a trigger phrase. Each skill's `SKILL.md` lists its invocation phrases.
 
+### Filing research into the vault
+
+When Gemini output is worth keeping, copy the full response (including the Sources list) and paste it into a Claude Ops session with `/import-research`. The skill:
+
+1. Detects the tier (quick / deep / research) from content shape
+2. Confirms title, slug, and target path with you
+3. Writes the content verbatim to `Research/YYYY-MM-DD-<slug>.md` in the vault with proper frontmatter (`tier`, `source_count`, `sources_detected`)
+4. Adds a one-line link to today's daily note Activity Log
+5. Appends to `System/skill-log.md`
+
+`Research/` is a new top-level vault folder, peer of `Investigations/`, `References/`, and `Reviews/`. The paste-to-Claude path is the only way research lands in the vault — Gemini doesn't write to the vault directly, keeping the data boundary clean.
+
+Skip the import for one-off lookups you'll never refer to again — not everything needs a record.
+
 ## TUI Apps
 
 The project includes a suite of Textual terminal UIs. All are launched via `tui/run-tui.sh` (requires an active `BW_SESSION`).
