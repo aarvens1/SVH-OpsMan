@@ -110,12 +110,14 @@ Run these in parallel:
   - IT Management Tasks: `e0-6qZKUSkyZJUQg9nNbzmQAEjoO`
   - IT Task Overview: `nyrAlo2ciUKVEv8GXUA78WQAG8mL`
 
-  Also pull `planner_list_tasks` for active project boards and surface them in the **Projects** section (not IT team boards):
-  - Office Network Standardization: `E4PruQekE0K25KH40pWa9WQAAfAr`
-  - BDR Testing: `lJQrriNYnUuLKm5u485GX2QAE_WS`
-  - Information Security Program (ISP): `2es7HS5UakyP3K6ZkwRfd2QAF3I_`
-  - CMMC Level 1: `qxQKzAEGd0m3Q6EUysaGVmQADbmg`
-  - Copilot Audit for IT team: `wP9PL7YWCEqGbG6o4aYVT2QADaLq`
+  Also pull `planner_list_tasks` for active project boards and surface them in the **Projects** section (not IT team boards). Each board has an associated project note in `Projects/` — link to it:
+  - Office Network Standardization: `E4PruQekE0K25KH40pWa9WQAAfAr` → [[Projects/Network-Segmentation]]
+  - BDR Testing: `lJQrriNYnUuLKm5u485GX2QAE_WS` → (no vault note yet)
+  - Information Security Program (ISP): `2es7HS5UakyP3K6ZkwRfd2QAF3I_` → (no vault note yet)
+  - CMMC Level 1: `qxQKzAEGd0m3Q6EUysaGVmQADbmg` → (no vault note yet)
+  - Copilot Audit for IT team: `wP9PL7YWCEqGbG6o4aYVT2QADaLq` → (no vault note yet)
+
+  For each project board, also compute **stale days** — the number of days since the most recent task update (max `lastModifiedDateTime` across all tasks in the plan, or plan creation date if no tasks have been touched). This drives the stale flag in the Projects section.
 
   This is the source for **IT team boards** and **Projects**.
 - `todo_list_task_lists` (user_id: `user.entra_id` from config) then `todo_list_tasks` (user_id: `user.entra_id` from config) for each list — personal To Do task lists, anything open or due today. **Always use the Entra object ID, not the UPN** — the UPN returns HTTP 403 with application credentials; the /me fallback returns HTTP 400.
@@ -139,7 +141,13 @@ Include To Do items alongside Planner tasks. Show due-today and overdue first, t
 
 **IT team boards** — tasks from `planner_list_tasks` that are NOT in Your Tasks (not assigned to Aaron, not tagged with his name). Group by plan. Overdue items get a full row; everything else is a one-liner. This is context, not a to-do list.
 
-**Projects** — whole Planner boards representing a project initiative rather than an operational queue (e.g. "Office Network Standardization"). Definition is TBD — for now, call these out by plan name when you encounter them but do not mix them into IT team boards. Aaron's current priority project is **Office Network Standardization**.
+**Projects** — Planner boards registered as project initiatives (not operational queues). Each is paired with a vault project note in `Projects/`. For each registered project board:
+- Render a row showing: plan name → vault project note wikilink (where one exists) → open task count → stale-days indicator
+- **Stale flag** — read the corresponding project note's `priority` frontmatter:
+  - `P1` projects: flag if stale ≥ 7 days
+  - `P2` projects: flag if stale ≥ 14 days
+  - `P3` projects: do not flag (always silent unless explicitly elevated)
+- Don't mix project boards into IT team boards. Aaron's current priority project is **Office Network Standardization**.
 
 ## Step 2b — Carry forward open items from yesterday
 
@@ -172,6 +180,15 @@ Combine all narrative items (from Day Ender and the Deferred list) into this sin
 **Important:** Do not duplicate items. If a carried-forward task is already appearing in today's lists from a live `planner_get_user_tasks` call or as a current security alert, do not include it in the "Carried from yesterday" narrative section. This section is only for items that would otherwise be lost between sessions.
 
 If yesterday's note doesn't exist or key sections are missing, note this in the narrative section: "*No EOD note found for [date] — open items may need manual review.*"
+
+## Step 2d — Inbox carry-forward
+
+Read `Inbox.md` from the vault root. This is the append-only `/brain-dump` capture file. Each entry is a timestamped bullet.
+
+1. Find all entries with timestamps **since the last `last_day_starter`** (from `System/briefing-state.md`). If no state exists, fall back to entries from the last 24 hours.
+2. If any are found, render them in the **Inbox** section of the briefing (see Step 3) so Aaron can triage them into Planner CREATE blocks, To Do items, or dismiss them.
+3. If none are found, **omit the Inbox section entirely** from the briefing — don't render an empty section.
+4. **Do not delete entries from `Inbox.md` automatically.** Inbox is append-only and carries forward until Aaron explicitly clears it via `/task-review` or manual edit. The day-starter only surfaces entries for triage; it does not consume them.
 
 ## Step 2c — Suppress cleared items
 
@@ -346,11 +363,24 @@ Unread or high-importance messages from the last N hours needing action. Externa
 ### Teams
 Unread DMs (from `teams_list_my_chats` + `teams_get_chat_messages`) and IT Team channel @mentions (from `teams_list_messages`) from the last N hours. Focus on messages directed at Aaron. Skip high-volume notification channels. If nothing actionable: state "No unread DMs or @mentions."
 
+### Inbox
+Brain-dump entries captured since the last day-starter (per Step 2d). Render as a compact list — one line per entry, preserving the original timestamp. Below each entry add a single italicised triage suggestion: *"→ Planner CREATE block?"*, *"→ To Do?"*, *"→ Dismiss?"*, or *"→ Investigate"*. If nothing fits, leave the entry without a suggestion. Omit this section entirely if no Inbox entries were captured in the window.
+
 ### Your tasks
 Tasks assigned to Aaron (by user ID or Planner label) across all plans and personal board, plus To Do items. Use a table for overdue/due-today items, compact list for upcoming. Due today or overdue first, then upcoming.
 
 ### Projects
-Active project-type Planner boards (e.g. Office Network Standardization). Call out open tasks or milestones — keep separate from operational team boards. Definition TBD.
+Active project-type Planner boards paired with their vault project notes. One row per registered project:
+
+```
+| Project | Open tasks | Last touched | Notes |
+|---------|-----------|--------------|-------|
+| [[Projects/Network-Segmentation]] (Office Network Std.) | 4 | 2 days ago | rolling out at PDX |
+| BDR Testing (no vault note) | 1 | 6 days ago | — |
+| [[Projects/ISP]] (Info Sec Program) | 0 | ⚠️ 12d stale | P1 — flag |
+```
+
+Apply the stale flag thresholds from Step 2 (P1≥7d, P2≥14d, P3 silent). For P3 projects, omit from this section entirely unless they have open tasks Aaron is assigned to. If no project boards have activity or open tasks: state "*No active project work since [date].*"
 
 ### IT team boards
 Open tasks from IT plans that Aaron isn't assigned to or tagged on. Group by plan. Overdue items only get a full row; everything else is a one-liner. Context only.

@@ -14,8 +14,11 @@ Run in parallel:
 - Read relevant Obsidian notes if the user mentions them
 - `calendar_list_events` — any upcoming deadlines, reviews, or milestones already on the calendar
 - `planner_list_plans` (IT Team group: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) — check if a Planner plan for this project already exists before creating a new one
+- List `Projects/` in the vault — check for a sibling project on the same topic; if one exists, ask whether this is a child work artifact (belongs in `Projects/Archive/` when complete) or a separate project
 
 If a plan already exists, surface it and ask whether to extend it or build a parallel structure.
+
+Also ask: **priority** — P1 (active focus), P2 (rolling, lower cadence), P3 (backlog/eval). Default P2 unless the conversation has already established otherwise. Day Starter uses this to drive stale-project flags (P1 at 7 days, P2 at 14, P3 silent).
 
 ## Step 2 — Structure the project
 
@@ -50,24 +53,37 @@ Embed in the project note with `![[project-name.md]]`.
 
 ## Step 5 — Write the project note with staged draft
 
-Write `Projects/[project-name].md`:
+Write `Projects/[project-name].md`. Filename is kebab-case for new projects (PascalCase-kebab is also accepted for existing convention, e.g. `Network-Segmentation.md`).
 
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Project Creator
-status: draft
-tags: [project]
+skill: project-creator
+status: active
+tags: [project, project/<slug>, <domain-tags>]
+priority: P1
+planner_plan_id:
 has_pending_tasks: true
 ---
 ```
 
-Sections:
-- **Scope** — one paragraph
-- **Deliverables** — bulleted list
-- **WBS diagram** — `![[project-name.md]]`
+**Frontmatter notes:**
+- `status` — `active | on-hold | closed`. NOT the draft→filed lifecycle. New projects start `active`.
+- `tags` — always include `project` and `project/<slug>` (kebab-case slug matching the filename). The `project/<slug>` tag is what lets meeting notes, change records, and incident notes backlink to this project via Dataview.
+- `priority` — `P1 | P2 | P3` (see Step 1). Day Starter reads this for stale flags.
+- `planner_plan_id` — leave empty until Step 7 executes and a plan is created; populate then.
+- `has_pending_tasks: true` only while the staged Planner build at the bottom is unresolved. Step 7 sets it to `false` once all blocks are processed.
+
+**Required section:** `## Scope`. **Strongly recommended:** Deliverables. Other sections grow organically from the work — do not force empty templates. The lived pattern (see `Projects/Network-Segmentation.md`) is fat working documents that accumulate standards, tables, and per-site progress as the project advances. Suggest sections during the interview; don't enforce them.
+
+**Suggested sections (use what fits):**
+- **Scope** — one paragraph (required)
+- **Deliverables** — bulleted list, each falsifiable
+- **WBS diagram** — `![[project-name.md]]` (if a WBS diagram was generated)
 - **Dependencies** — table: Task → Depends on → Blocker type
 - **Timeline** — phases with target dates
+- **Reference / Standard** — for projects that encode a standard or reference table
+- **Per-site progress** — for projects that roll out across multiple sites
 - **Confluence link** — once created
 
 Then append the full **staged draft block** at the bottom (see Step 6 format). The entire Planner build — plan, buckets, tasks — goes here as editable blocks for review before any API call.
@@ -121,11 +137,13 @@ Review all blocks below. Edit any field directly in the note. To skip a bucket o
 When Aaron confirms ("push the project", "push it", "go ahead"):
 
 Execute in strict sequence:
-1. `planner_create_plan` (group_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`, title from the PLAN block) → record the returned `plan_id`
+1. `planner_create_plan` (group_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`, title from the PLAN block) → record the returned `plan_id`, then update the project note's frontmatter `planner_plan_id:` field with this value via `edit_block`
 2. For each `CREATE BUCKET` block (in order): `planner_create_bucket` (plan_id, name) → record the returned `bucket_id`, building a `name → id` map
 3. For each `CREATE TASK` block: resolve `bucket_id` from the name map, then `planner_create_task` with all fields
 
 After each successful block execution, remove that block from the note using `edit_block`. When all blocks are gone, remove the `## 🚀 Staged Planner build` section header and update `has_pending_tasks` to `false` in frontmatter.
+
+If Aaron registers this as a tracked project for the day-starter Projects section, the `planner_plan_id` written to frontmatter is the value he'll paste into `.claude/config.yaml` under the project plan registry.
 
 If Aaron confirms only a subset ("push just the buckets", "push Phase 1 tasks"), execute only those blocks and leave the rest staged.
 
@@ -140,3 +158,12 @@ If Aaron asks to promote to Confluence:
 - `confluence_create_page` with scope, deliverables, WBS table, and a link to the Planner plan
 - Present as a draft block for review before creating
 - Add the Confluence link to the `Projects/[project-name].md` note once published
+
+## Step 9 — Skill log
+
+Append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | project-creator | Projects/[project-name].md | [project name + size: small/large + Planner staged Y/N]`
+
+## Closing the project
+
+When the project is complete, run `/project-close` — it captures a retrospective, archives dated work artifacts under `Projects/Archive/`, sets `status: closed`, and prompts to close any open Planner tasks. Do not manually edit a project's `status` to `closed` — use the skill so the close-out is consistent.

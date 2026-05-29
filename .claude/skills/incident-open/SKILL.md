@@ -18,6 +18,7 @@ Gather from the user's invocation or ask only for what's missing:
 | **Affected systems** | Devices, services, sites, or user groups |
 | **What's known** | Current symptom description |
 | **Detection time** | When was this first noticed |
+| **Related project (optional)** | If the incident is connected to an active project (e.g., a network-seg rollout that broke something), capture the project slug. Listed from `Projects/*.md` with `status: active`. Adds a `project/<slug>` tag to the incident frontmatter. |
 
 **Severity classification:**
 - **Critical** — production outage, data breach suspected, ransomware, complete service loss affecting multiple sites
@@ -49,11 +50,13 @@ Write `Incidents/Active/YYYY-MM-DD-[name].md`:
 date: YYYY-MM-DD
 skill: Incident Open
 status: open
-tags: [incident]
+tags: [incident, project/<slug-if-applicable>]
 incident_id: INC-YYYY-NNN
 severity: critical|high|medium|low
 ---
 ```
+
+Add `project/<slug>` to the tags only if Step 1 captured a related active project.
 
 Sections:
 - **Summary** — one paragraph: what broke, when, what's affected

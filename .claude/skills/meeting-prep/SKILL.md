@@ -12,6 +12,8 @@ allowed-tools: "mcp__svh-opsman__calendar_list_events mcp__svh-opsman__calendar_
 ### Step 1 — Get the event
 `calendar_list_events` to find today's or upcoming meetings. `calendar_get_event` for the target meeting — get attendees, location/link, and any attached agenda.
 
+If the meeting subject or attendees suggest a connection to an active project (e.g. weekly network-segmentation sync, vendor call about a known initiative), surface the matching project(s) from `Projects/*.md` where `status: active`. Capture the `project/<slug>` tag for the meeting note frontmatter. Skip if no match — most meetings are not project-bound.
+
 ### Step 2 — Pull context
 Run in parallel:
 - **Fathom** — use `search_meetings` or `list_meetings` to find past recordings with the same attendees or organisation. Any open action items from the last call?
@@ -28,10 +30,12 @@ Write `Meetings/YYYY-MM-DD-[meeting-name].md`:
 date: YYYY-MM-DD
 skill: Meeting Prep
 status: draft
-tags: [meeting, prep]
+tags: [meeting, prep, project/<slug-if-applicable>]
 attendees: []
 ---
 ```
+
+Add `project/<slug>` to the tags only if Step 1 identified a related active project.
 
 Sections:
 - **Meeting details** — time, attendees, location/link

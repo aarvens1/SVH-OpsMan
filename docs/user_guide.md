@@ -122,7 +122,8 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | **Patch Campaign**| `/patch-campaign` · "Plan this month's patching" | Gathers all pending patches, prioritizes them based on TVM data, and drafts a deployment plan. |
 | **Change Record**| `/change-record` · "Document this change" | Creates a structured change record with scope, risk, test plan, and rollback procedures. |
 | **Runbook Gen** | `/runbook-gen` · "Write a runbook for X" | Generates a structured, reusable runbook from a description or rough notes — prerequisites, numbered steps, expected outputs, verification, and rollback. |
-| **Project Creator**| `/project-creator` · "Turn this into a project"| Breaks down a request into a full project plan with deliverables, dependencies, and effort estimates. |
+| **Project Creator**| `/project-creator` · "Turn this into a project"| Breaks down a request into a full project plan with deliverables, dependencies, and effort estimates. Drafts a Planner plan + buckets + tasks (staged) and an Excalidraw WBS diagram. |
+| **Project Close**| `/project-close` · "Close the [name] project"| Closes a finished project: four-question retrospective, archives dated work artifacts to `Projects/Archive/`, sets `status: closed`, prompts to close any open Planner tasks. |
 | **Meeting Prep**| `/meeting-prep` · "Prep me for my 2pm" | Gathers context from calendar, past meetings (Fathom), and related tasks to prepare a briefing. |
 | **Diagram** | `/diagram` · "Diagram this" | Creates or updates an Excalidraw diagram in Obsidian from a description, sketch, or existing note. Works for architecture, workflows, timelines, org charts. |
 | **Draft** | `/draft` · "Draft an email to..." | Takes bullet points and drafts a polished email or Teams message in your voice. |
@@ -141,6 +142,46 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | **Memory Cleanup** | `/memory-cleanup` · "Clean up memory" | Audits and prunes the Claude auto-memory store. Deletes stale entries, moves actionable items to TODO.md, and rebuilds the memory index. |
 | **PowerShell Navigator** | `/powershell-navigator` · "How do I X in PowerShell?" | Conversational interface for finding, understanding, and executing commands from the SVH PowerShell modules. |
 | **PDX Weekend Digest** | `/pdx-weekend-digest` | Curated digest of upcoming weekend events in the Portland, OR area. |
+
+## Project Lifecycle
+
+Projects in OpsMan are fat working documents — they accumulate standards, tables, per-site progress, and decisions over the life of the work. The vault is not an index of work happening in Planner; **the vault note is the work**, with Planner as the operational task surface alongside it.
+
+### Lifecycle
+
+```
+/project-creator
+      │
+      ▼
+   active ──── on-hold (paused, may resume)
+      │              │
+      └──── /project-close ────▶ closed
+                                  │
+                  Dated artifacts ▼
+                            Projects/Archive/
+```
+
+Status values for project notes: `active | on-hold | closed`. This is NOT the briefing draft→filed lifecycle.
+
+### What lives where
+
+| Surface | Role |
+|---|---|
+| `Projects/<name>.md` | The project itself. Persistent, fat working document. Stays in `Projects/` even after closure. |
+| `Projects/Archive/<slug>-YYYY-MM-DD.md` | Dated work artifacts (snapshots, completed deliverables, eval matrices). Filed by `/project-close`. |
+| Planner plan (registered by ID in `.claude/config.yaml`) | Operational tasks. Day Starter surfaces these in the Projects section. |
+| `Diagrams/Projects/<name>.md` | WBS diagrams, topology diagrams, point-in-time state diagrams. |
+| `project/<slug>` tag on related notes | The cross-reference — meeting-prep, change-record, and incident-open optionally tag their output with the project slug. Dataview query `FROM #project/<slug>` returns every note that touched the project. |
+
+### Day-to-day signals
+
+- **Day Starter Projects section** — lists registered project Planner plans alongside their vault notes. Flags projects as stale based on priority: P1 ≥ 7 days, P2 ≥ 14 days, P3 silent.
+- **Inbox section** — captures brain-dump entries since the last day-starter. Triage suggestions for each.
+- **Project tag** — anything carrying `#project/<slug>` rolls up into the project's Dataview view.
+
+### Closing a project
+
+Use `/project-close`. It runs a four-question retrospective, walks artifacts through the archive-vs-delete decision table, sets `status: closed`, stages Planner task closures, and surfaces backlinks for manual review. The project note stays in `Projects/` — only dated artifacts move to Archive.
 
 ## Obsidian Output Reference
 
@@ -178,6 +219,8 @@ All skill output goes to the Obsidian vault first. This table shows where each s
 | **scribe** | Various (investigations, runbooks, etc.) | No |
 | **asset-investigation** | `Assets/[name].md` + `Diagrams/Assets/` | No |
 | **opsman-health** | Inline only | No |
+| **project-creator** | `Projects/<name>.md` (+ optional `Diagrams/Projects/`) | No |
+| **project-close** | Updates `Projects/<name>.md`; moves dated artifacts to `Projects/Archive/` | **Yes** |
 
 ### Skill usage log
 

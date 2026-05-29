@@ -34,6 +34,15 @@ Extra fields by note type:
 - **Daily briefings:** `has_pending_tasks: true|false` — set to `true` if the note contains draft Planner actions that were not pushed during the session
 - **Weekly briefings:** `week: YYYY-WW`
 - **Meetings:** `attendees: [Name, Name]`
+- **Projects:** `priority: P1|P2|P3` (drives Day Starter stale flags — P1 ≥ 7d, P2 ≥ 14d, P3 silent), `planner_plan_id: <id>` (optional — populated by `/project-creator` Step 7 if a Planner plan is created), `has_pending_tasks: true|false` (same semantics as briefings — true while staged Planner build blocks remain in the note)
+
+### Project tag convention
+
+Projects use a `project/<slug>` tag in their frontmatter (e.g. `project/network-segmentation` for `Projects/Network-Segmentation.md`). This tag is the cross-reference glue:
+
+- Meeting notes, change records, and incident notes can optionally include the same tag when they touch a project (the creating skills prompt for this).
+- Dataview query `FROM #project/<slug>` returns every note touching the project — no manual indexing required.
+- Slug is the kebab-case form of the project filename. One slug per project. Tag the project note itself with its own slug.
 
 ## Vault paths
 

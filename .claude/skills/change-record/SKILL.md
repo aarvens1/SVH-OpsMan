@@ -15,6 +15,7 @@ Ask (or infer from context):
 3. **Scope** — which systems, sites, or users are affected
 4. **Schedule** — proposed date/time and maintenance window
 5. **Risk level** — Low / Medium / High (see below)
+6. **Related project (optional)** — if this change is being made as part of an active project, capture the project slug. List `Projects/*.md` with `status: active` and ask if any apply. Used to add a `project/<slug>` tag in the frontmatter so the change rolls up under the project via Dataview.
 
 **Risk classification:**
 - **Low** — reversible, no production downtime, affects < 10 users, tested in lab
@@ -59,13 +60,15 @@ Write `Changes/CHG-YYYY-NNN.md`:
 date: YYYY-MM-DD
 skill: Change Record
 status: draft
-tags: [change]
+tags: [change, project/<slug-if-related>]
 change_id: CHG-YYYY-NNN
 risk: low|medium|high
 window: YYYY-MM-DD HH:MM – HH:MM
 change_date: YYYY-MM-DD
 ---
 ```
+
+If Step 1 captured a related project, add `project/<slug>` to the tags array. Otherwise omit it.
 
 Also produce (as staged drafts):
 - **Confluence page** — `confluence_create_page` in the IT changes space

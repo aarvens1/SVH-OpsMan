@@ -101,11 +101,12 @@ Section order inside Day Starter:
 3. Today (calendar table)
 4. Mail
 5. Teams
-6. Your tasks
-7. Projects
-8. IT team boards
-9. Worth watching (callout block)
-10. Tenant activity
-11. Next moves
-12. Infrastructure
-13. Draft Planner actions
+6. Inbox (if any brain-dump entries since last day-starter)
+7. Your tasks
+8. Projects
+9. IT team boards
+10. Worth watching (callout block)
+11. Tenant activity
+12. Next moves
+13. Infrastructure
+14. Draft Planner actions
