@@ -92,15 +92,14 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 
 | Skill | Invoke | Description |
 | :---- | :----- | :---------- |
-| **Incident Open** | `/incident-open` · "open an incident" | Formally declares an incident — creates the Obsidian record, drafts a Planner tracking card, and stages a Teams alert. Use after `/troubleshoot` confirms something is worth declaring. |
-| **Troubleshoot** | `/troubleshoot` · "X is broken" | Begins a systematic investigation, forming and testing hypotheses based on a library of known failure patterns. |
+| **Troubleshoot** | `/troubleshoot` · "X is broken" | Begins a systematic investigation, forming and testing hypotheses based on a library of known failure patterns. Writes to `Investigations/`. |
 | **Incident Open** | `/incident-open` · "Open an incident for X" | Formally declares an incident: captures severity, affected systems, timeline, and creates the Obsidian note, Planner card, and Teams alert draft. Use after `/troubleshoot` confirms significance. |
 | **Event Log Triage**| `/event-log-triage` · "Check event logs on X"| Queries and correlates logs from Wazuh, NinjaOne, and live PowerShell sessions. |
 | **Event Log Analyzer**| `/event-log-analyzer` · "Analyze this log export"| Parses and analyzes exported log files (`.xml`, `.csv`, `.log`). |
 | **Network Troubleshooter**| `/network-troubleshooter` · "Network issue at [site]"| Traces network paths from UniFi to the endpoint, checking firewall rules, VLANs, and device status. |
 | **Mailflow Investigation**| `/mailflow-investigation` · "Did this email deliver?"| Traces a message through Exchange, Defender, and Entra to determine its delivery status and path. |
 | **Tenant Forensics**| `/tenant-forensics` · "Who touched it?" | Merges audit logs from Azure, Entra, and NinjaOne into a single timeline of actions. |
-| **IR Triage** | `/ir-triage` · "Is this suspicious?" | **(Disabled by default)** Classifies a potential incident and can send alerts to Teams. |
+| **IR Triage** | `/ir-triage` · "Is this suspicious?" | Classifies a potential incident into a response lane (Burning Building / Active Investigation / Background Enrichment) and enriches with Defender, Entra, and NinjaOne data. The only skill authorized to send a Teams message without a second confirmation — currently routes sends to your own DM for testing. |
 
 ### Posture & Review
 
@@ -113,7 +112,8 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | **Asset Investigation**| `/asset-investigation` · "Tell me about [server/user]"| Compiles a comprehensive report on a specific asset or user from all connected systems. |
 | **User Report** | `/user-report` · "What has [user] been doing?" | Quick recent-activity snapshot for a user: sign-ins, Entra audit events, Defender alerts, Planner tasks, Teams activity. Lighter than `/asset-investigation` — no diagram, recent activity only. |
 | **Access Review**| `/access-review` · "Audit permissions for X" | Audits roles, group memberships, and sign-in activity for a user, group, or application. |
-| **License Audit**| `/license-audit` · "Are we wasting licenses?" | Analyzes M365 license assignments against user activity and device status to identify waste. |
+| **License Audit**| `/license-audit` · "Are we wasting licenses?" | Analyzes M365 license assignments against user activity and device status to identify waste. Full cross-join across all SKUs — use when you want the detailed cost/compliance view. |
+| **License Count**| `/license-count` · "How many E1/E3 licenses?" · "Are we low on licenses?" | Quick E1/E3 seat headroom check. Shows total/consumed/available in ~10 seconds. Alerts at zero seats and drafts a To Do task to notify procurement. Also runs automatically in the day-starter. |
 
 ### Planning & Content
 
@@ -123,7 +123,6 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | **Change Record**| `/change-record` · "Document this change" | Creates a structured change record with scope, risk, test plan, and rollback procedures. |
 | **Runbook Gen** | `/runbook-gen` · "Write a runbook for X" | Generates a structured, reusable runbook from a description or rough notes — prerequisites, numbered steps, expected outputs, verification, and rollback. |
 | **Project Creator**| `/project-creator` · "Turn this into a project"| Breaks down a request into a full project plan with deliverables, dependencies, and effort estimates. |
-| **Runbook Gen**| `/runbook-gen` · "write a runbook for" | Generates a structured, reusable runbook from a description or rough notes, with prerequisites, numbered steps, verification, and rollback. |
 | **Meeting Prep**| `/meeting-prep` · "Prep me for my 2pm" | Gathers context from calendar, past meetings (Fathom), and related tasks to prepare a briefing. |
 | **Diagram** | `/diagram` · "Diagram this" | Creates or updates an Excalidraw diagram in Obsidian from a description, sketch, or existing note. Works for architecture, workflows, timelines, org charts. |
 | **Draft** | `/draft` · "Draft an email to..." | Takes bullet points and drafts a polished email or Teams message in your voice. |
@@ -142,6 +141,63 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | **Memory Cleanup** | `/memory-cleanup` · "Clean up memory" | Audits and prunes the Claude auto-memory store. Deletes stale entries, moves actionable items to TODO.md, and rebuilds the memory index. |
 | **PowerShell Navigator** | `/powershell-navigator` · "How do I X in PowerShell?" | Conversational interface for finding, understanding, and executing commands from the SVH PowerShell modules. |
 | **PDX Weekend Digest** | `/pdx-weekend-digest` | Curated digest of upcoming weekend events in the Portland, OR area. |
+
+## Obsidian Output Reference
+
+All skill output goes to the Obsidian vault first. This table shows where each skill writes and whether it automatically adds a link to the day's Activity Log.
+
+### What writes where
+
+| Skill | Vault path | Updates Activity Log? |
+| :---- | :--------- | :-------------------- |
+| **day-starter** | `Briefings/Daily/YYYY-MM-DD.md` | Is the daily note |
+| **day-ender** | `Briefings/Daily/YYYY-MM-DD.md` | Is the daily note |
+| **week-starter** | `Briefings/Weekly/YYYY-WW.md` | No |
+| **week-ender** | `Briefings/Weekly/YYYY-WW.md` | No |
+| **meeting-prep** | `Meetings/YYYY-MM-DD-name.md` | Yes — adds link + one sentence |
+| **task-review** | Appends to today's Activity Log | Only if you ask |
+| **brain-dump** | `Inbox.md` (append) | No |
+| **troubleshoot** | `Investigations/YYYY-MM-DD-[topic].md` | Yes — adds wikilink |
+| **onprem-health** | `Investigations/YYYY-MM-DD-onprem-health.md` | Yes — adds wikilink |
+| **posture-check** | `Reviews/Posture/YYYY-MM-DD.md` | Yes — adds wikilink |
+| **incident-open** | `Incidents/Active/YYYY-MM-DD-name.md` | Yes — adds wikilink |
+| **ir-triage** | `Incidents/Active/YYYY-MM-DD-[name].md` | No |
+| **change-record** | `Changes/CHG-YYYY-NNN.md` + `Diagrams/Changes/` | No |
+| **vuln-triage** | `Vulnerabilities/` + Confluence draft | No |
+| **tenant-forensics** | `Investigations/` | No |
+| **user-report** | `Investigations/user-report-YYYY-MM-DD-[name].md` | No |
+| **mailflow-investigation** | `Investigations/` | No |
+| **network-troubleshooter** | `Investigations/` + `Diagrams/` | No |
+| **event-log-analyzer** | `Investigations/` | No |
+| **access-review** | `Reviews/Access/YYYY-MM-DD-[name].md` | No |
+| **license-audit** | `Reviews/Access/license-audit-YYYY-MM-DD.md` | No |
+| **license-count** | Inline only (`System/skill-log.md` append) | No |
+| **patch-campaign** | `Reviews/Patches/YYYY-MM-DD-patch-campaign.md` | No |
+| **ticketsmith** | `Investigations/tickets/YYYY-MM-DD-[title].md` | No |
+| **runbook-gen** | `Investigations/runbooks/[topic].md` | No |
+| **scribe** | Various (investigations, runbooks, etc.) | No |
+| **asset-investigation** | `Assets/[name].md` + `Diagrams/Assets/` | No |
+| **opsman-health** | Inline only | No |
+
+### Skill usage log
+
+Every skill that writes a note appends one line to `System/skill-log.md` in the vault:
+
+```
+YYYY-MM-DD HH:MM | skill-name | path/to/note.md | one-line summary
+```
+
+This gives you a running record of which skills ran and what they produced. Query it to see which skills are used most or to find a note you can't remember the path for.
+
+### Finding notes by skill
+
+Every skill-produced note carries `skill: <name>` in its frontmatter. Use a Dataview query in any Obsidian note to list all output from a given skill:
+
+```dataview
+TABLE date, file.path FROM ""
+WHERE skill = "troubleshoot"
+SORT date DESC
+```
 
 ## Gemini Dev Assistant
 

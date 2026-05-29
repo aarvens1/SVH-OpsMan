@@ -185,6 +185,44 @@ function Get-SVHTenantSubscriptions {
 }
 Export-ModuleMember -Function Get-SVHTenantSubscriptions
 
+function Get-SVHLicenseSeatAlert {
+    <#
+    .SYNOPSIS  Flag M365 license SKUs that are at or near zero available seats.
+    .DESCRIPTION
+        Filters subscriptions to the specified SKU name patterns and applies a threshold.
+        Returns objects for any SKU where Available <= Threshold.
+        AlertLevel: Critical (0 available) or Warning (1..Threshold).
+    .PARAMETER SkuPattern
+        One or more substring patterns to match against skuPartNumber.
+        Defaults to 'E1','E3' which covers STANDARDPACK and ENTERPRISEPACK family SKUs.
+    .PARAMETER Threshold
+        Warn when available seats <= this number. Defaults to 5.
+    .EXAMPLE   Get-SVHLicenseSeatAlert
+    .EXAMPLE   Get-SVHLicenseSeatAlert -Threshold 10
+    .EXAMPLE   Get-SVHLicenseSeatAlert -SkuPattern 'E3','DESKLESS'
+    #>
+    [CmdletBinding()]
+    [OutputType([PSObject])]
+    param(
+        [string[]]$SkuPattern = @('E1', 'E3'),
+        [int]$Threshold = 5
+    )
+    Get-SVHTenantSubscriptions |
+        Where-Object { $sku = $_.SKU; $SkuPattern | Where-Object { $sku -like "*$_*" } } |
+        Where-Object { $_.Available -le $Threshold } |
+        ForEach-Object {
+            [PSCustomObject]@{
+                SKU        = $_.SKU
+                Total      = $_.Total
+                Consumed   = $_.Consumed
+                Available  = $_.Available
+                Threshold  = $Threshold
+                AlertLevel = if ($_.Available -eq 0) { 'Critical' } else { 'Warning' }
+            }
+        }
+}
+Export-ModuleMember -Function Get-SVHLicenseSeatAlert
+
 function Get-SVHTenantDomains {
     <#
     .SYNOPSIS  List all domains registered in the tenant.

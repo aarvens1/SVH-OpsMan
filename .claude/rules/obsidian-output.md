@@ -44,8 +44,10 @@ Extra fields by note type:
 | Projects | `Projects/` |
 | Access reviews | `Reviews/Access/` |
 | Patch reviews | `Reviews/Patches/` |
+| Task triage / reviews | `Reviews/Tasks/YYYY-MM-DD-triage.md` |
 | Vulnerabilities | `Vulnerabilities/` |
 | Excalidraw diagrams | `Diagrams/<category>/[name].md` |
+| Skill reference pages | `Skills/[skill-name].md` (persistent — update in place) |
 
 ## Diagrams
 

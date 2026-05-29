@@ -152,8 +152,10 @@ Get-SVHConditionalAccessPolicies
 
 # Licenses
 Get-SVHUserLicenses -Identity jdoe@shoestringvalley.com
-Get-SVHLicenseWaste                            # assigned but disabled accounts
-Get-SVHTenantSubscriptions
+Get-SVHLicenseWaste                            # licensed users with no sign-in in N days
+Get-SVHTenantSubscriptions                     # all SKUs — total, consumed, available
+Get-SVHLicenseSeatAlert                        # E1/E3 threshold check — returns only flagged SKUs
+Get-SVHLicenseSeatAlert -Threshold 10 -SkuPattern 'E3','DESKLESS'
 
 # Groups and roles
 Get-SVHGroupMembers -GroupId <id>

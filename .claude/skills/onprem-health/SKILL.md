@@ -82,3 +82,18 @@ Structure:
 - **Services** — stopped automatic services
 - **Pending reboots** — servers waiting on a reboot
 - **Hyper-V / Cluster / MABS** — results if sa_stevens session was available, otherwise "skipped — requires interactive session"
+
+## Daily note
+
+After writing the health note, append a line to today's `Briefings/Daily/YYYY-MM-DD.md` in the `# Activity Log` section using the `edit_block` / `<!-- DAY-STARTER-END -->` sentinel:
+
+```markdown
+→ [[Investigations/YYYY-MM-DD-onprem-health]] — [one-line: Green/Yellow/Red, any flagged servers]
+```
+
+If no daily note exists for today, skip this step.
+
+## Skill log
+
+Append one line to `System/skill-log.md`:
+`YYYY-MM-DD HH:MM | onprem-health | Investigations/YYYY-MM-DD-onprem-health.md | [one-line summary]`

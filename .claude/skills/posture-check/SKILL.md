@@ -79,6 +79,21 @@ tags: [posture, security]
 
 Format: summary scorecard at the top (all six categories with colour), then findings by category below. No alerts are sent unless the user asks.
 
+## Daily note
+
+After writing the snapshot note, append a line to today's `Briefings/Daily/YYYY-MM-DD.md` in the `# Activity Log` section using the `edit_block` / `<!-- DAY-STARTER-END -->` sentinel:
+
+```markdown
+→ [[Reviews/Posture/YYYY-MM-DD]] — Posture check: [e.g. "2 🔴 3 🟡 1 🟢"]
+```
+
+If no daily note exists for today, skip this step.
+
+## Skill log
+
+Append one line to `System/skill-log.md`:
+`YYYY-MM-DD HH:MM | posture-check | Reviews/Posture/YYYY-MM-DD.md | [overall score summary]`
+
 ## After the scorecard
 
 If any category is 🔴:
