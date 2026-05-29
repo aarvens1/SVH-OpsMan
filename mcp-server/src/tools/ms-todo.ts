@@ -1,10 +1,24 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { isAxiosError } from "axios";
 import { getGraphToken } from "../auth/graph.js";
 import { graphClient, GRAPH_SCOPE } from "../utils/http.js";
 import { ok, err } from "../utils/response.js";
 
 type A = Record<string, unknown>;
+
+// Graph Todo API returns transient 403s on first call — retry once after a brief pause.
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (e) {
+    if (isAxiosError(e) && e.response?.status === 403) {
+      await new Promise(r => setTimeout(r, 1500));
+      return fn();
+    }
+    throw e;
+  }
+}
 
 export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
   if (!enabled) return;
@@ -24,7 +38,7 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const base = user_id ? `/users/${user_id}` : "/me";
-        const res = await graphClient(token).get(`${base}/todo/lists`);
+        const res = await withRetry(() => graphClient(token).get(`${base}/todo/lists`));
         const lists = ((res.data as A)["value"] as A[] ?? []).map((l: A) => ({
           id: l["id"],
           displayName: l["displayName"],
@@ -62,9 +76,8 @@ export function registerMsTodoTools(server: McpServer, enabled: boolean): void {
         const base = user_id ? `/users/${user_id}` : "/me";
         const params: Record<string, string> = {};
         if (open_only) params["$filter"] = "status ne 'completed'";
-        const res = await graphClient(token).get(
-          `${base}/todo/lists/${list_id}/tasks`,
-          { params }
+        const res = await withRetry(() =>
+          graphClient(token).get(`${base}/todo/lists/${list_id}/tasks`, { params })
         );
         const tasks = ((res.data as A)["value"] as A[] ?? []).map((t: A) => ({
           id: t["id"],
