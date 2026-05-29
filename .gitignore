@@ -17,3 +17,6 @@ mcp-server/node_modules/
 
 # BW session file — never commit
 .config/svh-opsman/bw-session
+
+# Gemini local skills
+.gemini/skills/

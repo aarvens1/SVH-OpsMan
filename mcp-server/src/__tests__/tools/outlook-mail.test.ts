@@ -1,128 +1,369 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { registerOutlookMailTools } from "../../tools/outlook-mail.js";
-import { graphClient } from "../../utils/http.js";
+import { getGraphToken } from "../../auth/graph.js";
 
-vi.mock("../../auth/graph.js", () => ({
-  getGraphToken: vi.fn().mockResolvedValue("fake-token"),
-}));
-
+// Mock graphClient to avoid hoisting issues with vi.mock
 const mockGraphClient = {
   get: vi.fn(),
   post: vi.fn(),
 };
 
 vi.mock("../../utils/http.js", () => ({
-  graphClient: vi.fn().mockReturnValue(mockGraphClient),
+  graphClient: vi.fn(() => mockGraphClient),
   GRAPH_SCOPE: "https://graph.microsoft.com/.default",
 }));
 
-describe("registerOutlookMailTools", () => {
+vi.mock("../../auth/graph.js", () => ({
+  getGraphToken: vi.fn(),
+}));
+
+vi.mock("../../utils/response.js", () => ({
+  ok: (data: any) => ({ ok: true, data }),
+  err: (e: any) => ({ ok: false, error: { message: e.message || "An error occurred" } }),
+  cfgErr: (msg: string) => ({ ok: false, error: { message: msg, code: "config_error" } }),
+}));
+
+// These imports must be after mocks
+import { graphClient } from "../../utils/http.js";
+
+const TEST_USER_ID = "test-user@example.com";
+
+describe("Outlook Mail Tools", () => {
   let server: McpServer;
-  let handlers: Map<string, (inputs: unknown) => Promise<unknown>>;
-  const testUserId = "test-user@example.com";
+  let registeredTools: Map<string, any>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    server = new McpServer({ name: "test", version: "0.0.0" });
-    handlers = new Map();
-    vi.spyOn(server, "registerTool").mockImplementation((name, _schema, handler) => {
-      handlers.set(name, handler as (inputs: unknown) => Promise<unknown>);
-      return server;
-    });
-    registerOutlookMailTools(server, true, testUserId);
+    registeredTools = new Map();
+    server = {
+      registerTool: (name: string, schema: any, handler: any) => {
+        registeredTools.set(name, { name, schema, handler });
+      },
+    } as any;
+    registerOutlookMailTools(server, true, TEST_USER_ID);
+  });
+
+  it("should not register tools if disabled", () => {
+    registeredTools.clear();
+    const mockServer = { registerTool: vi.fn() };
+    registerOutlookMailTools(mockServer as any, false, TEST_USER_ID);
+    expect(mockServer.registerTool).not.toHaveBeenCalled();
+  });
+
+  it("should return config error if user ID is not set", async () => {
+    registeredTools.clear();
+    registerOutlookMailTools(server, true, undefined);
+    for (const [name, tool] of registeredTools.entries()) {
+      const result = await tool.handler({});
+      expect(result.ok, `Tool ${name} should fail without userId`).toBe(false);
+      expect(result.error.code).toBe("config_error");
+    }
   });
 
   describe("mail_search", () => {
-    it("returns messages on success", async () => {
-      const mockResponse = { data: { value: [{ id: "msg1", subject: "Hello" }] } };
-      mockGraphClient.get.mockResolvedValueOnce(mockResponse);
-      const result = await handlers.get("mail_search")!({ query: "Hello" });
-      expect((result as any).isError).toBeUndefined();
+    const toolName = "mail_search";
+
+    it("should search mail on happy path", async () => {
+      const handler = registeredTools.get(toolName)?.handler;
+      expect(handler).toBeDefined();
+
+      vi.mocked(getGraphToken).mockResolvedValue("fake-token");
+      const mockResponse = {
+        data: {
+          value: [
+            {
+              id: "msg1",
+              subject: "Test Subject",
+              from: { emailAddress: { address: "from@example.com" } },
+              receivedDateTime: "2023-01-01T00:00:00Z",
+              hasAttachments: false,
+              bodyPreview: "This is a test preview.",
+              importance: "normal",
+              isRead: true,
+            },
+          ],
+        },
+      };
+      vi.mocked(mockGraphClient.get).mockResolvedValue(mockResponse);
+
+      const result = await handler({ query: "test", top: 1 });
+
+      expect(getGraphToken).toHaveBeenCalledWith("https://graph.microsoft.com/.default");
+      expect(graphClient).toHaveBeenCalledWith("fake-token");
+      expect(mockGraphClient.get).toHaveBeenCalledWith(`/users/${TEST_USER_ID}/messages`, {
+        params: {
+          $search: '"test"',
+          $top: 1,
+          $select: "id,subject,from,receivedDateTime,hasAttachments,bodyPreview,importance,isRead",
+        },
+      });
+      expect(result).toEqual({
+        ok: true,
+        data: {
+          count: 1,
+          messages: [
+            {
+              id: "msg1",
+              subject: "Test Subject",
+              from: { address: "from@example.com" },
+              receivedDateTime: "2023-01-01T00:00:00Z",
+              isRead: true,
+              hasAttachments: false,
+              importance: "normal",
+              bodyPreview: "This is a test preview.",
+            },
+          ],
+        },
+      });
     });
 
-    it("returns error on failure", async () => {
-      mockGraphClient.get.mockRejectedValueOnce(new Error("API Error"));
-      const result = await handlers.get("mail_search")!({ query: "Hello" });
-      expect((result as any).isError).toBe(true);
+    it("should handle errors when searching mail", async () => {
+      const handler = registeredTools.get(toolName)?.handler;
+      vi.mocked(getGraphToken).mockResolvedValue("fake-token");
+      const error = new Error("API Error");
+      vi.mocked(mockGraphClient.get).mockRejectedValue(error);
+
+      const result = await handler({ query: "test", top: 1 });
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toEqual({ message: "API Error" });
     });
   });
 
   describe("mail_get_message", () => {
-    it("returns a message on success", async () => {
-      const mockMsg = { data: { id: "msg1", subject: "Hello" } };
-      const mockAttachments = { data: { value: [] } };
-      mockGraphClient.get.mockResolvedValueOnce(mockMsg);
-      mockGraphClient.get.mockResolvedValueOnce(mockAttachments);
-      const result = await handlers.get("mail_get_message")!({ message_id: "msg1" });
-      expect((result as any).isError).toBeUndefined();
+    const toolName = "mail_get_message";
+
+    it("should get a message on happy path", async () => {
+      const handler = registeredTools.get(toolName)?.handler;
+      vi.mocked(getGraphToken).mockResolvedValue("fake-token");
+      const mockMsg = {
+        data: {
+          id: "msg1",
+          subject: "Full Message",
+          from: { emailAddress: { address: "from@example.com" } },
+          toRecipients: [{ emailAddress: { address: "to@example.com" } }],
+          body: { contentType: "html", content: "<p>Hello</p>" },
+        },
+      };
+      const mockAttachments = {
+        data: {
+          value: [{ id: "att1", name: "file.txt", size: 123 }],
+        },
+      };
+      vi.mocked(mockGraphClient.get)
+        .mockResolvedValueOnce(mockMsg)
+        .mockResolvedValueOnce(mockAttachments);
+
+      const result = await handler({ message_id: "msg1" });
+
+      expect(mockGraphClient.get).toHaveBeenCalledWith(`/users/${TEST_USER_ID}/messages/msg1`);
+      expect(mockGraphClient.get).toHaveBeenCalledWith(
+        `/users/${TEST_USER_ID}/messages/msg1/attachments?$select=id,name,contentType,size`
+      );
+      expect(result).toEqual({
+        ok: true,
+        data: {
+          id: "msg1",
+          subject: "Full Message",
+          from: { address: "from@example.com" },
+          to: ["to@example.com"],
+          cc: undefined,
+          receivedDateTime: undefined,
+          sentDateTime: undefined,
+          hasAttachments: undefined,
+          importance: undefined,
+          isRead: undefined,
+          body: "<p>Hello</p>",
+          bodyContentType: "html",
+          attachments: [{ id: "att1", name: "file.txt", size: 123 }],
+        },
+      });
     });
 
-    it("returns error on failure", async () => {
-      mockGraphClient.get.mockRejectedValueOnce(new Error("API Error"));
-      const result = await handlers.get("mail_get_message")!({ message_id: "msg1" });
-      expect((result as any).isError).toBe(true);
+    it("should handle errors when getting a message", async () => {
+      const handler = registeredTools.get(toolName)?.handler;
+      vi.mocked(getGraphToken).mockResolvedValue("fake-token");
+      const error = new Error("Message not found");
+      vi.mocked(mockGraphClient.get).mockRejectedValue(error);
+
+      const result = await handler({ message_id: "msg1" });
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toEqual({ message: "Message not found" });
     });
   });
 
   describe("mail_send", () => {
-    const params = { to: ["a@b.com"], subject: "Hi", body: "Test" };
-    it("sends mail on success", async () => {
-      mockGraphClient.post.mockResolvedValueOnce({ status: 202 });
-      const result = await handlers.get("mail_send")!(params);
-      expect((result as any).isError).toBeUndefined();
+    const toolName = "mail_send";
+
+    it("should send an email on happy path", async () => {
+      const handler = registeredTools.get(toolName)?.handler;
+      vi.mocked(getGraphToken).mockResolvedValue("fake-token");
+      vi.mocked(mockGraphClient.post).mockResolvedValue({ status: 202 });
+
+      const result = await handler({
+        to: ["recipient@example.com"],
+        subject: "Sending a test",
+        body: "Test body",
+        body_type: "text",
+        save_to_sent: true,
+      });
+
+      expect(mockGraphClient.post).toHaveBeenCalledWith(`/users/${TEST_USER_ID}/sendMail`, {
+        message: {
+          subject: "Sending a test",
+          importance: "normal",
+          body: { contentType: "text", content: "Test body" },
+          toRecipients: [{ emailAddress: { address: "recipient@example.com" } }],
+        },
+        saveToSentItems: true,
+      });
+      expect(result).toEqual({
+        ok: true,
+        data: { sent: true, to: ["recipient@example.com"], subject: "Sending a test" },
+      });
     });
 
-    it("returns error on failure", async () => {
-      mockGraphClient.post.mockRejectedValueOnce(new Error("API Error"));
-      const result = await handlers.get("mail_send")!(params);
-      expect((result as any).isError).toBe(true);
+    it("should handle errors when sending an email", async () => {
+      const handler = registeredTools.get(toolName)?.handler;
+      vi.mocked(getGraphToken).mockResolvedValue("fake-token");
+      const error = new Error("Send failed");
+      vi.mocked(mockGraphClient.post).mockRejectedValue(error);
+
+      const result = await handler({
+        to: ["recipient@example.com"],
+        subject: "Sending a test",
+        body: "Test body",
+      });
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toEqual({ message: "Send failed" });
     });
   });
 
   describe("mail_draft", () => {
-    const params = { to: ["a@b.com"], subject: "Draft", body: "Test" };
-    it("creates draft on success", async () => {
-      const mockResponse = { data: { id: "draft1", subject: "Draft" } };
-      mockGraphClient.post.mockResolvedValueOnce(mockResponse);
-      const result = await handlers.get("mail_draft")!(params);
-      expect((result as any).isError).toBeUndefined();
+    const toolName = "mail_draft";
+
+    it("should create a draft on happy path", async () => {
+      const handler = registeredTools.get(toolName)?.handler;
+      vi.mocked(getGraphToken).mockResolvedValue("fake-token");
+      const mockResponse = { data: { id: "draft1", subject: "Draft Subject" } };
+      vi.mocked(mockGraphClient.post).mockResolvedValue(mockResponse);
+
+      const result = await handler({
+        to: ["recipient@example.com"],
+        subject: "Draft Subject",
+        body: "Draft body",
+      });
+
+      expect(mockGraphClient.post).toHaveBeenCalledWith(`/users/${TEST_USER_ID}/messages`, {
+        subject: "Draft Subject",
+        importance: "normal",
+        body: { contentType: "text", content: "Draft body" },
+        toRecipients: [{ emailAddress: { address: "recipient@example.com" } }],
+      });
+      expect(result).toEqual({
+        ok: true,
+        data: { id: "draft1", subject: "Draft Subject", created: true },
+      });
     });
 
-    it("returns error on failure", async () => {
-      mockGraphClient.post.mockRejectedValueOnce(new Error("API Error"));
-      const result = await handlers.get("mail_draft")!(params);
-      expect((result as any).isError).toBe(true);
+    it("should handle errors when creating a draft", async () => {
+      const handler = registeredTools.get(toolName)?.handler;
+      vi.mocked(getGraphToken).mockResolvedValue("fake-token");
+      const error = new Error("Draft creation failed");
+      vi.mocked(mockGraphClient.post).mockRejectedValue(error);
+
+      const result = await handler({
+        to: ["recipient@example.com"],
+        subject: "Draft Subject",
+        body: "Draft body",
+      });
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toEqual({ message: "Draft creation failed" });
     });
   });
 
   describe("mail_list_folders", () => {
-    it("returns folders on success", async () => {
-      const mockResponse = { data: { value: [{ id: "inbox", displayName: "Inbox" }] } };
-      mockGraphClient.get.mockResolvedValueOnce(mockResponse);
-      const result = await handlers.get("mail_list_folders")!({});
-      expect((result as any).isError).toBeUndefined();
+    const toolName = "mail_list_folders";
+
+    it("should list folders on happy path", async () => {
+      const handler = registeredTools.get(toolName)?.handler;
+      vi.mocked(getGraphToken).mockResolvedValue("fake-token");
+      const mockResponse = {
+        data: {
+          value: [{ id: "inbox-id", displayName: "Inbox", totalItemCount: 10, unreadItemCount: 2 }],
+        },
+      };
+      vi.mocked(mockGraphClient.get).mockResolvedValue(mockResponse);
+
+      const result = await handler({ include_hidden_folders: false });
+
+      expect(mockGraphClient.get).toHaveBeenCalledWith(`/users/${TEST_USER_ID}/mailFolders`, {
+        params: { $top: 100, includeHiddenFolders: false },
+      });
+      expect(result).toEqual({
+        ok: true,
+        data: {
+          count: 1,
+          folders: [
+            {
+              id: "inbox-id",
+              displayName: "Inbox",
+              totalItemCount: 10,
+              unreadItemCount: 2,
+              parentFolderId: undefined,
+            },
+          ],
+        },
+      });
     });
 
-    it("returns error on failure", async () => {
-      mockGraphClient.get.mockRejectedValueOnce(new Error("API Error"));
-      const result = await handlers.get("mail_list_folders")!({});
-      expect((result as any).isError).toBe(true);
+    it("should handle errors when listing folders", async () => {
+      const handler = registeredTools.get(toolName)?.handler;
+      vi.mocked(getGraphToken).mockResolvedValue("fake-token");
+      const error = new Error("Could not list folders");
+      vi.mocked(mockGraphClient.get).mockRejectedValue(error);
+
+      const result = await handler({});
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toEqual({ message: "Could not list folders" });
     });
   });
 
   describe("mail_move_message", () => {
-    it("moves message on success", async () => {
-      const mockResponse = { data: { id: "msg1" } };
-      mockGraphClient.post.mockResolvedValueOnce(mockResponse);
-      const result = await handlers.get("mail_move_message")!({ message_id: "msg1", destination_folder_id: "archive" });
-      expect((result as any).isError).toBeUndefined();
+    const toolName = "mail_move_message";
+
+    it("should move a message on happy path", async () => {
+      const handler = registeredTools.get(toolName)?.handler;
+      vi.mocked(getGraphToken).mockResolvedValue("fake-token");
+      const mockResponse = { data: { id: "moved-msg-id" } };
+      vi.mocked(mockGraphClient.post).mockResolvedValue(mockResponse);
+
+      const result = await handler({ message_id: "msg1", destination_folder_id: "sentItems" });
+
+      expect(mockGraphClient.post).toHaveBeenCalledWith(`/users/${TEST_USER_ID}/messages/msg1/move`, {
+        destinationId: "sentItems",
+      });
+      expect(result).toEqual({
+        ok: true,
+        data: { id: "moved-msg-id", moved: true, destination: "sentItems" },
+      });
     });
 
-    it("returns error on failure", async () => {
-      mockGraphClient.post.mockRejectedValueOnce(new Error("API Error"));
-      const result = await handlers.get("mail_move_message")!({ message_id: "msg1", destination_folder_id: "archive" });
-      expect((result as any).isError).toBe(true);
+    it("should handle errors when moving a message", async () => {
+      const handler = registeredTools.get(toolName)?.handler;
+      vi.mocked(getGraphToken).mockResolvedValue("fake-token");
+      const error = new Error("Move failed");
+      vi.mocked(mockGraphClient.post).mockRejectedValue(error);
+
+      const result = await handler({ message_id: "msg1", destination_folder_id: "sentItems" });
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toEqual({ message: "Move failed" });
     });
   });
 });
