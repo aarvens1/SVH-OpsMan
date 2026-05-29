@@ -1,7 +1,7 @@
 {
   "$help": "https://aka.ms/terminal-documentation",
   "$schema": "https://aka.ms/terminal-profiles-schema",
-  "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+  "defaultProfile": "{b7d2e3f4-5a6b-7c8d-9e0f-1a2b3c4d5e6f}",
   "copyOnSelect": false,
   "copyFormatting": "none",
   "tabWidthMode": "compact",
@@ -28,7 +28,7 @@
       {
         "name": "Windows PowerShell",
         "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
-        "hidden": false
+        "hidden": true
       },
       {
         "name": "Claude Ops",
@@ -51,7 +51,7 @@
       {
         "name": "Gemini",
         "guid": "{e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b}",
-        "commandline": "wsl.exe -- zsh -lic \"cd ~/SVH-OpsMan && exec gemini\"",
+        "commandline": "wsl.exe -- zsh -lc \"source ~/SVH-OpsMan/dotfiles/bashrc.sh && exec gemini\"",
         "startingDirectory": "//wsl$/Ubuntu-22.04/home/wsl_stevens/SVH-OpsMan",
         "tabColor": "#458588",
         "icon": "\ud83c\udf1f",
