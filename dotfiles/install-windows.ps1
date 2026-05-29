@@ -75,7 +75,7 @@ $stub = @'
 $_d = (wsl.exe -l -q 2>$null | Where-Object { $_ -match '\S' } | Select-Object -First 1).Trim() -replace '\x00', ''
 $_p = if ($_d) { "\\wsl`$$_d\home\wsl_stevens\SVH-OpsMan\dotfiles\profile.ps1" } else { $null }
 if ($_p -and -not (Test-Path $_p -ErrorAction SilentlyContinue)) {
-    wsl.exe -e bash -c 'true' 2>$null  # ensure WSL is started so the UNC path is accessible
+    wsl.exe -e zsh -c 'true' 2>$null  # ensure WSL is started so the UNC path is accessible
 }
 if ($_p -and (Test-Path $_p)) { . $_p }
 else { Write-Warning 'SVH profile not found — is WSL running? (git clone SVH-OpsMan into ~/SVH-OpsMan)' }
@@ -122,9 +122,33 @@ if (-not (Test-Path $src)) {
     }
     Copy-Item -Path $src -Destination $wtSettingsPath -Force
     Ok "Windows Terminal settings installed"
-    Ok "Profiles: Claude Code (teal tab), PowerShell OpsMan (yellow), WSL Bash (green)"
-    Ok "Skills: Ctrl+Alt+[D/E/W/P/T/N/C/V/A/X]  |  New Claude tab: Ctrl+Shift+Alt+C"
+    Ok "Profiles: Claude Ops (teal) · Claude Dev (yellow) · Gemini (blue) · PowerShell (purple) · WSL Zsh (green)"
+    Ok "Skills: Ctrl+Alt+[D/E/W/P/T/N/C/V/A/X]  |  New Ops tab: Ctrl+Shift+Alt+C"
     Warn "Restart Windows Terminal for changes to take effect"
+}
+
+# ── 4. Start Menu shortcut ────────────────────────────────────────────────────
+Step "Start Menu shortcut"
+
+$wtArgs = 'new-tab --profile "Claude Ops" --title "Ops" ; new-tab --profile "Claude Dev" --title "Dev" ; new-tab --profile "Gemini" --title "Gemini" ; new-tab --profile "PowerShell (OpsMan)" --title "PS" ; new-tab --profile "WSL Zsh" --title "Zsh"'
+$lnkPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\SVH OpsMan.lnk"
+
+try {
+    $wtExe = (Get-Command wt.exe -ErrorAction SilentlyContinue)?.Source
+    if (-not $wtExe) { $wtExe = "$env:LOCALAPPDATA\Microsoft\WindowsApps\wt.exe" }
+
+    $wsh = New-Object -ComObject WScript.Shell
+    $lnk = $wsh.CreateShortcut($lnkPath)
+    $lnk.TargetPath  = $wtExe
+    $lnk.Arguments   = $wtArgs
+    $lnk.Description = 'SVH OpsMan — 5-tab workspace'
+    $lnk.IconLocation = "$wtExe,0"
+    $lnk.Save()
+    Ok "Start Menu shortcut created: SVH OpsMan"
+    Ok "Tip: right-click → Pin to Start, or use PowerToys Keyboard Manager to map the Copilot key to this shortcut"
+} catch {
+    Warn "Could not create shortcut: $_"
+    Warn "Create it manually: target wt.exe, arguments: $wtArgs"
 }
 
 # ── Done ──────────────────────────────────────────────────────────────────────

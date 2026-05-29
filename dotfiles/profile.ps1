@@ -112,7 +112,7 @@ function wsl-here { wsl.exe --cd (Get-Location).ProviderPath }
 
 function Update-OpsMan {
     Write-Host 'Pulling SVH-OpsMan...' -ForegroundColor Cyan
-    wsl.exe -e bash -lc 'cd ~/SVH-OpsMan && git pull --ff-only'
+    wsl.exe -e zsh -lc 'cd ~/SVH-OpsMan && git pull --ff-only'
 }
 
 # ── Edit shortcuts ────────────────────────────────────────────────────────────
@@ -130,17 +130,13 @@ $da_account       = 'da_stevens@shoestringvalley.com'
 $ma_account       = 'ma_stevens@shoestringvalley.com'
 $standard_account = 'astevens@shoestringvalley.com'
 
-# ── opsman — launch the full ops workspace (3 tabs: Ops · Dev · Gemini) ───────
+# ── opsman — launch the full ops workspace (5 tabs: Ops · Dev · Gemini · PS · Zsh) ──
 function Invoke-OpsMan {
-    $bwStatus = wsl.exe -e bash -c 'bw status 2>/dev/null' 2>$null
-    if ($bwStatus -notmatch '"status":"unlocked"') {
-        Write-Host '  Bitwarden locked -- run bwu in a WSL shell first, then opsman' -ForegroundColor Yellow
-        return
-    }
-    wsl.exe -e bash -c 'pgrep -f "status-refresh.sh" >/dev/null || { nohup bash ~/SVH-OpsMan/dotfiles/status-refresh.sh >/dev/null 2>&1 & disown; }'
-    # Open all three tabs in the current WT window
-    wt.exe --window 0 new-tab --profile "Claude Ops" --title "Ops" `; new-tab --profile "Claude Dev" --title "Dev" `; new-tab --profile "Gemini" --title "Gemini"
-    Write-Host '  Workspace: Ops (teal) · Dev (yellow) · Gemini (blue)' -ForegroundColor Green
+    # BW check and status-refresh are handled inside the Claude Ops tab by opsman().
+    # Just open the workspace — wt.exe args passed as a single string avoids PS semicolon issues.
+    $wtArgs = 'new-tab --profile "Claude Ops" --title "Ops" ; new-tab --profile "Claude Dev" --title "Dev" ; new-tab --profile "Gemini" --title "Gemini" ; new-tab --profile "PowerShell (OpsMan)" --title "PS" ; new-tab --profile "WSL Zsh" --title "Zsh"'
+    Start-Process 'wt.exe' -ArgumentList $wtArgs
+    Write-Host '  Workspace: Ops (teal) · Dev (yellow) · Gemini (blue) · PS (purple) · Zsh (green)' -ForegroundColor Green
     Write-Host '  Skills: Ctrl+Alt+[D/E/W/P/T/N/C/V/A/X]  |  New Ops tab: Ctrl+Shift+Alt+C'
 }
 

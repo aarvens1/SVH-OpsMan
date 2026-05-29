@@ -1,6 +1,7 @@
 # SVH-OpsMan shell environment
-# Sourced from ~/.bashrc.
-# To install: echo '[ -f ~/SVH-OpsMan/dotfiles/bashrc.sh ] && . ~/SVH-OpsMan/dotfiles/bashrc.sh' >> ~/.bashrc
+# Sourced from ~/.zshrc (interactive) and ~/.zprofile (all login shells, including WT tabs).
+# To install into zsh: add to both ~/.zshrc and ~/.zprofile:
+#   [ -f ~/SVH-OpsMan/dotfiles/bashrc.sh ] && source ~/SVH-OpsMan/dotfiles/bashrc.sh
 
 # ── Bitwarden ──────────────────────────────────────────────────────────────────
 # Restore BW session from file so new shells (WT tabs, etc.) inherit it automatically
@@ -25,15 +26,6 @@ bwu() {
     disown
     echo "✓ Status daemon (re)started — first refresh in ~5s"
 }
-
-# Warn on every new shell if the vault is locked (MCP server won't load creds without it)
-if command -v bw &>/dev/null; then
-    _bws=$(bw status 2>/dev/null)
-    if ! echo "$_bws" | grep -q '"status":"unlocked"'; then
-        echo "⚠  Bitwarden locked — run: bwu"
-    fi
-    unset _bws
-fi
 
 # ── History ────────────────────────────────────────────────────────────────────
 HISTSIZE=10000
@@ -164,12 +156,6 @@ opsman() {
         nohup bash "$OPSMANDIR/dotfiles/status-refresh.sh" >/dev/null 2>&1 &
         disown
         echo "✓ Status refresh daemon started"
-    fi
-    # When inside Windows Terminal, open Dev and Gemini in new tabs alongside this Ops session
-    if [[ -n "${WT_SESSION:-}" ]]; then
-        wt.exe new-tab --profile "Claude Dev" --title "Dev" 2>/dev/null || true
-        wt.exe new-tab --profile "Gemini" --title "Gemini" 2>/dev/null || true
-        echo "✓ Dev + Gemini tabs opened"
     fi
     cd "$OPSMANDIR" && claude
 }
