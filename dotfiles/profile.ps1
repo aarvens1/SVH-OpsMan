@@ -130,17 +130,18 @@ $da_account       = 'da_stevens@shoestringvalley.com'
 $ma_account       = 'ma_stevens@shoestringvalley.com'
 $standard_account = 'astevens@shoestringvalley.com'
 
-# ── opsman — launch the full ops workspace ────────────────────────────────────
+# ── opsman — launch the full ops workspace (3 tabs: Ops · Dev · Gemini) ───────
 function Invoke-OpsMan {
     $bwStatus = wsl.exe -e bash -c 'bw status 2>/dev/null' 2>$null
     if ($bwStatus -notmatch '"status":"unlocked"') {
-        Write-Host '  Bitwarden locked -- run bwu in a WSL shell first' -ForegroundColor Yellow
+        Write-Host '  Bitwarden locked -- run bwu in a WSL shell first, then opsman' -ForegroundColor Yellow
         return
     }
     wsl.exe -e bash -c 'pgrep -f "status-refresh.sh" >/dev/null || { nohup bash ~/SVH-OpsMan/dotfiles/status-refresh.sh >/dev/null 2>&1 & disown; }'
-    Start-Process 'wt.exe' -ArgumentList 'new-tab', '--profile', 'Claude Code'
-    Write-Host '  Windows Terminal opening Claude Code profile' -ForegroundColor Green
-    Write-Host '  Skills: Ctrl+Alt+[D/E/W/P/T/N/C/V/A/X]  |  New Claude tab: Ctrl+Shift+Alt+C'
+    # Open all three tabs in the current WT window
+    wt.exe --window 0 new-tab --profile "Claude Ops" --title "Ops" `; new-tab --profile "Claude Dev" --title "Dev" `; new-tab --profile "Gemini" --title "Gemini"
+    Write-Host '  Workspace: Ops (teal) · Dev (yellow) · Gemini (blue)' -ForegroundColor Green
+    Write-Host '  Skills: Ctrl+Alt+[D/E/W/P/T/N/C/V/A/X]  |  New Ops tab: Ctrl+Shift+Alt+C'
 }
 
 # ── Aliases (Set-Alias is idempotent — no errors on re-source) ────────────────

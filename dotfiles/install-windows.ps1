@@ -74,6 +74,9 @@ $stub = @'
 # Edit dotfiles/profile.ps1 in SVH-OpsMan; changes apply on next PS start.
 $_d = (wsl.exe -l -q 2>$null | Where-Object { $_ -match '\S' } | Select-Object -First 1).Trim() -replace '\x00', ''
 $_p = if ($_d) { "\\wsl`$$_d\home\wsl_stevens\SVH-OpsMan\dotfiles\profile.ps1" } else { $null }
+if ($_p -and -not (Test-Path $_p -ErrorAction SilentlyContinue)) {
+    wsl.exe -e bash -c 'true' 2>$null  # ensure WSL is started so the UNC path is accessible
+}
 if ($_p -and (Test-Path $_p)) { . $_p }
 else { Write-Warning 'SVH profile not found — is WSL running? (git clone SVH-OpsMan into ~/SVH-OpsMan)' }
 Remove-Variable _d, _p -ErrorAction SilentlyContinue

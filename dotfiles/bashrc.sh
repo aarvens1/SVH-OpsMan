@@ -3,13 +3,21 @@
 # To install: echo '[ -f ~/SVH-OpsMan/dotfiles/bashrc.sh ] && . ~/SVH-OpsMan/dotfiles/bashrc.sh' >> ~/.bashrc
 
 # ── Bitwarden ──────────────────────────────────────────────────────────────────
-# bwu — unlock vault, export session, restart status daemon so it inherits the fresh session
+# Restore BW session from file so new shells (WT tabs, etc.) inherit it automatically
+if [[ -z "${BW_SESSION:-}" && -f "$HOME/.bw_session" ]]; then
+    export BW_SESSION=$(< "$HOME/.bw_session")
+fi
+
+# bwu — unlock vault, export session, persist it, restart status daemon
 bwu() {
     export BW_SESSION=$(bw unlock --raw)
     if [[ -z "$BW_SESSION" ]]; then
         echo "✗ Unlock failed — check your master password"
         return 1
     fi
+    # Persist so new WSL shells / WT tabs inherit the session
+    printf '%s' "$BW_SESSION" > "$HOME/.bw_session"
+    chmod 600 "$HOME/.bw_session"
     echo "✓ BW_SESSION set"
     # Restart status daemon so it picks up the new session
     pkill -f "dotfiles/status-refresh.sh" 2>/dev/null && sleep 0.3
@@ -48,22 +56,15 @@ alias wexp='explorer.exe "$(wslpath -w .)"'   # open current dir in Windows Expl
 alias clip='clip.exe'                          # pipe to Windows clipboard: echo hello | clip
 alias wpath='wslpath -w'                       # convert a WSL path to Windows path: wpath ~/foo
 
-# ── Antigravity CLI (formerly Gemini) ─────────────────────────────────────────
-# The 'gemini' CLI is deprecated and will be removed after June 18, 2026.
-# Migrated to 'antigravity' as of May 26, 2026.
+# ── Gemini CLI ────────────────────────────────────────────────────────────────
+# Using @google/gemini-cli (binary: gemini). Google plans to rename the binary
+# to 'antigravity' after June 18, 2026 — update this alias when that lands.
 # The 'gs' alias can conflict with 'git status', so we unalias it first to be safe.
 unalias gs 2>/dev/null || true
 
 export GEMINI_MODEL=gemini-2.5-pro
 
-# Main account (uses default ~/.config/antigravity config)
-alias gs='antigravity'
-
-# Example alias for a 'work' account (will create/use ~/.config/antigravity-work)
-alias ag-work='ANTIGRAVITY_CONFIG_HOME=~/.config/antigravity-work antigravity'
-
-# Example alias for a 'personal' account (will create/use ~/.config/antigravity-personal)
-alias ag-personal='ANTIGRAVITY_CONFIG_HOME=~/.config/antigravity-personal antigravity'
+alias gs='gemini'
 
 # ── Git ────────────────────────────────────────────────────────────────────────
 alias gst='git status -sb'
@@ -163,6 +164,12 @@ opsman() {
         nohup bash "$OPSMANDIR/dotfiles/status-refresh.sh" >/dev/null 2>&1 &
         disown
         echo "✓ Status refresh daemon started"
+    fi
+    # When inside Windows Terminal, open Dev and Gemini in new tabs alongside this Ops session
+    if [[ -n "${WT_SESSION:-}" ]]; then
+        wt.exe new-tab --profile "Claude Dev" --title "Dev" 2>/dev/null || true
+        wt.exe new-tab --profile "Gemini" --title "Gemini" 2>/dev/null || true
+        echo "✓ Dev + Gemini tabs opened"
     fi
     cd "$OPSMANDIR" && claude
 }

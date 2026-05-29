@@ -1,7 +1,7 @@
 {
     "$help": "https://aka.ms/terminal-documentation",
     "$schema": "https://aka.ms/terminal-profiles-schema",
-    "defaultProfile": "{a5e8c1d9-4f32-4a8b-9c6e-1b2d3e4f5a6b}",
+    "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
     "copyOnSelect": false,
     "copyFormatting": "none",
     "tabWidthMode": "compact",
@@ -23,30 +23,44 @@
         },
         "list": [
             {
-                "name": "Claude Code",
+                "name": "Windows PowerShell",
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "hidden": false
+            },
+            {
+                "name": "Claude Ops",
                 "guid": "{a5e8c1d9-4f32-4a8b-9c6e-1b2d3e4f5a6b}",
-                "commandline": "wsl.exe -- bash -l -c \"cd ~/SVH-OpsMan && exec claude\"",
-                "startingDirectory": "//wsl$/Ubuntu/home/astevens",
+                "commandline": "wsl.exe -- zsh -lc \"cd ~/SVH-OpsMan && exec claude\"",
+                "startingDirectory": "//wsl$/Ubuntu-22.04/home/wsl_stevens/SVH-OpsMan",
                 "tabColor": "#83a598"
+            },
+            {
+                "name": "Claude Dev",
+                "guid": "{d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a}",
+                "commandline": "wsl.exe -- zsh -lc \"cd ~/SVH-OpsMan && CLAUDE_CONFIG_DIR=$HOME/.claude-dev CLAUDE_DEV_MODE=1 exec claude\"",
+                "startingDirectory": "//wsl$/Ubuntu-22.04/home/wsl_stevens/SVH-OpsMan",
+                "tabColor": "#fabd2f"
+            },
+            {
+                "name": "Gemini",
+                "guid": "{e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b}",
+                "commandline": "wsl.exe -- zsh -lc \"cd ~/SVH-OpsMan && gemini\"",
+                "startingDirectory": "//wsl$/Ubuntu-22.04/home/wsl_stevens/SVH-OpsMan",
+                "tabColor": "#458588"
             },
             {
                 "name": "PowerShell (OpsMan)",
                 "guid": "{b7d2e3f4-5a6b-7c8d-9e0f-1a2b3c4d5e6f}",
-                "commandline": "pwsh.exe -NoLogo -NoExit -Command \". $env:USERPROFILE\\SVH-OpsMan\\dotfiles\\profile.ps1 -ErrorAction SilentlyContinue\"",
+                "commandline": "pwsh.exe -NoLogo",
                 "startingDirectory": "%USERPROFILE%",
                 "tabColor": "#fabd2f"
             },
             {
                 "name": "WSL Bash",
                 "guid": "{c8d9e0f1-a2b3-4c5d-6e7f-8a9b0c1d2e3f}",
-                "commandline": "wsl.exe -- bash -l -c \"cd ~/SVH-OpsMan && exec zsh\"",
-                "startingDirectory": "//wsl$/Ubuntu/home/astevens/SVH-OpsMan",
+                "commandline": "wsl.exe -- zsh -lc \"cd ~/SVH-OpsMan && exec zsh\"",
+                "startingDirectory": "//wsl$/Ubuntu-22.04/home/wsl_stevens/SVH-OpsMan",
                 "tabColor": "#b8bb26"
-            },
-            {
-                "name": "Windows PowerShell",
-                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
-                "hidden": false
             },
             {
                 "name": "Command Prompt",
@@ -94,17 +108,19 @@
         { "command": { "action": "sendInput", "input": "/asset-investigation\r" },    "keys": "ctrl+alt+a" },
         { "command": { "action": "sendInput", "input": "/patch-campaign\r" },         "keys": "ctrl+alt+x" },
 
-        { "command": { "action": "newTab", "profile": "Claude Code" },                "keys": "ctrl+shift+alt+c" },
-        { "command": { "action": "newTab", "profile": "PowerShell (OpsMan)" },        "keys": "ctrl+shift+alt+p" },
-        { "command": { "action": "newTab", "profile": "WSL Bash" },                   "keys": "ctrl+shift+alt+b" },
+        { "command": { "action": "newTab", "profile": "Claude Ops" },   "keys": "ctrl+shift+alt+c" },
+        { "command": { "action": "newTab", "profile": "Claude Dev" },   "keys": "ctrl+shift+alt+d" },
+        { "command": { "action": "newTab", "profile": "Gemini" },       "keys": "ctrl+shift+alt+g" },
+        { "command": { "action": "newTab", "profile": "PowerShell (OpsMan)" }, "keys": "ctrl+shift+alt+p" },
+        { "command": { "action": "newTab", "profile": "WSL Bash" },     "keys": "ctrl+shift+alt+b" },
 
-        { "command": { "action": "splitPane", "split": "horizontal", "profile": "Claude Code" }, "keys": "ctrl+alt+2" },
-        { "command": { "action": "splitPane", "split": "vertical" },                   "keys": "ctrl+alt+minus" },
+        { "command": { "action": "splitPane", "split": "horizontal", "profile": "Claude Ops" }, "keys": "ctrl+alt+2" },
+        { "command": { "action": "splitPane", "split": "vertical" },    "keys": "ctrl+alt+minus" },
 
-        { "command": { "action": "moveFocus", "direction": "left" },  "keys": "ctrl+alt+h" },
-        { "command": { "action": "moveFocus", "direction": "down" },  "keys": "ctrl+alt+j" },
-        { "command": { "action": "moveFocus", "direction": "up" },    "keys": "ctrl+alt+k" },
-        { "command": { "action": "moveFocus", "direction": "right" }, "keys": "ctrl+alt+l" },
+        { "command": { "action": "moveFocus", "direction": "left" },    "keys": "ctrl+alt+h" },
+        { "command": { "action": "moveFocus", "direction": "down" },    "keys": "ctrl+alt+j" },
+        { "command": { "action": "moveFocus", "direction": "up" },      "keys": "ctrl+alt+k" },
+        { "command": { "action": "moveFocus", "direction": "right" },   "keys": "ctrl+alt+l" },
 
         { "command": "renameTab",  "keys": "ctrl+alt+r" },
         { "command": "newTab",     "keys": "ctrl+shift+t" },
