@@ -130,11 +130,43 @@ alias alert-trend='sqlite3 -column -header "$OPSMANDIR/db/metrics.db" "SELECT re
 alias disk-hot='sqlite3 -column -header "$OPSMANDIR/db/metrics.db" "SELECT server, drive_letter, used_pct, recorded_at FROM disk_usage WHERE used_pct > 80 ORDER BY used_pct DESC, recorded_at DESC LIMIT 20;"'
 
 # ── TUI ───────────────────────────────────────────────────────────────────────
-alias tui='run-tui'
+# tui with no args launches an fzf menu; with an arg launches that view directly
+tui() {
+    if [[ -n "$1" ]]; then
+        run-tui "$1"
+        return
+    fi
+    local views=(alerts ad net patches)
+    local labels=(
+        "🚨  alerts   — Defender + Wazuh alerts"
+        "👤  ad       — Entra users / groups"
+        "🌐  net      — UniFi topology + clients"
+        "🔧  patches  — NinjaOne patch status"
+    )
+    local choice
+    choice=$(printf '%s\n' "${labels[@]}" | fzf \
+        --prompt="TUI > " \
+        --height=8 \
+        --layout=reverse \
+        --border \
+        --no-info)
+    [[ -z "$choice" ]] && return
+    local idx
+    for i in "${!labels[@]}"; do
+        [[ "${labels[$i]}" == "$choice" ]] && idx=$i && break
+    done
+    run-tui "${views[$idx]}"
+}
 alias tui-ad='run-tui ad'
 alias tui-alerts='run-tui alerts'
 alias tui-net='run-tui net'
 alias tui-patches='run-tui patches'
+
+# ── Tab title helpers (WT sets these via OSC escape sequences) ─────────────────
+# Set WT tab title from within WSL
+tab-title() { printf '\033]0;%s\007' "$1"; }
+# Auto-set tab title on directory change for zsh (lean — just dir name)
+chpwd() { tab-title "$(basename "$PWD")"; }
 
 # ── OpsMan update ─────────────────────────────────────────────────────────────
 # Pull latest, rebuild both packages, restart MCP + status daemon

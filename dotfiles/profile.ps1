@@ -3,6 +3,10 @@
 # Loaded by both $PROFILE paths via dot-source from the UNC path into WSL.
 # Edit this file; changes apply on next PowerShell start (no re-install needed).
 
+# BW_SESSION must never exist in the Windows PS environment — it lives in WSL only.
+# This removes a stale token if it was ever accidentally set as a Windows env var.
+Remove-Item Env:\BW_SESSION -ErrorAction SilentlyContinue
+
 # ── WSL context (resolved once at load) ───────────────────────────────────────
 $script:WslDistro = (wsl.exe -l -q 2>$null |
     Where-Object { $_ -match '\S' } | Select-Object -First 1
@@ -12,7 +16,9 @@ $script:OpsManUNC = if ($script:WslDistro) {
 } else { $null }
 
 # ── Modules ───────────────────────────────────────────────────────────────────
-$_mods = @('PSReadLine', 'PSWriteColor', 'SysInfo', 'SystemSplash')
+# Only load well-behaved modules here. SysInfo/SystemSplash were removed — they
+# output env vars (including BW_SESSION if set as a Windows env var) on import.
+$_mods = @('PSReadLine', 'PSWriteColor')
 foreach ($_m in $_mods) {
     if (-not (Get-Module -ListAvailable -Name $_m -ErrorAction SilentlyContinue)) {
         Write-Host "Installing $_m..." -ForegroundColor Cyan
@@ -130,19 +136,41 @@ $da_account       = 'da_stevens@shoestringvalley.com'
 $ma_account       = 'ma_stevens@shoestringvalley.com'
 $standard_account = 'astevens@shoestringvalley.com'
 
-# ── opsman — launch the full ops workspace (5 tabs: Ops · Dev · Gemini · PS · Zsh) ──
+# ── opsman — launch the full ops workspace (6 tabs: Ops · Dev · Gemini · PS · Zsh · Helix) ──
 function Invoke-OpsMan {
     # BW check and status-refresh are handled inside the Claude Ops tab by opsman().
-    # Just open the workspace — wt.exe args passed as a single string avoids PS semicolon issues.
-    $wtArgs = 'new-tab --profile "Claude Ops" --title "Ops" ; new-tab --profile "Claude Dev" --title "Dev" ; new-tab --profile "Gemini" --title "Gemini" ; new-tab --profile "PowerShell (OpsMan)" --title "PS" ; new-tab --profile "WSL Zsh" --title "Zsh"'
+    # Passes args as a single string to avoid PS semicolon issues.
+    # windowingBehavior:useExisting means these tabs open in the current WT window.
+    $wtArgs = 'new-tab --profile "Claude Ops" --title "Ops" ; new-tab --profile "Claude Dev" --title "Dev" ; new-tab --profile "Gemini" --title "Gemini" ; new-tab --profile "PowerShell (OpsMan)" --title "PS" ; new-tab --profile "WSL Zsh" --title "Zsh" ; new-tab --profile "Helix" --title "Helix"'
     Start-Process 'wt.exe' -ArgumentList $wtArgs
-    Write-Host '  Workspace: Ops (teal) · Dev (yellow) · Gemini (blue) · PS (purple) · Zsh (green)' -ForegroundColor Green
+    Write-Host '  Workspace: Ops (teal) · Dev (yellow) · Gemini (blue) · PS (purple) · Zsh (green) · Helix (cyan)' -ForegroundColor Green
     Write-Host '  Skills: Ctrl+Alt+[D/E/W/P/T/N/C/V/A/X]  |  New Ops tab: Ctrl+Shift+Alt+C'
 }
 
+# ── Reset-OpsMan — open a fresh workspace in a new WT window ──────────────────
+function Reset-OpsMan {
+    # -w new forces a new WT window regardless of windowingBehavior setting.
+    $wtArgs = '-w new new-tab --profile "Claude Ops" --title "Ops" ; new-tab --profile "Claude Dev" --title "Dev" ; new-tab --profile "Gemini" --title "Gemini" ; new-tab --profile "PowerShell (OpsMan)" --title "PS" ; new-tab --profile "WSL Zsh" --title "Zsh" ; new-tab --profile "Helix" --title "Helix"'
+    Start-Process 'wt.exe' -ArgumentList $wtArgs
+    Write-Host '  Fresh workspace launched in a new window.' -ForegroundColor Cyan
+}
+
+# ── hx / helix — open Helix editor via WSL ───────────────────────────────────
+function Invoke-Helix {
+    param([string]$Path = '')
+    if ($Path) {
+        wsl.exe -e hx $Path
+    } else {
+        wsl.exe -e hx
+    }
+}
+function Edit-OpsMan { wsl.exe -e hx (Join-Path $script:OpsManUNC '.') }
+
 # ── Aliases (Set-Alias is idempotent — no errors on re-source) ────────────────
 Set-Alias opsman        Invoke-OpsMan
+Set-Alias reset-opsman  Reset-OpsMan
 Set-Alias update-opsman Update-OpsMan
 Set-Alias nviminit      Enter-NvimInit
 Set-Alias psprofile     Enter-PSProfile
-Set-Alias neofetch      Get-SystemSplash
+Set-Alias hx            Invoke-Helix
+Set-Alias helix         Invoke-Helix
