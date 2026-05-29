@@ -97,3 +97,13 @@ Routing rewrite landed (Claude account 2 = Dev, Gemini = quick Google only). The
 - [ ] **Retire or repurpose `/handoff-queue` and `/handoff-receive`** — these manage the Gemini draft → ready → in-progress → done lifecycle. No equivalent need with a second interactive Claude session. Probably delete both and the `Handoffs/` folder lifecycle.
 - [ ] **Prune retired Gemini dev skills from `.gemini/skills/`** — the dev-side skill directories (`test-writer`, `refactor-powershell`, `code-reviewer`, `api-spec`, `ts-linter`, `npm-audit`, `dependency-manager`, `git-helper`, `release-drafter`, `code-documenter`, `log-analyzer`, `config-validator`, `db-query`, `shell-script-converter`, `create-collector-job`) still exist on disk. GEMINI.md and user_guide.md now document them as retired. Decide whether to delete the skill directories or leave them for reference until Claude Dev fully proves out.
 - [ ] **Remove `.gemini/skills/test-writer-mcp-server/`** — uncommitted artifact from a pre-retirement test-writer run. Decide if the output is worth keeping (those 28 MCP tool test files) before removing the skill directory.
+
+---
+
+## WT workspace launch — finish setup (from 2026-05-29 fix session)
+
+Root cause fixed (zsh -lc skips .zshrc → added ~/.zprofile), 5-tab launcher created. Three manual steps still needed:
+
+- [ ] **Restart Windows Terminal** — settings were updated live but WT needs a restart to pick up profile + keybinding changes
+- [ ] **Run `dotfiles/install-windows.ps1`** from a PowerShell window — creates `SVH OpsMan.lnk` in Start Menu (wt.exe target, 5-tab args); then right-click → Pin to Start
+- [ ] **Remap Copilot key** — PowerToys → Keyboard Manager → Remap a shortcut → Source: Copilot Key → Target: Run Application → `%APPDATA%\Microsoft\Windows\Start Menu\Programs\SVH OpsMan.lnk`
