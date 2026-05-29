@@ -182,3 +182,12 @@ opsman-dev() {
     fi
     cd "$OPSMANDIR" && CLAUDE_DEV_MODE=1 claude
 }
+
+# claude-dev — second Claude account (astevens2694@gmail.com)
+# Code work that's safe with the data boundary (sanitized inputs only).
+# - Uses CLAUDE_CONFIG_DIR=$HOME/.claude-dev for isolated session state
+# - Does NOT unlock Bitwarden (Dev account has no MCP access by design)
+# - Sets CLAUDE_DEV_MODE=1 to relax git workflow blocks
+claude-dev() {
+    cd "$OPSMANDIR" && CLAUDE_CONFIG_DIR="$HOME/.claude-dev" CLAUDE_DEV_MODE=1 claude
+}

@@ -43,18 +43,18 @@ Two launch modes. Use the right one for the work at hand.
 
 `opsman-dev` sets `CLAUDE_DEV_MODE=1`, which relaxes git workflow blocks (reset --hard, restore, clean) and the rm -rf guard (with safe-path exceptions). Force push, .env files, DROP TABLE, and disk format remain blocked in both modes.
 
-The routing rule: **try `opsman-dev` before routing to Gemini**. Gemini is the right choice for separable work you'd review as a PR — new features, bulk refactors, test suites. It's not the right choice for mid-session fixes where the context is already here.
+The routing rule: **most dev work belongs in Claude Account 2 (Dev)** — see below. Use `opsman-dev` on Account 1 only for code work that needs live ops context to do correctly (e.g., a fix that came out of a current investigation, where switching accounts would lose the thread).
 
-## A Second Claude Account
+## Two Claude Accounts
 
-If you add a second Claude account for token reasons, split by role — same logic as the Gemini three-account strategy:
+Both Claude accounts are live. Split by role and quota pool:
 
-- **Claude Account 1 (Ops)**: Current `opsman` setup. Full MCP access. Owns incidents, briefings, posture, all ops output.
-- **Claude Account 2 (Dev)**: `opsman-dev` equivalent. No MCP access by convention. Owns Claude-specific dev work: skills, hooks, settings, anything that needs Claude's reasoning on the OpsMan codebase itself.
+- **Claude Account 1 (Ops)** — `aa_stevens@shoestringvalley.com`. Launch: `opsman` (or `opsman-dev` for mid-session OpsMan-codebase work that needs ops context). Full MCP access. Owns incidents, briefings, posture, all ops output, all writes to Obsidian/Planner/Teams/Confluence on live data.
+- **Claude Account 2 (Dev)** — `astevens2694@gmail.com`. Launch: `claude-dev`. No MCP access by convention (and no `BW_SESSION`, so the OpsMan MCP server fails to start anyway). Uses `CLAUDE_CONFIG_DIR=$HOME/.claude-dev` for isolated session state. Owns most OpsMan code work: skills, hooks, MCP server changes, collector, PowerShell modules, TUI apps, test suites, type generation, refactors.
 
-Gemini stays for what it's already better at: bulk long-context reads (Account B), public web research (Account C), and anything where you want Google Search grounding. Account A (active coding) becomes the most overlap — route to Claude Dev when the task needs understanding of OpsMan's ops context; route to Gemini A when it's genuinely separable code work with no ops context required.
+The data boundary applies identically across both accounts: no real device names, hostnames, IPs, UPNs, or credentials cross into the Dev account. When you discover something mid-Ops-session that needs a code fix in Dev, sanitize the spec before pasting it across. The lethal trifecta argument still applies — Dev account has no MCP and no Bitwarden access by design, and that boundary must hold.
 
-The data boundary applies identically: no real device names, IPs, or credentials cross into the Dev account, regardless of whether it's Claude or Gemini.
+Gemini's role has narrowed to **public web research only** — quick Google lookups (API docs, CVE info, package versions, error message research). See `.claude/rules/gemini-routing.md` for the routing table.
 
 ## Draft-First Principle
 

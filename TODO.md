@@ -75,3 +75,25 @@ Full vault review was done on 2026-05-28. Everything below came out of that sess
 - [ ] Re-enable IR Triage skill — currently `SKILL.md.disabled`; re-enable once comfortable with tiered confirmation model
 - [ ] `sa_stevens` / `da_stevens` non-interactive PSRemoting — add `SA_REMOTE_PASSWORD` and `DA_REMOTE_PASSWORD` to BW to enable automated skills that currently require `Get-Credential`
 - [ ] Configure rclone remotes (`onedrive` and `gdrive`) — see `docs/setup/backup.md`
+
+---
+
+## Project workflow — remaining catch-up items (from 2026-05-29 design pass)
+
+The project lifecycle bundle landed in `f25feea` (close skill + day-starter Projects link-back + Inbox rhythm + `project/<slug>` tag prompts). These four items came out of the same diagnostic but weren't in the bundle:
+
+- [ ] **Initiative layer decision** — umbrella pattern for multi-project initiatives (e.g. "OpsMan itself", or Network Segmentation with per-site child plans currently sitting as peers). Two options: introduce `Projects/Initiatives/` for umbrella notes that link to child projects, OR declare initiatives are just shared tags. Pick one and document.
+- [ ] **Skill page + PS companion audit** — script that walks `.claude/skills/*/SKILL.md` and checks for matching `Skills/<name>.md` in the vault + matching `Get-SVH*` / `New-SVH*` / `Set-SVH*` in `powershell/modules/`. Reports gaps so missing skill pages and PS companions can be backfilled.
+- [ ] **Activity Log inclusion rule** — write into `.claude/rules/note-patterns.md`: "Skills that produce a note linked to today's work add to Activity Log. Skills that produce reference material (asset profiles, skill pages, runbooks) don't." Then audit existing skills against the rule.
+- [ ] **Handoff stale flag in day-starter** — surface old `Handoffs/` notes that have been sitting in `ready` or `in-progress` past a threshold. Becomes less relevant once Gemini async-handoff workflow is retired (see below).
+
+---
+
+## Dev assistant routing — Gemini retirement follow-ups (from 2026-05-29 routing change)
+
+Routing rewrite landed (Claude account 2 = Dev, Gemini = quick Google only). The handoff skills were built around Gemini's async cycle — they need a rethink now that Dev work is interactive in a second Claude session.
+
+- [ ] **Rethink `/gemini-handoff`** — sanitization step still has value (ops session → Dev session needs the same data-boundary discipline). But the file destination (`.gemini/handoff.md`) and the queue mechanic don't apply. Options: rename to `/code-handoff` and write to `.claude-dev/handoff.md`, or fold sanitization into a new lightweight skill that just produces the spec inline for paste.
+- [ ] **Retire or repurpose `/handoff-queue` and `/handoff-receive`** — these manage the Gemini draft → ready → in-progress → done lifecycle. No equivalent need with a second interactive Claude session. Probably delete both and the `Handoffs/` folder lifecycle.
+- [ ] **Prune Gemini-only skills from the user_guide table** — 17 Gemini skills currently listed (test-writer, refactor-powershell, code-reviewer, etc.). Most are retired in the new routing. Update the user_guide Gemini skills table to reflect only `web-research` (or whatever the renamed equivalent is on the single remaining Gemini account).
+- [ ] **Remove `.gemini/skills/test-writer-mcp-server/`** — uncommitted artifact from a pre-retirement test-writer run. Decide if the output is worth keeping (those 28 MCP tool test files) before removing the skill directory.

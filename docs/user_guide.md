@@ -242,57 +242,37 @@ WHERE skill = "troubleshoot"
 SORT date DESC
 ```
 
-## Gemini Dev Assistant
+## Dev Assistant Lanes
 
-Gemini runs alongside Claude in three dedicated accounts. Claude owns ops; Gemini owns dev. Neither crosses into the other's lane.
+Work is routed across three lanes by quota pool, data exposure, and tool strengths.
 
-### The Three Accounts
+### The Three Lanes
 
-| Account | Role | What to use it for |
-| :------ | :--- | :----------------- |
-| **A — Dev** | Active coding | Scaffolding, refactoring, testing, TypeScript types, git ops, npm audit |
-| **B — Docs** | Long-context analysis | Bulk documentation passes, reading entire modules, large-file diffs |
-| **C — Research** | Public web lookups | API docs, package versions, error messages, CVE public info |
+| Lane | Account | Launch | Live data? | Owns |
+| :--- | :------ | :----- | :--------- | :--- |
+| **Claude Ops** | `aa_stevens@shoestringvalley.com` | `opsman` · `opsman-dev` | Yes — full MCP, BW_SESSION | Incidents, briefings, posture, investigations, all vault writes on real data, messages to Teams/Planner/Confluence |
+| **Claude Dev** | `astevens2694@gmail.com` | `claude-dev` | No (by design) | Most OpsMan code work: skills, hooks, MCP server, collector, PowerShell, TUI, tests, type generation, refactors |
+| **Gemini** | Existing Gemini login | Gemini CLI / web | No | Public web research only — quick Google lookups, API docs, package versions, CVE public info |
 
-### Handoff Workflow
+### Claude Dev launch
 
-Each Gemini handoff is tracked as an Obsidian note in `Handoffs/` with a status lifecycle:
+`claude-dev` uses an isolated `CLAUDE_CONFIG_DIR=$HOME/.claude-dev` so session state and login don't collide with the Ops account. No Bitwarden unlock happens — the OpsMan MCP server won't start in a Dev session, which is the design.
 
-`draft` → `ready` → `in-progress` → `done`
+### Data boundary
 
-**Queueing a handoff:** Run `/gemini-handoff` — Claude creates a note in `Handoffs/`, adds a link to your daily Activity Log, and prompts you to review the spec. Multiple handoffs can queue as `draft` without blocking each other.
+The Dev account and Gemini both sit outside the data boundary. **Real device names, hostnames, IPs, UPNs, alert content, and credentials must not cross from an Ops session into either of them.** When ops context is live and the next step is code work, sanitize the spec first — extract field names and types only.
 
-**Pushing to Gemini:** Change the note's `status` to `ready` in Obsidian, then run `/handoff-queue`. Claude writes the spec to `.gemini/handoff.md` and tells you which account and skill to use. If multiple are ready, they process one at a time — run `/handoff-queue` again after each receive.
+Historically there was a `/gemini-handoff` skill that wrote a sanitized spec to `.gemini/handoff.md` for an async cycle. That async cycle is retired; sanitization itself still matters and is currently done manually. See `TODO.md` for the rewrite plan.
 
-**Receiving results:** After Gemini writes `.gemini/to-claude.md`, run `/handoff-receive`. Claude integrates the result and closes out the Handoff note.
+### Retired roles
 
-The data boundary is enforced at creation time: `/gemini-handoff` strips all private data before writing the spec. Field names and types only — no real device names, IPs, UPNs, or credentials.
+| Was | Now |
+| :-- | :-- |
+| Gemini Account A (active coding) | Claude Dev |
+| Gemini Account B (long-context docs reads, bulk refactors) | Claude Dev |
+| Gemini Account C (web research) | Single remaining Gemini account |
 
-### Gemini Skills
-
-| Skill | Account | Invoke |
-| :---- | :------ | :----- |
-| `create-collector-job` | A | "Scaffold a new collector job for..." |
-| `test-writer` | A | "Write tests for `path/to/file.ts`" |
-| `refactor-powershell` | A | "Refactor `SVH.Core.psm1`" |
-| `code-reviewer` | A / B | "Review my changes since main" |
-| `api-spec` | A | "Generate types from this JSON shape" |
-| `ts-linter` | A | "Run the linter" |
-| `npm-audit` | A | "Check for vulnerable dependencies" |
-| `dependency-manager` | A | "Add zod to mcp-server" |
-| `git-helper` | A | "Show me what changed in collector/" |
-| `release-drafter` | A | "Draft release notes since the last tag" |
-| `code-documenter` | A / B | "Add JSDoc to all exports in `utils/`" |
-| `log-analyzer` | B | "Analyze this log file" |
-| `web-research` | C | "Quick Google: what's the Graph API for sign-in logs?" |
-| `claude-handoff` | A | "Pick up the Claude handoff" |
-| `config-validator` | A | "Validate my tsconfig" |
-| `db-query` | A | "Query metrics.db for..." |
-| `shell-script-converter` | A | "Convert this script to PowerShell" |
-
-### Data Boundary
-
-Gemini accounts have no MCP tool access. Never paste raw NinjaOne responses, Wazuh alerts, M365 mail content, or Bitwarden credentials into a Gemini session. When Gemini needs to know the shape of a private API response, use `/gemini-handoff` in Claude — it strips real values and passes only field names and types.
+Most of the previously listed Gemini skills (`test-writer`, `refactor-powershell`, `code-reviewer`, `api-spec`, `ts-linter`, `npm-audit`, `dependency-manager`, `git-helper`, `release-drafter`, `code-documenter`, `log-analyzer`, `config-validator`, `db-query`, `shell-script-converter`) are superseded by Claude Dev. The only Gemini skill that still has a clear role is `web-research`.
 
 ## TUI Apps
 
