@@ -17,9 +17,9 @@ From the conversation, extract:
 
 **Step 2 — Write the handoff note**
 
-Path: `Projects/YYYY-MM-DD-[topic]-handoff.md`
+Path: `Projects/Archive/[topic]-handoff-YYYY-MM-DD.md`
 
-Use today's date and a kebab-case topic slug (e.g. `2026-05-26-collector-staging-handoff`).
+Use today's date at the end and a kebab-case topic slug (e.g. `collector-staging-handoff-2026-05-26`).
 
 Frontmatter:
 ```yaml
@@ -65,7 +65,7 @@ old_string: <!-- DAY-STARTER-END -->
 new_string: <!-- DAY-STARTER-END -->
 
 ## Session handoff — HH:MM
-→ [[Projects/YYYY-MM-DD-[topic]-handoff]]
+→ [[Projects/Archive/[topic]-handoff-YYYY-MM-DD]]
 One sentence summary of what the session produced.
 ```
 

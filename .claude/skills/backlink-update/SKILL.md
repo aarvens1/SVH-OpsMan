@@ -52,7 +52,7 @@ For each source file in scope:
 ```bash
 grep -oP '\[\[([^\]|#]+)' source.md | sed 's/\[\[//'
 ```
-This gives you link targets like `Assets/ACCOCOLOKEMP`, `Infrastructure/Kemp Load Balancer`, `Sites/ACCO-Colo`.
+This gives you link targets like `Assets/ACCOCOLOKEMP`, `Infrastructure/kemp-load-balancer`, `Sites/ACCO-Colo`.
 
 **Step 2: Filter to structural targets only**
 Keep links that start with `Assets/`, `Sites/`, or `Infrastructure/`.
@@ -110,8 +110,8 @@ Backlinks already present: N
 Backlinks added: N
 
 Added:
-- [[Assets/ACCOCOLOKEMP]] ← [[Infrastructure/Kemp Load Balancer]]
-- [[Sites/ACCO-Portland]] ← [[Infrastructure/Synology Rackstation]]
+- [[Assets/ACCOCOLOKEMP]] ← [[Infrastructure/kemp-load-balancer]]
+- [[Sites/ACCO-Portland]] ← [[Infrastructure/synology-rackstation]]
   (etc.)
 
 Skipped (excluded folder):

@@ -22,8 +22,8 @@ From the conversation, identify and sanitize the core task details. This process
 
 **Step 2 — Write the Handoff Note in Obsidian**
 
-1.  Get the current timestamp using `mcp__time__get_current_time`. Format it as `YYYY-MM-DD-HH:MM`.
-2.  Construct the filename: `Handoffs/YYYY-MM-DD-HH:MM-<task-slug>.md`.
+1.  Get the current timestamp using `mcp__time__get_current_time`. Format it as `YYYY-MM-DD-HHMM`.
+2.  Construct the filename: `Handoffs/YYYY-MM-DD-HHMM-<task-slug>.md`.
 3.  Write the note to the Obsidian vault using the structure below. The `status` must be `draft`.
 
 ```markdown
@@ -68,10 +68,10 @@ Add a wikilink to the newly created handoff note in today's daily note.
 
 1.  Use `edit_block` to target the `<!-- DAY-STARTER-END -->` sentinel in `Briefings/Daily/YYYY-MM-DD.md`.
 2.  Insert the following line, linking to the new handoff file:
-    `→ [[Handoffs/YYYY-MM-DD-HH:MM-task-slug]] — [one sentence describing the task]`
+    `→ [[Handoffs/YYYY-MM-DD-HHMM-task-slug]] — [one sentence describing the task]`
 
 **Step 4 — Reply to User**
 
 Confirm to the user that the handoff has been created as a draft.
 
-> Handoff created: `[[Handoffs/YYYY-MM-DD-HH:MM-task-slug]]` — review the spec, change status to `ready`, then run `/handoff-queue`.
+> Handoff created: `[[Handoffs/YYYY-MM-DD-HHMM-task-slug]]` — review the spec, change status to `ready`, then run `/handoff-queue`.

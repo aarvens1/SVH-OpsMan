@@ -31,7 +31,7 @@ Your job is to find the oldest "ready" handoff in the Obsidian vault, push its s
 **Step 3 — Report to User**
 
 1.  Report your action to the user:
-    > Pushed: `[[Handoffs/YYYY-MM-DD-HH:MM-slug]]` — fire **Gemini [target] account**, use `[gemini_skill]` skill. When done, run `/handoff-receive`.
+    > Pushed: `[[Handoffs/YYYY-MM-DD-HHMM-slug]]` — fire **Gemini [target] account**, use `[gemini_skill]` skill. When done, run `/handoff-receive`.
 
 2.  If there were multiple "ready" handoffs in your list from Step 1, add this note:
     > N more handoffs are queued. Run `/handoff-queue` again after this one is received.

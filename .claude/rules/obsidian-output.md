@@ -21,6 +21,11 @@ tags: [<relevant>, <tags>]
 
 Status lifecycle: `draft` → `reviewed` → `filed` or `promoted`
 
+Exceptions:
+- **Projects (indexes):** `status: active | on-hold | closed` — not the draft/filed lifecycle
+- **Reference/infrastructure docs:** `status: active` — these are living docs, always current
+- **Archived work artifacts:** `status: archived` — also add `archived` to the tags array
+
 Extra fields by note type:
 - **Incidents:** `incident_id: INC-YYYY-NNN`, `severity: critical|high|medium|low`, `status: open|contained|closed`
 - **Changes:** `change_id: CHG-YYYY-NNN`, `risk: low|medium|high`, `window: YYYY-MM-DD HH:MM – HH:MM`, `change_date: YYYY-MM-DD` (clean date for Bases calendar view — same day as the window start)
@@ -41,13 +46,29 @@ Extra fields by note type:
 | Changes | `Changes/` |
 | Meetings | `Meetings/YYYY-MM-DD-name.md` |
 | Assets | `Assets/[name].md` (persistent — update in place) |
-| Projects | `Projects/` |
+| Projects (indexes) | `Projects/[ProjectName].md` (evergreen — update in place) |
+| Project work artifacts | `Projects/Archive/slug-YYYY-MM-DD.md` (dated, archived when phase closes) |
 | Access reviews | `Reviews/Access/` |
 | Patch reviews | `Reviews/Patches/` |
 | Task triage / reviews | `Reviews/Tasks/YYYY-MM-DD-triage.md` |
 | Vulnerabilities | `Vulnerabilities/` |
 | Excalidraw diagrams | `Diagrams/<category>/[name].md` |
 | Skill reference pages | `Skills/[skill-name].md` (persistent — update in place) |
+
+## File naming conventions
+
+| Folder | Convention | Example |
+|--------|-----------|---------|
+| `Infrastructure/` | kebab-case | `kemp-load-balancer.md` |
+| `Assets/` | UPPERCASE device name | `ACCOCOLOKEMP.md` |
+| `Sites/` | PascalCase or kebab-case | `ACCO-Colo.md` |
+| `References/` | kebab-case | `common-event-clusters.md` |
+| `Projects/` (indexes) | PascalCase-kebab | `Network-Segmentation.md` |
+| `Projects/Archive/` | `slug-YYYY-MM-DD.md` (date at end) | `network-snapshot-pdx-2026-05-17.md` |
+| `Briefings/`, `Incidents/`, `Investigations/`, `Meetings/` | `YYYY-MM-DD-slug.md` (date first — calendar-indexed) | `2026-05-29-cmdb-audit.md` |
+| `Handoffs/` | `YYYY-MM-DD-HHMM-slug.md` (no colon in time) | `2026-05-27-1503-mcp-test.md` |
+
+**General rule:** No spaces in filenames anywhere. Prefer lowercase or kebab-case for new files. Existing Asset/Site names that are already established don't need to be changed.
 
 ## Diagrams
 
