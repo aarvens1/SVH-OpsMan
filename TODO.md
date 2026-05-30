@@ -82,7 +82,7 @@ Full vault review was done on 2026-05-28. Everything below came out of that sess
 
 The project lifecycle bundle landed in `f25feea` (close skill + day-starter Projects link-back + Inbox rhythm + `project/<slug>` tag prompts). These four items came out of the same diagnostic but weren't in the bundle:
 
-- [ ] **Initiative layer decision** — umbrella pattern for multi-project initiatives (e.g. "OpsMan itself", or Network Segmentation with per-site child plans currently sitting as peers). Two options: introduce `Projects/Initiatives/` for umbrella notes that link to child projects, OR declare initiatives are just shared tags. Pick one and document.
+- [x] **Initiative layer decision** — shared tags, no subfolder. Initiatives are a `project/<initiative-slug>` tag shared across related project notes; Dataview surfaces them. Documented in `obsidian-output.md` vault paths table (2026-05-29).
 - [x] **Skill page + PS companion audit** — script created at `scripts/audit-skills.sh`; run it to get a live gap report. Current state (2026-05-29): 28 skills missing both vault page and PS companion, 15 missing PS companion only. See audit output for the full list.
 - [x] **Activity Log inclusion rule** — written into `.claude/rules/note-patterns.md` (2026-05-29)
 - [x] **Handoff stale flag in day-starter** — moot: `/handoff-queue` and `/handoff-receive` are now disabled; `Handoffs/` lifecycle is retired. No stale-flag logic needed.
@@ -93,10 +93,9 @@ The project lifecycle bundle landed in `f25feea` (close skill + day-starter Proj
 
 Routing rewrite landed (Claude account 2 = Dev, Gemini = quick Google only). The handoff skills were built around Gemini's async cycle — they need a rethink now that Dev work is interactive in a second Claude session.
 
-- [ ] **Rename `/gemini-handoff` → `/code-handoff`** — sanitization step still has value (ops session → Dev session needs same data-boundary discipline). Current skill already creates sanitized vault note correctly. Remaining work: rename skill dir, update name/description/triggers, remove Gemini references. Then decide whether to write to `Handoffs/` vault path or produce spec inline.
+- [x] **Rename `/gemini-handoff` → `/code-handoff`** — done (2026-05-29). Dir renamed, SKILL.md rewritten with new name/triggers/allowed-tools, docs updated. Handoffs/ vault path kept.
 - [x] **Retire `/handoff-queue` and `/handoff-receive`** — both disabled (`SKILL.md.disabled`) as of 2026-05-29. Gemini async cycle is retired; these skills have no equivalent need with interactive Claude Dev. `Handoffs/` folder and any existing notes can be archived when ready.
-- [ ] **Prune retired Gemini dev skills from `.gemini/skills/`** — the dev-side skill directories (`test-writer`, `refactor-powershell`, `code-reviewer`, `api-spec`, `ts-linter`, `npm-audit`, `dependency-manager`, `git-helper`, `release-drafter`, `code-documenter`, `log-analyzer`, `config-validator`, `db-query`, `shell-script-converter`, `create-collector-job`) still exist on disk. GEMINI.md and user_guide.md now document them as retired. Decide whether to delete the skill directories or leave them for reference until Claude Dev fully proves out.
-- [ ] **Remove `.gemini/skills/test-writer-mcp-server/`** — uncommitted artifact from a pre-retirement test-writer run. Decide if the output is worth keeping (those 28 MCP tool test files) before removing the skill directory.
+- [x] **Prune retired Gemini dev skills from `.gemini/skills/`** — deleted 17 dirs: api-spec, claude-handoff, code-documenter, code-reviewer, config-validator, create-collector-job, db-query, dependency-manager, git-helper, log-analyzer, npm-audit, refactor-powershell, release-drafter, shell-script-converter, test-writer, test-writer-mcp-server, ts-linter. Remaining: deep-search, research, web-research, pdx-pinball, pdx-weekend-digest (2026-05-29).
 
 ---
 
@@ -104,6 +103,6 @@ Routing rewrite landed (Claude account 2 = Dev, Gemini = quick Google only). The
 
 Root cause fixed (zsh -lc skips .zshrc → added ~/.zprofile), 5-tab launcher created. Three manual steps still needed:
 
-- [ ] **Restart Windows Terminal** — settings were updated live but WT needs a restart to pick up profile + keybinding changes
-- [ ] **Run `dotfiles/install-windows.ps1`** from a PowerShell window — creates `SVH OpsMan.lnk` in Start Menu (wt.exe target, 5-tab args); then right-click → Pin to Start
+- [x] **Restart Windows Terminal** — done
+- [x] **Run `dotfiles/install-windows.ps1`** — done; Start Menu shortcut created
 - [ ] **Remap Copilot key** — PowerToys → Keyboard Manager → Remap a shortcut → Source: Copilot Key → Target: Run Application → `%APPDATA%\Microsoft\Windows\Start Menu\Programs\SVH OpsMan.lnk`

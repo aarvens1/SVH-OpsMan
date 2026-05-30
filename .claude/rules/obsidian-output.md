@@ -57,6 +57,7 @@ Projects use a `project/<slug>` tag in their frontmatter (e.g. `project/network-
 | Assets | `Assets/[name].md` (persistent — update in place) |
 | Projects (indexes) | `Projects/[ProjectName].md` (evergreen — update in place) |
 | Project work artifacts | `Projects/Archive/slug-YYYY-MM-DD.md` (dated, archived when phase closes) |
+| Initiatives | No separate folder — use a shared `project/<initiative-slug>` tag across related project notes. An initiative is just a Dataview query away. |
 | Access reviews | `Reviews/Access/` |
 | Patch reviews | `Reviews/Patches/` |
 | Task triage / reviews | `Reviews/Tasks/YYYY-MM-DD-triage.md` |
@@ -80,7 +81,7 @@ Projects use a `project/<slug>` tag in their frontmatter (e.g. `project/network-
 
 **General rule:** No spaces in filenames anywhere. Prefer lowercase or kebab-case for new files. Existing Asset/Site names that are already established don't need to be changed.
 
-**Handoffs folder:** Written by `/gemini-handoff`. The async queue-and-receive workflow (`/handoff-queue`, `/handoff-receive`) is pending a rewrite — see `TODO.md`. For now, create the sanitized spec note and copy it to a Claude Dev session manually.
+**Handoffs folder:** Written by `/code-handoff`. Creates a sanitized spec note for Claude Dev — review in vault, then paste into a `claude-dev` session.
 
 ## Diagrams
 

@@ -130,7 +130,7 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | **TicketSmith** | `/ticketsmith` · "Write a ticket for this"| Converts a raw user complaint into a well-structured IT ticket. |
 | **Scribe** | `/scribe` · "Document what I just did" | Turns rough notes into structured documentation in various styles (e.g., how-to, incident report). |
 | **Brain Dump** | `/brain-dump` · "brain dump" · "log this" | Zero-friction capture. Appends a timestamped bullet to `Inbox.md` in the vault. No structure, no frontmatter — just a line with a timestamp. |
-| **Gemini Handoff** | `/gemini-handoff` · "Hand this to Gemini" | Creates a structured Obsidian draft note with the sanitized code-work spec. Review it in the vault, then copy the spec into a Claude Dev session manually. The async Gemini cycle is retired — see `TODO.md`. |
+| **Code Handoff** | `/code-handoff` · "Hand this to Claude Dev" · "send this to dev" | Creates a sanitized spec note in `Handoffs/`. Review it in the vault, then paste the spec into a `claude-dev` session. Enforces the data boundary — no private data crosses. |
 
 ### Utilities & Maintenance
 
@@ -258,7 +258,7 @@ Work is routed across three lanes by quota pool, data exposure, and tool strengt
 
 The Dev account and Gemini both sit outside the data boundary. **Real device names, hostnames, IPs, UPNs, alert content, and credentials must not cross from an Ops session into either of them.** When ops context is live and the next step is code work, sanitize the spec first — extract field names and types only.
 
-Historically there was a `/gemini-handoff` skill that wrote a sanitized spec to `.gemini/handoff.md` for an async cycle. That async cycle is retired; sanitization itself still matters and is currently done manually. See `TODO.md` for the rewrite plan.
+Use `/code-handoff` to create a sanitized spec note in `Handoffs/`. Review it there, then paste the spec into a `claude-dev` session.
 
 ### Retired roles
 
