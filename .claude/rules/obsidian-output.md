@@ -80,6 +80,8 @@ Projects use a `project/<slug>` tag in their frontmatter (e.g. `project/network-
 
 **General rule:** No spaces in filenames anywhere. Prefer lowercase or kebab-case for new files. Existing Asset/Site names that are already established don't need to be changed.
 
+**Handoffs folder:** Written by `/gemini-handoff`. The async queue-and-receive workflow (`/handoff-queue`, `/handoff-receive`) is pending a rewrite — see `TODO.md`. For now, create the sanitized spec note and copy it to a Claude Dev session manually.
+
 ## Diagrams
 
 For network topology, attack paths, asset network position, change impact scope, and project WBS — produce an Excalidraw diagram rather than a prose description. Save to `Diagrams/<category>/` and embed with `![[filename.md]]`.

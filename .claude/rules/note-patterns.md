@@ -85,6 +85,14 @@ Example: if it's actually 14:47 and you're adding an investigation note, use a t
 
 ---
 
+## Activity Log inclusion rule
+
+Skills that produce a note linked to today's work (incident triage, investigations, task triage, access reviews, patch campaigns) add a wikilink entry to `# Activity Log`. Skills that produce reference material (asset profiles, skill pages, runbooks, diagrams, project indexes) do not — those notes stand alone.
+
+The test: if the output note would be stale or irrelevant tomorrow, it belongs in the Activity Log. If it's a living document that will be updated in place, skip the log entry.
+
+---
+
 ## Daily note structure
 
 Top-level sections — plain text, no emoji in the header:

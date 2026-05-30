@@ -11,7 +11,7 @@ WSL shell, dotfiles, WinRM trust, Tailscale subnet routing, and systemd services
 A custom MCP server that connects Claude to all managed IT systems (NinjaOne, Defender, M365, Azure, UniFi, Confluence, and more), an on-demand data collector for bulk pulls, a PowerShell module suite for write operations, and five TUI applications for interactive administration.
 
 **Layer 3 — AI Context**
-Claude and Gemini configuration, skill definitions, and runtime reference files the AI reads during operations. Claude is the Ops Expert — full MCP access, owns incident response and all reporting. Gemini is the Dev Assistant — three accounts (Dev / Docs / Research), no MCP access, owns the development lifecycle.
+Claude and Gemini configuration, skill definitions, and runtime reference files the AI reads during operations. Claude is the Ops Expert — full MCP access, owns incident response and all reporting. Claude Dev (`astevens2694@gmail.com`) owns the development lifecycle. Gemini does public web research only — three depth tiers, cited sources, no MCP access.
 
 ## Quick Start
 

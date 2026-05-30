@@ -130,16 +130,12 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | **TicketSmith** | `/ticketsmith` · "Write a ticket for this"| Converts a raw user complaint into a well-structured IT ticket. |
 | **Scribe** | `/scribe` · "Document what I just did" | Turns rough notes into structured documentation in various styles (e.g., how-to, incident report). |
 | **Brain Dump** | `/brain-dump` · "brain dump" · "log this" | Zero-friction capture. Appends a timestamped bullet to `Inbox.md` in the vault. No structure, no frontmatter — just a line with a timestamp. |
-| **Handoff** | `/handoff` · "Create a handoff" | Writes a session handoff note to Obsidian and adds a summary line to today's daily note. Use before context compaction or when switching projects. |
-| **Gemini Handoff** | `/gemini-handoff` · "Hand this to Gemini" | Writes a sanitized code task spec to `.gemini/handoff.md` for Gemini to pick up. No private data crosses the boundary. |
+| **Gemini Handoff** | `/gemini-handoff` · "Hand this to Gemini" | Creates a structured Obsidian draft note with the sanitized code-work spec. Review it in the vault, then copy the spec into a Claude Dev session manually. The async Gemini cycle is retired — see `TODO.md`. |
 
 ### Utilities & Maintenance
 
 | Skill | Invoke | Description |
 | :---- | :----- | :---------- |
-| **OpsMan Health** | `/opsman-health` · "Test my integrations" | Fires a lightweight probe against every configured integration and reports pass/fail per service. Run after MCP server changes or when a tool call fails unexpectedly. |
-| **Staging Review** | `/staging-review` · "What's in staging?" | Quick summary of the latest collector staging data — what was gathered, how fresh it is, and any gaps. Faster than running a full day starter. |
-| **Memory Cleanup** | `/memory-cleanup` · "Clean up memory" | Audits and prunes the Claude auto-memory store. Deletes stale entries, moves actionable items to TODO.md, and rebuilds the memory index. |
 | **PowerShell Navigator** | `/powershell-navigator` · "How do I X in PowerShell?" | Conversational interface for finding, understanding, and executing commands from the SVH PowerShell modules. |
 | **PDX Weekend Digest** | `/pdx-weekend-digest` | Curated digest of upcoming weekend events in the Portland, OR area. |
 

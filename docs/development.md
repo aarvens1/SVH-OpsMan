@@ -127,34 +127,25 @@ npm run typecheck   # TypeScript check without building
 
 Test files live under `mcp-server/src/__tests__/`. When adding a new tool, add a corresponding test file under `__tests__/tools/`. When adding a utility, add tests under `__tests__/utils/`. Run `npm run typecheck` before committing — test files are excluded from the build but the source files they import are not.
 
-## Using Gemini for Development
+## Dev Assistant: Claude Dev
 
-While Claude is the "Ops Expert," Gemini's role is the **Dev Assistant**. It is ideal for:
+Code work belongs in **Claude Dev** — account `astevens2694@gmail.com`, launched via `claude-dev`. This account has no Bitwarden session and no MCP access by design, keeping the data boundary clean.
 
--   **Code Generation & Refactoring:** Creating new scripts, refactoring `mcp-server` tools, or improving PowerShell modules.
--   **Development & Debugging:** Helping to debug code, explaining complex logic, or writing unit tests.
+```bash
+claude-dev   # launches Claude with isolated config at $HOME/.claude-dev
+```
 
-### How Gemini Accesses Project Data
+Claude Dev owns: skills, hooks, MCP server changes, collector jobs, PowerShell modules, TUI apps, test suites, type generation, refactors.
 
-Gemini cannot use the MCP tools directly, but it can access project data and run tasks via the shell aliases and command-line tools:
+### Sanitization before crossing sessions
 
--   **Collector Data:** `staging-cat <job_name>` (e.g., `staging-cat ninja-devices`)
--   **Run Collector Jobs:** `gather` or `gather-<job_name>`
--   **Metrics:** `runs`, `disk-trend`, and `alert-trend`
--   **PowerShell:** `pwsh -c "..."`
+Private system data must not enter a Dev session. Before describing a task to Claude Dev, strip all private values from any ops context — real device names, hostnames, IPs, UPNs, credentials, and alert content are not permitted across the boundary.
 
-You can prompt Gemini like this:
-> "Run the ninja collector, then show me all offline devices that are not in maintenance mode."
+Use `/gemini-handoff` in an Ops session to create a structured Obsidian draft note with the sanitized spec. Review it in the vault, then copy the spec into Claude Dev manually. See `TODO.md` for the async handoff rewrite plan.
 
-Gemini will then use the available shell commands (`gather-ninja`, `staging-cat ninja-devices`, and `jq`) to fulfill the request.
+### Gemini: web research only
 
-### GitHub Integration
-
-Gemini uses a repository-specific **SSH Deploy Key** (`~/.ssh/svh_opsman_gemini_github_key`) for `git` operations, which is configured automatically in `~/.ssh/config`.
-
-### Multiple Gemini Accounts
-
-Three Gemini accounts run in parallel — **A (Dev)**, **B (Docs)**, and **C (Research)** — configured in `dotfiles/bashrc.sh`. The full account strategy and routing rules are in `.gemini/GEMINI.md`. Keep context clean: never cross-pollinate tasks between accounts.
+Gemini's role is public web research — three depth tiers (quick · deep · research), cited sources, image input. It is not a code assistant. See `.gemini/GEMINI.md` for tier descriptions and `.claude/rules/gemini-routing.md` for the routing table.
 
 ## Dev Tools
 

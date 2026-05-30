@@ -2,8 +2,10 @@
 name: handoff-queue
 description: Scans for ready handoffs and pushes one to Gemini. Trigger phrases: "/handoff-queue", "run ready handoffs", "push ready handoffs".
 when_to_use: When you have marked one or more handoff notes in Obsidian with `status: ready` and want to push the oldest one to Gemini for execution.
-allowed-tools: ["mcp__obsidian__*"]
+allowed-tools: "mcp__desktop-commander__* mcp__svh-opsman__staging_read"
 ---
+
+> **Status: Pending Rewrite.** This skill was built for the async Gemini dev workflow, which is retired. The async cycle (`handoff-queue` → Gemini → `handoff-receive`) is not in active use. To pass a spec to Claude Dev, create the sanitized note with `/gemini-handoff`, then copy the spec directly into a `claude-dev` session. See `TODO.md` for the rewrite plan.
 
 # Handoff Queue — Push to Gemini
 

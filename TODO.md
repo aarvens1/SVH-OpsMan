@@ -63,16 +63,16 @@ Full vault review was done on 2026-05-28. Everything below came out of that sess
 ### Remaining issues
 
 - [x] Create missing folder stubs — `Incidents/Active/`, `Changes/`, `Assets/`, `Reviews/Access/`, `Reviews/Patches/`, `Vulnerabilities/` all created
-- [ ] Wikilinks pass — partial (4 daily notes wired up); meeting notes, investigation notes, and asset references still have no cross-links. Consider a `vault-audit` skill to catch this routinely.
-- [ ] Naming inconsistency in `Projects/` — mixed conventions (ISO date prefix vs. no prefix, `FGT-` vs. `Fought-`). Standardize to: dated artifacts = `YYYY-MM-DD-kebab-name.md`, persistent references = `Category-Name.md`.
+- [ ] Wikilinks pass — partial (4 daily notes wired up); meeting notes all have at least one link now, but cross-links to assets/investigations are thin. Consider a `vault-audit` skill to catch this routinely.
+- [x] Naming inconsistency in `Projects/` — renamed `EUG/PDX/SEA-Network-Plan-2026-05-25.md` → `2026-05-25-{site}-network-plan.md`; renamed `Fought-Network-Plan.md` → `FGT-Network-Plan.md`; updated all backlinks (2026-05-29)
 
 ---
 
 ## Optional / later
 
-- [ ] TTL cache on `ninja_list_servers` and `admin_get_service_health` — reduces repeat calls in day-starter sessions
-- [ ] Shape `teams.ts` write ops — `send_message`, `create_channel`, `add_member` still return raw API responses
-- [ ] Re-enable IR Triage skill — currently `SKILL.md.disabled`; re-enable once comfortable with tiered confirmation model
+- [x] TTL cache on `ninja_list_servers` and `admin_get_service_health` — both already implemented (60s TTL, in-memory Map) as of the time this was written to TODO
+- [x] Shape `teams.ts` write ops — `send_message`, `create_channel`, `add_member` now return shaped responses (id, name, webUrl only) (2026-05-29)
+- [x] Re-enable IR Triage skill — already active (`SKILL.md` exists alongside old `SKILL.md.disabled` backup); DM routing validation mode in place (2026-05-29)
 - [ ] `sa_stevens` / `da_stevens` non-interactive PSRemoting — add `SA_REMOTE_PASSWORD` and `DA_REMOTE_PASSWORD` to BW to enable automated skills that currently require `Get-Credential`
 - [ ] Configure rclone remotes (`onedrive` and `gdrive`) — see `docs/setup/backup.md`
 
@@ -83,9 +83,9 @@ Full vault review was done on 2026-05-28. Everything below came out of that sess
 The project lifecycle bundle landed in `f25feea` (close skill + day-starter Projects link-back + Inbox rhythm + `project/<slug>` tag prompts). These four items came out of the same diagnostic but weren't in the bundle:
 
 - [ ] **Initiative layer decision** — umbrella pattern for multi-project initiatives (e.g. "OpsMan itself", or Network Segmentation with per-site child plans currently sitting as peers). Two options: introduce `Projects/Initiatives/` for umbrella notes that link to child projects, OR declare initiatives are just shared tags. Pick one and document.
-- [ ] **Skill page + PS companion audit** — script that walks `.claude/skills/*/SKILL.md` and checks for matching `Skills/<name>.md` in the vault + matching `Get-SVH*` / `New-SVH*` / `Set-SVH*` in `powershell/modules/`. Reports gaps so missing skill pages and PS companions can be backfilled.
-- [ ] **Activity Log inclusion rule** — write into `.claude/rules/note-patterns.md`: "Skills that produce a note linked to today's work add to Activity Log. Skills that produce reference material (asset profiles, skill pages, runbooks) don't." Then audit existing skills against the rule.
-- [ ] **Handoff stale flag in day-starter** — surface old `Handoffs/` notes that have been sitting in `ready` or `in-progress` past a threshold. Becomes less relevant once Gemini async-handoff workflow is retired (see below).
+- [x] **Skill page + PS companion audit** — script created at `scripts/audit-skills.sh`; run it to get a live gap report. Current state (2026-05-29): 28 skills missing both vault page and PS companion, 15 missing PS companion only. See audit output for the full list.
+- [x] **Activity Log inclusion rule** — written into `.claude/rules/note-patterns.md` (2026-05-29)
+- [x] **Handoff stale flag in day-starter** — moot: `/handoff-queue` and `/handoff-receive` are now disabled; `Handoffs/` lifecycle is retired. No stale-flag logic needed.
 
 ---
 
@@ -93,8 +93,8 @@ The project lifecycle bundle landed in `f25feea` (close skill + day-starter Proj
 
 Routing rewrite landed (Claude account 2 = Dev, Gemini = quick Google only). The handoff skills were built around Gemini's async cycle — they need a rethink now that Dev work is interactive in a second Claude session.
 
-- [ ] **Rethink `/gemini-handoff`** — sanitization step still has value (ops session → Dev session needs the same data-boundary discipline). But the file destination (`.gemini/handoff.md`) and the queue mechanic don't apply. Options: rename to `/code-handoff` and write to `.claude-dev/handoff.md`, or fold sanitization into a new lightweight skill that just produces the spec inline for paste.
-- [ ] **Retire or repurpose `/handoff-queue` and `/handoff-receive`** — these manage the Gemini draft → ready → in-progress → done lifecycle. No equivalent need with a second interactive Claude session. Probably delete both and the `Handoffs/` folder lifecycle.
+- [ ] **Rename `/gemini-handoff` → `/code-handoff`** — sanitization step still has value (ops session → Dev session needs same data-boundary discipline). Current skill already creates sanitized vault note correctly. Remaining work: rename skill dir, update name/description/triggers, remove Gemini references. Then decide whether to write to `Handoffs/` vault path or produce spec inline.
+- [x] **Retire `/handoff-queue` and `/handoff-receive`** — both disabled (`SKILL.md.disabled`) as of 2026-05-29. Gemini async cycle is retired; these skills have no equivalent need with interactive Claude Dev. `Handoffs/` folder and any existing notes can be archived when ready.
 - [ ] **Prune retired Gemini dev skills from `.gemini/skills/`** — the dev-side skill directories (`test-writer`, `refactor-powershell`, `code-reviewer`, `api-spec`, `ts-linter`, `npm-audit`, `dependency-manager`, `git-helper`, `release-drafter`, `code-documenter`, `log-analyzer`, `config-validator`, `db-query`, `shell-script-converter`, `create-collector-job`) still exist on disk. GEMINI.md and user_guide.md now document them as retired. Decide whether to delete the skill directories or leave them for reference until Claude Dev fully proves out.
 - [ ] **Remove `.gemini/skills/test-writer-mcp-server/`** — uncommitted artifact from a pre-retirement test-writer run. Decide if the output is worth keeping (those 28 MCP tool test files) before removing the skill directory.
 

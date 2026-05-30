@@ -2,8 +2,10 @@
 name: handoff-receive
 description: Integrates Gemini's results from .gemini/to-claude.md and closes out the handoff note. Trigger phrases: "/handoff-receive", "pick up Gemini's result", "Gemini is done".
 when_to_use: After Gemini has finished a handoff task and written its results to `.gemini/to-claude.md`.
-allowed-tools: ["mcp__obsidian__*"]
+allowed-tools: "mcp__desktop-commander__* mcp__svh-opsman__staging_read"
 ---
+
+> **Status: Pending Rewrite.** This skill was built for the async Gemini dev workflow, which is retired. The async cycle is not in active use — Claude Dev results are integrated directly in the Ops session. See `TODO.md` for the rewrite plan.
 
 # Handoff Receive — Integrate Gemini's Result
 

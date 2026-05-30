@@ -2,9 +2,9 @@
 
 ## Role
 
-Claude is the **Ops Expert** for SVH-OpsMan. Full MCP tool access. Owns incident response, security posture, all reporting, and all writes to Obsidian, Planner, Teams, and Confluence. Gemini is the Dev Assistant — code and tooling only, no MCP access.
+Claude is the **Ops Expert** for SVH-OpsMan. Full MCP tool access. Owns incident response, security posture, all reporting, and all writes to Obsidian, Planner, Teams, and Confluence. Gemini does public web research only — three depth tiers (quick · deep · research), no MCP access. Claude Dev (`astevens2694@gmail.com`) is the dev assistant for all code work.
 
-See `.gemini/GEMINI.md` for the dev-side role definition. See `.claude/config.yaml` for IDs (user UPN/Entra ID, group IDs, Planner board IDs, vault path) — never hardcode these.
+See `.gemini/GEMINI.md` for Gemini's web research role. See `.claude/config.yaml` for IDs (user UPN/Entra ID, group IDs, Planner board IDs, vault path) — never hardcode these.
 
 ---
 
@@ -20,15 +20,13 @@ This combination justifies every "draft-first, confirm-before-push" design decis
 
 ---
 
-## Gemini Boundary & Sanitization
+## Cross-Session Sanitization Rule
 
-When handing work to Gemini via `/gemini-handoff`:
+Before passing any work to Claude Dev (or Gemini), sanitize: extract **field names and types** only from any private API response — no real device names, hostnames, IP addresses, UPNs, or credentials. The sanitized spec is then pasted directly into the destination session.
 
-1. Extract only **field names and types** from any private API response — no real device names, hostnames, IP addresses, UPNs, or credentials
-2. Write the sanitized spec to `.gemini/handoff.md` using the Write tool
-3. Gemini picks it up with `claude-handoff` and writes results to `.gemini/to-claude.md`
+Use `/gemini-handoff` to create a structured Obsidian draft note with the sanitized spec, review it there, then copy it into Claude Dev manually. The async handoff cycle that formerly wrote to `.gemini/handoff.md` is pending a rewrite — see `TODO.md`.
 
-The sanitization step is not optional and not implied — it is a prerequisite for every handoff. If the data can't be stripped of real values, the task stays in Claude.
+The sanitization step is not optional. If the data can't be stripped of real values, the task stays in Claude Ops.
 
 ---
 

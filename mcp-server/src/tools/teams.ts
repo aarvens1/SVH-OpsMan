@@ -89,7 +89,8 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
           `/teams/${team_id}/channels/${channel_id}/messages`,
           { body: { content, contentType: content_type } }
         );
-        return ok(res.data);
+        const d = res.data as Record<string, unknown>;
+        return ok({ id: d["id"], createdDateTime: d["createdDateTime"], webUrl: d["webUrl"] });
       } catch (e) {
         return err(e);
       }
@@ -157,7 +158,8 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
         };
         if (description) body["description"] = description;
         const res = await graphClient(token).post(`/teams/${team_id}/channels`, body);
-        return ok(res.data);
+        const d = res.data as Record<string, unknown>;
+        return ok({ id: d["id"], displayName: d["displayName"], description: d["description"] ?? null, webUrl: d["webUrl"] });
       } catch (e) {
         return err(e);
       }
@@ -274,7 +276,8 @@ export function registerTeamsTools(server: McpServer, enabled: boolean, graphUse
           "user@odata.bind": `https://graph.microsoft.com/v1.0/users('${user_id}')`,
         };
         const res = await graphClient(token).post(`/teams/${team_id}/members`, body);
-        return ok(res.data);
+        const d = res.data as Record<string, unknown>;
+        return ok({ id: d["id"], displayName: d["displayName"], userId: d["userId"], roles: d["roles"] });
       } catch (e) {
         return err(e);
       }
