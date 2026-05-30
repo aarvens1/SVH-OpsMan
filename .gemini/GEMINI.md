@@ -32,14 +32,6 @@ All three tiers:
 
 ---
 
-## What Used to Be Here (Retired)
-
-The previous three-account model (A: Dev, B: Docs, C: Research) is retired as of 2026-05-29. Most of the dev-side skills (`test-writer`, `refactor-powershell`, `code-reviewer`, `api-spec`, `ts-linter`, `npm-audit`, `dependency-manager`, `git-helper`, `release-drafter`, `code-documenter`, `log-analyzer`, `config-validator`, `db-query`, `shell-script-converter`) are superseded by Claude Dev (account `astevens2694@gmail.com`, launched via `claude-dev`).
-
-The skill files remain on disk during transition — see the project `TODO.md` for the cleanup plan. Do not invoke them in new work; route dev tasks to Claude Dev instead.
-
-The async handoff workflow (`claude-handoff` here / `gemini-handoff` on the Claude side) is also pending a rewrite — see `TODO.md`. For now: when ops data needs to become a sanitized spec for code work, the sanitization step happens manually in the Ops Claude session, then pastes into Claude Dev.
-
 ---
 
 ## How to Invoke
