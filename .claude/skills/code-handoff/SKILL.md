@@ -2,7 +2,7 @@
 name: code-handoff
 description: Creates a sanitized Obsidian spec note for passing code work to Claude Dev. Trigger phrases: "/code-handoff", "hand this to Claude Dev", "send this to dev".
 when_to_use: When the next step is pure code work (scaffolding, refactoring, testing, type generation) that doesn't require live MCP tool calls or raw private system data. Use to capture and sanitize the spec before pasting it into a Claude Dev session.
-allowed-tools: "mcp__obsidian__* mcp__time__*"
+allowed-tools: "Read Write Edit"
 ---
 
 # Code Handoff — Create Sanitized Spec Note

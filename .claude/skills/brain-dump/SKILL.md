@@ -2,7 +2,7 @@
 name: brain-dump
 description: Zero-friction capture. Appends a timestamped bullet to Inbox.md in the vault. Accepts inline text or whatever is in the current message. Trigger phrases: "brain dump", "jot this down", "log this", "/brain-dump", "capture this", "add to inbox".
 when_to_use: When you want to capture a thought, link, idea, or reminder without ceremony. No note structure, no frontmatter — just a timestamped line in Inbox.md.
-allowed-tools: "mcp__desktop-commander__write_file mcp__desktop-commander__read_file mcp__time__*"
+allowed-tools: "mcp__desktop-commander__write_file mcp__desktop-commander__read_file"
 ---
 
 # Brain Dump

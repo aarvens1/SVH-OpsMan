@@ -2,7 +2,7 @@
 name: license-audit
 description: Unified license + device audit. Cross-joins M365 license assignments, Intune enrollment, and MFA registration to surface orphaned licenses (licensed user, no device, no MFA), over-licensed users, and compliance gaps. Trigger phrases: "license audit", "orphaned licenses", "who has licenses but no device", "license waste", "unified license check".
 when_to_use: Use for periodic license hygiene, cost audits, or when the "licensed but exposed" problem needs a concrete answer. Not for investigating a specific user — use /access-review for that.
-allowed-tools: "mcp__svh-opsman__admin_get_user_licenses mcp__svh-opsman__intune_list_devices mcp__svh-opsman__entra_get_user_mfa_methods mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_list_risky_users mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__admin_get_user_licenses mcp__svh-opsman__intune_list_devices mcp__svh-opsman__entra_get_user_mfa_methods mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_list_risky_users"
 ---
 
 # License Audit
@@ -16,7 +16,7 @@ Parse the user's invocation for any filters:
 - **Risk focus**: highlight users who are also in Entra risky users list
 - **Default**: run the full cross-join across all premium license SKUs (E3, E5, F3, EMS, Defender P1/P2)
 
-Call `mcp__time__get_current_time` for timestamp. Define "inactive" as no sign-in in the past 30 days.
+Use today's date from session context for timestamp. Define "inactive" as no sign-in in the past 30 days.
 
 ## Step 1 — Pull data in parallel
 
@@ -116,7 +116,7 @@ Summarize as a count with a representative sample: "12 users have licenses but n
 [Draft tasks below for any findings that warrant follow-up. Nothing is created until Aaron confirms. After confirmation, remove the block using `edit_block`.]
 
 #### CREATE — [task title]
-- **Plan:** IT Sysadmin Tasks (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`)
+- **Plan:** IT Sysadmin Tasks (`config.planner.sysadmin`)
 - **Bucket:** [bucket name or leave blank]
 - **Due:** YYYY-MM-DD
 - **Priority:** [Urgent / Important / Medium / Low]

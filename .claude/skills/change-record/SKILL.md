@@ -2,7 +2,7 @@
 name: change-record
 description: Document a change before or during implementation. Captures scope, risk classification, test plan, rollback procedure, comms plan, and schedule. Produces an impact-scope Excalidraw diagram. Trigger phrases: "about to make a change", "document this rollout", "change record for X", "I'm about to change Y".
 when_to_use: Use before any significant change — config changes, deployments, infrastructure changes, major updates.
-allowed-tools: "mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__confluence_create_page mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_channels mcp__obsidian__* mcp__excalidraw__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__confluence_create_page mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_channels"
 ---
 
 # Change Record
@@ -73,4 +73,4 @@ If Step 1 captured a related project, add `project/<slug>` to the tags array. Ot
 Also produce (as staged drafts):
 - **Confluence page** — `confluence_create_page` in the IT changes space
 - **Planner card** — `planner_create_task` for tracking
-- **Teams notification draft** — for the IT Team Changes channel (team_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`, channel: Changes). Not sent until user confirms. Draft in Aaron's voice following the `aaron-voice` rules: no greeting, declarative tone, state what's changing, start time, and expected duration. Bold the maintenance window if users need to plan around it (e.g., `**Maintenance window: Sunday 2026-05-10 22:00–00:00 — file server will be offline.**`). Run the self-check before presenting.
+- **Teams notification draft** — for the IT Team Changes channel (team_id: `config.groups.it_team`, channel: Changes). Not sent until user confirms. Draft in Aaron's voice following the `aaron-voice` rules: no greeting, declarative tone, state what's changing, start time, and expected duration. Bold the maintenance window if users need to plan around it (e.g., `**Maintenance window: Sunday 2026-05-10 22:00–00:00 — file server will be offline.**`). Run the self-check before presenting.

@@ -2,7 +2,7 @@
 name: day-ender
 description: End-of-day wrap-up. Covers the period since the last day-starter or day-ender ran, with a 24-hour cap. Falls back to 12h if no state exists. Override with "last N hours" or "reset" to use defaults. Trigger phrases: "day ender", "wrap up today", "end of day", "EOD".
 when_to_use: Use at the end of each workday to close out the day cleanly.
-allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__obsidian__* mcp__time__* mcp__svh-opsman__gmail_list_recent mcp__svh-opsman__gmail_search mcp__svh-opsman__gmail_get_message mcp__svh-opsman__gmail_send mcp__svh-opsman__gcal_list_events mcp__svh-opsman__gcal_get_event mcp__svh-opsman__gcal_create_event mcp__svh-opsman__gcal_update_event mcp__svh-opsman__gtasks_list_task_lists mcp__svh-opsman__gtasks_list_tasks mcp__svh-opsman__gtasks_create_task mcp__svh-opsman__gtasks_complete_task mcp__svh-opsman__gdrive_list_files mcp__svh-opsman__gdrive_search mcp__svh-opsman__gdrive_read_file"
+allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search"
 ---
 
 # Day Ender
@@ -11,7 +11,7 @@ allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mc
 
 ### Step 0 — Compute the lookback window
 
-1. Call `mcp__time__get_current_time` to get the current timestamp.
+1. Get the current timestamp from session context (injected by session-start hook — do not call a time tool).
 2. Check whether the user specified an explicit override in their invocation:
    - **"reset"** or **"default"**: skip the state file. Use 12h. Write current timestamp to state after the run.
    - **"last N hours"** / any explicit time range: use that window. Write current timestamp to state after the run.
@@ -27,7 +27,7 @@ allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mc
 The day-starter already established the morning baseline. This step gathers only what you need to close out the day — what moved, what's still live, what came in.
 
 Run in parallel:
-- `planner_get_user_tasks` (user_id: `astevens@shoestringvalley.com`, open_only: true) — Aaron's tasks across all boards. Cross-reference against the morning briefing to identify what closed and what's still open.
+- `planner_get_user_tasks` (user_id: `config.user.upn`, open_only: true) — Aaron's tasks across all boards. Cross-reference against the morning briefing to identify what closed and what's still open.
 - `todo_list_task_lists` (user_id: `user.entra_id` from config) then `todo_list_tasks` (user_id: `user.entra_id` from config) — unchecked personal To Do items. **Always use the Entra object ID, not the UPN** — the UPN returns HTTP 403 with application credentials.
 - `mde_list_alerts` + `wazuh_search_alerts` — security alerts still active. Compare against morning briefing — note only what's new or still unresolved. (If Wazuh unavailable, skip and note it.)
 - `entra_list_risky_users` — any still-open risky users.
@@ -74,7 +74,7 @@ Focus at EOD on:
 - **CREATE** any new tasks surfaced by EOD findings (security alerts, infra issues, follow-ups from Teams/mail)
 
 Default destination for new tasks:
-- **IT Sysadmin Tasks** (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`) — operational/sysadmin follow-ups, security findings, infrastructure issues
+- **IT Sysadmin Tasks** (`config.planner.sysadmin`) — operational/sysadmin follow-ups, security findings, infrastructure issues
 - **Personal To Do** — smaller personal action items not appropriate for the team board
 
 **UPDATE format** (one subsection per task):

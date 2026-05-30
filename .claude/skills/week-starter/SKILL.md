@@ -2,7 +2,7 @@
 name: week-starter
 description: Monday morning weekly briefing. Last week's loose ends plus this week's load — what closed, open threads, upcoming calendar and tasks, anything stale that needs a nudge, and a suggested first move. Trigger phrases: "week starter", "what does the week look like", "weekly briefing".
 when_to_use: Use at the start of the work week (Monday) for a broader picture than the daily briefing.
-allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__collector_run mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_list_expiring_secrets mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__obsidian__* mcp__time__* mcp__svh-opsman__gmail_list_recent mcp__svh-opsman__gmail_search mcp__svh-opsman__gmail_get_message mcp__svh-opsman__gmail_send mcp__svh-opsman__gcal_list_events mcp__svh-opsman__gcal_get_event mcp__svh-opsman__gcal_list_calendars mcp__svh-opsman__gcal_create_event mcp__svh-opsman__gcal_update_event mcp__svh-opsman__gtasks_list_task_lists mcp__svh-opsman__gtasks_list_tasks mcp__svh-opsman__gtasks_create_task mcp__svh-opsman__gtasks_complete_task mcp__svh-opsman__gdrive_list_files mcp__svh-opsman__gdrive_search mcp__svh-opsman__gdrive_read_file mcp__svh-opsman__gdrive_create_folder mcp__svh-opsman__gdrive_upload_text"
+allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__collector_run mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_list_expiring_secrets mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups"
 ---
 
 # Week Starter
@@ -11,7 +11,7 @@ allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mc
 
 ### Step 0 — Compute the lookback window
 
-1. Call `mcp__time__get_current_time` to get the current timestamp.
+1. Get the current timestamp from session context (injected by session-start hook — do not call a time tool).
 2. Check whether the user specified an explicit override:
    - **"reset"** or **"default"**: skip the state file. Use 7 days. Write current timestamp to state after the run.
    - **"last N days/hours"** / any explicit range: use that window. Write current timestamp to state after the run.
@@ -52,19 +52,19 @@ The following always use live APIs:
 ### Step 1b — Last week's state (run in parallel)
 
 Run in parallel:
-- `planner_get_user_tasks` (user_id: `astevens@shoestringvalley.com`, open_only: true) — Aaron's tasks still open. Primary source for his task list.
-- `planner_list_plans` (IT Team group: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) to catch any newly created plans, then `planner_list_tasks` for the known operational boards:
-  - IT Sysadmin Tasks: `-aZEdilGAUqLC8B8GwOLfmQAAh9M`
-  - IT Recurring Tasks: `ZTlTUrl1gUunMMwExKSDRWQABKjH`
-  - IT Management Tasks: `e0-6qZKUSkyZJUQg9nNbzmQAEjoO`
-  - IT Task Overview: `nyrAlo2ciUKVEv8GXUA78WQAG8mL`
+- `planner_get_user_tasks` (user_id: `config.user.upn`, open_only: true) — Aaron's tasks still open. Primary source for his task list.
+- `planner_list_plans` (IT Team group: `config.groups.it_team`) to catch any newly created plans, then `planner_list_tasks` for the known operational boards:
+  - IT Sysadmin Tasks: `config.planner.sysadmin`
+  - IT Recurring Tasks: `config.planner.recurring`
+  - IT Management Tasks: `config.planner.management`
+  - IT Task Overview: `config.planner.overview`
 
   Also pull `planner_list_tasks` for project boards (surface in Projects section, not team boards):
-  - Office Network Standardization: `E4PruQekE0K25KH40pWa9WQAAfAr`
-  - BDR Testing: `lJQrriNYnUuLKm5u485GX2QAE_WS`
-  - Information Security Program (ISP): `2es7HS5UakyP3K6ZkwRfd2QAF3I_`
-  - CMMC Level 1: `qxQKzAEGd0m3Q6EUysaGVmQADbmg`
-  - Copilot Audit for IT team: `wP9PL7YWCEqGbG6o4aYVT2QADaLq`
+  - Office Network Standardization: `config.planner.office_network`
+  - BDR Testing: `config.planner.bdr_testing`
+  - Information Security Program (ISP): `config.planner.isp`
+  - CMMC Level 1: `config.planner.cmmc_l1`
+  - Copilot Audit for IT team: `config.planner.copilot_audit`
 - `todo_list_task_lists` then `todo_list_tasks` — any uncompleted personal tasks.
 - `wazuh_search_alerts` / `mde_list_alerts` — unresolved alerts from the last N days.
 - `entra_list_risky_users` — open risky user flags.
@@ -94,7 +94,7 @@ Run in parallel:
 - `entra_list_expiring_secrets` — app secrets expiring within 30 days.
 - `admin_list_service_incidents` — any active M365 incidents carrying over.
 - **DMs:** `teams_list_my_chats` (top: 50) → filter to threads with activity since lookback start → `teams_get_chat_messages` (top: 10, as a **number not a string**) for active threads.
-- **IT Team channels:** `teams_list_teams` → `teams_list_channels` (team_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) → `teams_list_messages` on General, Changes, Infrastructure, and Alerts channels. Filter to messages since lookback start.
+- **IT Team channels:** `teams_list_teams` → `teams_list_channels` (team_id: `config.groups.it_team`) → `teams_list_messages` on General, Changes, Infrastructure, and Alerts channels. Filter to messages since lookback start.
 
 Also run in parallel for the personal digest:
 - `gcal_list_events` (Google Calendar, calendar_id: "primary", time_min: start of this week, time_max: end of this week) — personal events for the week.
@@ -132,7 +132,7 @@ Sections:
    - If any Google tool fails: `*Google [service]: unavailable this session.*` and skip that subsection.
 10. **🖥 Infrastructure status** — Always include. NinjaOne: all servers (discover via `ninja_list_servers`), grouped by org, status per device. UniFi: all sites table (site name, ISP, clients, devices, offline, alerts). Confluence: pages modified since lookback start in INF/PROC/POL/SITE, or "No changes this week."
 11. **💡 Suggested first move** — single most important thing to tackle Monday
-12. **📝 Draft Planner actions** — Always include. Nothing is created or changed until Aaron explicitly confirms. Use CREATE / UPDATE / REMOVE / TODO format (same as Day Starter). Default plan: IT Sysadmin Tasks (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`). After Aaron confirms any block, remove it from the note with `edit_block`.
+12. **📝 Draft Planner actions** — Always include. Nothing is created or changed until Aaron explicitly confirms. Use CREATE / UPDATE / REMOVE / TODO format (same as Day Starter). Default plan: IT Sysadmin Tasks (`config.planner.sysadmin`). After Aaron confirms any block, remove it from the note with `edit_block`.
 
 ## Step 4 — Update state file
 

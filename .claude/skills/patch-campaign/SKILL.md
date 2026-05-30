@@ -2,7 +2,7 @@
 name: patch-campaign
 description: Plan a patch campaign across all managed devices. Pulls pending patches from NinjaOne, cross-references Defender TVM priority, groups into tiers, and creates a Planner board for tracking. Trigger phrases: "patch campaign", "what needs patching", "let's plan patching", "patching this month".
 when_to_use: Use when planning a scheduled patching cycle or responding to a critical patch release.
-allowed-tools: "mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__mde_get_security_recommendations mcp__svh-opsman__mde_list_devices mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_plan mcp__svh-opsman__planner_create_bucket mcp__svh-opsman__planner_create_task mcp__obsidian__* mcp__firecrawl__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__mde_get_security_recommendations mcp__svh-opsman__mde_list_devices mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_plan mcp__svh-opsman__planner_create_bucket mcp__svh-opsman__planner_create_task"
 ---
 
 # Patch Campaign

@@ -2,7 +2,7 @@
 name: import-research
 description: File pasted Gemini search output (any tier) into the Obsidian vault as a Research note. Adds frontmatter, links from today's daily note, appends to the skill log. Trigger phrases: "file this research", "save this to research", "import-research", "/import-research", "this came from Gemini, save it".
 when_to_use: After running a quick/deep/research search in Gemini, when the output is worth keeping. Paste the full output (including the Sources list) and the skill files it consistently. Skip for one-off lookups that don't need a record.
-allowed-tools: "mcp__obsidian__* mcp__time__*"
+allowed-tools: "Read Write Edit"
 ---
 
 # Import Research
@@ -28,7 +28,7 @@ Extract:
    - Short prose with citations only → `quick`
    - If ambiguous, ask.
 4. **Source count** — count `[N]` entries in the Sources list. Record this number.
-5. **Date** — `mcp__time__get_current_time` for today.
+5. **Date** — use today's date from session context.
 
 Show Aaron: title, slug, tier, source count, target path. Confirm before writing.
 

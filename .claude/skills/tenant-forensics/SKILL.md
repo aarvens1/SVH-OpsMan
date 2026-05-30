@@ -2,7 +2,7 @@
 name: tenant-forensics
 description: "What broke and who touched it?" forensic pair. Cross-references Azure activity logs + Entra audit logs by timestamp and actor to produce a human-readable change timeline for a given window. Trigger phrases: "who touched it", "what changed before X broke", "tenant forensics", "forensic audit", "what happened in Azure around [time]".
 when_to_use: Use when something broke and you need to know what changed in the 30–60 minutes before it. Also useful for ad-hoc change auditing, compliance checks, or "someone did something they shouldn't have" investigations.
-allowed-tools: "mcp__svh-opsman__azure_get_activity_logs mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_get_role_members mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__ninja_get_patch_history mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__azure_get_activity_logs mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_get_role_members mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__ninja_get_patch_history"
 ---
 
 # Tenant Forensics
@@ -11,7 +11,7 @@ allowed-tools: "mcp__svh-opsman__azure_get_activity_logs mcp__svh-opsman__entra_
 
 ## Step 0 — Establish the window
 
-1. Call `mcp__time__get_current_time` for the current timestamp.
+1. Get the current timestamp from session context (injected by session-start hook — do not call a time tool).
 2. Parse the user's invocation for a time window. Accept any of:
    - Explicit range: "between 2pm and 3pm yesterday", "from 14:00 to 15:30 on May 12"
    - Relative: "last 2 hours", "last 30 minutes"

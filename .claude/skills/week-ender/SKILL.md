@@ -2,7 +2,7 @@
 name: week-ender
 description: Thursday pre-meeting wrap-up. What shipped, what slipped, seeds for next week, and an optional summary draft. Run before the Thursday admin meeting so the week's state is visible going in. Trigger phrases: "week ender", "wrap up the week", "weekly wrap".
 when_to_use: Use Thursday morning before the admin meeting. The Day Ender still runs at EOD to capture Thursday afternoon — the weekly note stays as a pre-meeting snapshot.
-allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__calendar_list_events mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__obsidian__* mcp__time__* mcp__svh-opsman__gmail_list_recent mcp__svh-opsman__gmail_search mcp__svh-opsman__gmail_get_message mcp__svh-opsman__gmail_send mcp__svh-opsman__gcal_list_events mcp__svh-opsman__gcal_get_event mcp__svh-opsman__gcal_create_event mcp__svh-opsman__gcal_update_event mcp__svh-opsman__gtasks_list_task_lists mcp__svh-opsman__gtasks_list_tasks mcp__svh-opsman__gtasks_create_task mcp__svh-opsman__gtasks_complete_task mcp__svh-opsman__gdrive_list_files mcp__svh-opsman__gdrive_search mcp__svh-opsman__gdrive_read_file"
+allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__calendar_list_events mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages"
 ---
 
 # Week Ender
@@ -11,7 +11,7 @@ allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mc
 
 ### Step 0 — Compute the lookback window
 
-1. Call `mcp__time__get_current_time` to get the current timestamp.
+1. Get the current timestamp from session context (injected by session-start hook — do not call a time tool).
 2. Check whether the user specified an explicit override:
    - **"reset"** or **"default"**: skip the state file. Use 7 days. Write current timestamp to state after the run.
    - **"last N days/hours"** / any explicit range: use that window. Write current timestamp to state after the run.
@@ -32,18 +32,18 @@ Call `staging_status`. If fresh, use `staging_read` for bulk infrastructure read
 Fall back to live APIs if staging is stale. Note failures in **Data gaps**.
 
 ### Step 1b — Run in parallel:
-- `planner_get_user_tasks` (user_id: `astevens@shoestringvalley.com`, open_only: false) — Aaron's tasks including completed ones this week.
+- `planner_get_user_tasks` (user_id: `config.user.upn`, open_only: false) — Aaron's tasks including completed ones this week.
 - `planner_list_tasks` for the operational boards (completed vs. still open):
-  - IT Sysadmin Tasks: `-aZEdilGAUqLC8B8GwOLfmQAAh9M`
-  - IT Recurring Tasks: `ZTlTUrl1gUunMMwExKSDRWQABKjH`
-  - IT Management Tasks: `e0-6qZKUSkyZJUQg9nNbzmQAEjoO`
-  - IT Task Overview: `nyrAlo2ciUKVEv8GXUA78WQAG8mL`
+  - IT Sysadmin Tasks: `config.planner.sysadmin`
+  - IT Recurring Tasks: `config.planner.recurring`
+  - IT Management Tasks: `config.planner.management`
+  - IT Task Overview: `config.planner.overview`
 - `planner_list_tasks` for project boards (progress this week):
-  - Office Network Standardization: `E4PruQekE0K25KH40pWa9WQAAfAr`
-  - BDR Testing: `lJQrriNYnUuLKm5u485GX2QAE_WS`
-  - Information Security Program (ISP): `2es7HS5UakyP3K6ZkwRfd2QAF3I_`
-  - CMMC Level 1: `qxQKzAEGd0m3Q6EUysaGVmQADbmg`
-  - Copilot Audit for IT team: `wP9PL7YWCEqGbG6o4aYVT2QADaLq`
+  - Office Network Standardization: `config.planner.office_network`
+  - BDR Testing: `config.planner.bdr_testing`
+  - Information Security Program (ISP): `config.planner.isp`
+  - CMMC Level 1: `config.planner.cmmc_l1`
+  - Copilot Audit for IT team: `config.planner.copilot_audit`
 - `todo_list_task_lists` then `todo_list_tasks` — personal task completion.
 - `calendar_list_events` — what meetings happened, which recurred.
 - `gcal_list_events` (Google Calendar, calendar_id: "primary") — personal events this week.
@@ -54,7 +54,7 @@ Fall back to live APIs if staging is stale. Note failures in **Data gaps**.
 - `unifi_list_sites` — end-of-week site health snapshot.
 - `confluence_search_pages` — pages modified since the lookback start in INF, PROC, POL, SITE. CQL: `space.key IN ("INF","PROC","POL","SITE") AND lastModified >= "YYYY-MM-DD" ORDER BY lastModified DESC` (substitute lookback start date from Step 0).
 - **DMs:** `teams_list_my_chats` (top: 50) → filter to threads with activity since lookback start → `teams_get_chat_messages` (top: 10, as a **number not a string**) for active threads.
-- **IT Team channels:** `teams_list_teams` → `teams_list_channels` (team_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) → `teams_list_messages` on General, Changes, Infrastructure, and Alerts channels. Filter to messages since lookback start.
+- **IT Team channels:** `teams_list_teams` → `teams_list_channels` (team_id: `config.groups.it_team`) → `teams_list_messages` on General, Changes, Infrastructure, and Alerts channels. Filter to messages since lookback start.
 
 Also read any `Incidents/Active/` notes from Obsidian created this week.
 
@@ -97,7 +97,7 @@ Always include. Nothing is created or changed until Aaron explicitly confirms. F
 - **UPDATE** slipped tasks (adjust due dates, note reason)
 - **CREATE** tasks for seeds that need a Planner card next week
 
-Use CREATE / UPDATE / REMOVE / TODO format (same as Day Starter). Default plan: IT Sysadmin Tasks (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`). After Aaron confirms any block, remove it with `edit_block`.
+Use CREATE / UPDATE / REMOVE / TODO format (same as Day Starter). Default plan: IT Sysadmin Tasks (`config.planner.sysadmin`). After Aaron confirms any block, remove it with `edit_block`.
 
 ## Step 4 — Update state file
 

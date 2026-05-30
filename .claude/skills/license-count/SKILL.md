@@ -2,7 +2,7 @@
 name: license-count
 description: Quick E1/E3 license seat count. Shows total purchased, consumed, and available seats for M365 E1 and E3 subscriptions. Alerts if seats are critically low or exhausted and drafts a To Do task to notify procurement. Trigger phrases: "license count", "how many E1/E3 licenses", "check license inventory", "are we low on licenses", "E1 seats", "E3 seats".
 when_to_use: Use for a quick license headroom check — runs in ~10 seconds. For a full cost/compliance audit (per-user cross-join, ghost accounts, orphaned licenses), use /license-audit instead.
-allowed-tools: "mcp__svh-opsman__admin_list_subscriptions mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__todo_create_task mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__admin_list_subscriptions mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__todo_create_task"
 ---
 
 # License Count

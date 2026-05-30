@@ -2,7 +2,7 @@
 name: project-creator
 description: Break a large task or initiative into a structured project with scope, deliverables, WBS, dependencies, and effort estimate. Small projects (≤8 items) get a single Planner card. Larger ones get a full Planner plan with buckets and tasks, a Confluence project page, and an Excalidraw WBS diagram — with a full staged review before anything is pushed. Trigger phrases: "turn this into a project", "help me plan X", "create a project for Y".
 when_to_use: Use when a task is too large to fit in a single Planner card and needs decomposition.
-allowed-tools: "mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__confluence_get_page mcp__svh-opsman__confluence_create_page mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_get_plan_details mcp__svh-opsman__planner_create_plan mcp__svh-opsman__planner_create_bucket mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__calendar_list_events mcp__obsidian__* mcp__excalidraw__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__confluence_get_page mcp__svh-opsman__confluence_create_page mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_get_plan_details mcp__svh-opsman__planner_create_plan mcp__svh-opsman__planner_create_bucket mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__calendar_list_events"
 ---
 
 # Project Creator
@@ -13,7 +13,7 @@ Run in parallel:
 - `confluence_search_pages` — any existing docs for this project, system, or domain
 - Read relevant Obsidian notes if the user mentions them
 - `calendar_list_events` — any upcoming deadlines, reviews, or milestones already on the calendar
-- `planner_list_plans` (IT Team group: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) — check if a Planner plan for this project already exists before creating a new one
+- `planner_list_plans` (IT Team group: `config.groups.it_team`) — check if a Planner plan for this project already exists before creating a new one
 - List `Projects/` in the vault — check for a sibling project on the same topic; if one exists, ask whether this is a child work artifact (belongs in `Projects/Archive/` when complete) or a separate project
 
 If a plan already exists, surface it and ask whether to extend it or build a parallel structure.
@@ -103,7 +103,7 @@ Review all blocks below. Edit any field directly in the note. To skip a bucket o
 
 ### CREATE PLAN
 - **Title:** [project name]
-- **Group:** IT Team (`1acb76b4-f2eb-42fc-8ae3-3b2262277516`)
+- **Group:** IT Team (`config.groups.it_team`)
 
 ---
 
@@ -137,7 +137,7 @@ Review all blocks below. Edit any field directly in the note. To skip a bucket o
 When Aaron confirms ("push the project", "push it", "go ahead"):
 
 Execute in strict sequence:
-1. `planner_create_plan` (group_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`, title from the PLAN block) → record the returned `plan_id`, then update the project note's frontmatter `planner_plan_id:` field with this value via `edit_block`
+1. `planner_create_plan` (group_id: `config.groups.it_team`, title from the PLAN block) → record the returned `plan_id`, then update the project note's frontmatter `planner_plan_id:` field with this value via `edit_block`
 2. For each `CREATE BUCKET` block (in order): `planner_create_bucket` (plan_id, name) → record the returned `bucket_id`, building a `name → id` map
 3. For each `CREATE TASK` block: resolve `bucket_id` from the name map, then `planner_create_task` with all fields
 

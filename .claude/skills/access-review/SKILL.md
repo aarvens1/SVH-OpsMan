@@ -2,7 +2,7 @@
 name: access-review
 description: Access and permission audit for a user, group, or Entra role. Flags inactive privileged accounts, missing MFA in sensitive roles, and stale memberships. Trigger phrases: "access review for [user/group/role]", "audit permissions for X", "who has access to Y".
 when_to_use: Use for privilege audits, compliance reviews, or investigating over-permissioned accounts.
-allowed-tools: "mcp__svh-opsman__entra_list_directory_roles mcp__svh-opsman__entra_get_role_members mcp__svh-opsman__entra_list_app_registrations mcp__svh-opsman__entra_get_user_mfa_methods mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_list_conditional_access_policies mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__confluence_create_page mcp__svh-opsman__confluence_search_pages mcp__obsidian__* mcp__time__* mcp__svh-opsman__hibp_check_account mcp__svh-opsman__hibp_check_pastes"
+allowed-tools: "mcp__svh-opsman__entra_list_directory_roles mcp__svh-opsman__entra_get_role_members mcp__svh-opsman__entra_list_app_registrations mcp__svh-opsman__entra_get_user_mfa_methods mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_list_conditional_access_policies mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__confluence_create_page mcp__svh-opsman__confluence_search_pages"
 ---
 
 # Access Review

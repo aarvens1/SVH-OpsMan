@@ -2,7 +2,7 @@
 name: task-review
 description: Full task triage across MS To Do and all Planner boards. Pulls everything fresh, organizes by urgency and owner, then supports bulk actions (close, reschedule, mark done). Trigger phrases: "task review", "let's bust out some tasks", "triage my tasks", "clear out tasks", "task triage".
 when_to_use: Use when you want a comprehensive, interactive triage session across all open tasks — not for a daily briefing snapshot. Day Starter gives a task summary; this skill is for acting on them.
-allowed-tools: "mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_update_task mcp__svh-opsman__todo_create_task mcp__svh-opsman__todo_get_task mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_buckets mcp__svh-opsman__planner_update_task mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_get_task mcp__svh-opsman__planner_get_task_details mcp__svh-opsman__ninja_set_maintenance_mode mcp__obsidian__* mcp__time__* mcp__desktop-commander__write_file mcp__desktop-commander__edit_block"
+allowed-tools: "mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_update_task mcp__svh-opsman__todo_create_task mcp__svh-opsman__todo_get_task mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_buckets mcp__svh-opsman__planner_update_task mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_get_task mcp__svh-opsman__planner_get_task_details mcp__svh-opsman__ninja_set_maintenance_mode mcp__desktop-commander__write_file mcp__desktop-commander__edit_block"
 ---
 
 # Task Review

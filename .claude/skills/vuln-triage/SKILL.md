@@ -2,7 +2,7 @@
 name: vuln-triage
 description: Vulnerability triage for a specific CVE or Defender TVM finding. Identifies who's exposed, checks patch state, scores composite priority, and recommends a timeline. Produces a Confluence draft and Planner tickets. Trigger phrases: CVE ID, "should we patch X", "TVM finding", "vulnerability triage for X".
 when_to_use: Use when you need to assess the actual risk and remediation timeline for a specific vulnerability in your environment.
-allowed-tools: "mcp__svh-opsman__mde_list_devices mcp__svh-opsman__mde_get_device mcp__svh-opsman__mde_get_device_vulnerabilities mcp__svh-opsman__mde_get_security_recommendations mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_get_patch_history mcp__svh-opsman__confluence_create_page mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__obsidian__* mcp__firecrawl__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__mde_list_devices mcp__svh-opsman__mde_get_device mcp__svh-opsman__mde_get_device_vulnerabilities mcp__svh-opsman__mde_get_security_recommendations mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_get_patch_history mcp__svh-opsman__confluence_create_page mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task"
 ---
 
 # Vulnerability Triage

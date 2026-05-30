@@ -2,7 +2,7 @@
 name: event-log-triage
 description: Live event log investigation on a specific host or time window. Queries Wazuh first for broad correlation, then NinjaOne for anything Wazuh missed, then targeted PowerShell via Desktop Commander for precision. Trigger phrases: "check event logs on X", "what happened on Z around [time]", "event log triage for X".
 when_to_use: Use when you need to investigate what happened on a specific host at a specific time, using live system access.
-allowed-tools: "mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__wazuh_list_agents mcp__svh-opsman__wazuh_get_fim_events mcp__svh-opsman__wazuh_get_rootcheck mcp__svh-opsman__ninja_get_server mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_processes mcp__svh-opsman__ninja_list_services mcp__obsidian__* mcp__desktop-commander__* mcp__time__* Read(powershell/**)"
+allowed-tools: " mcp__svh-opsman__ninja_get_server mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_processes mcp__svh-opsman__ninja_list_services mcp__desktop-commander__* Read(powershell/**)"
 ---
 
 # Event Log Triage

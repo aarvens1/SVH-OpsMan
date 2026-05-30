@@ -2,7 +2,7 @@
 name: day-starter
 description: Morning briefing. Covers the period since the last Day Ender ran (on Mondays) or since the last Day Starter ran (other days), with a 120-hour cap. Falls back to 120h if no state exists (no shorter default). Override with "last N days/hours" or "reset" to use defaults. Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
 when_to_use: Use at the start of each workday to get a prioritized digest of what needs attention.
-allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__collector_run mcp__svh-opsman__metrics_disk_over_threshold mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_get_backup_usage mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__admin_list_subscriptions mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__obsidian__* mcp__time__* mcp__svh-opsman__synology_m365_backup_status mcp__svh-opsman__synology_m365_backup_logs mcp__svh-opsman__gmail_list_recent mcp__svh-opsman__gmail_search mcp__svh-opsman__gmail_get_message mcp__svh-opsman__gmail_send mcp__svh-opsman__gcal_list_events mcp__svh-opsman__gcal_get_event mcp__svh-opsman__gcal_list_calendars mcp__svh-opsman__gcal_create_event mcp__svh-opsman__gcal_update_event mcp__svh-opsman__gtasks_list_task_lists mcp__svh-opsman_... [truncated]
+allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__collector_run mcp__svh-opsman__metrics_disk_over_threshold mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_get_backup_usage mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__admin_list_subscriptions mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__svh-opsman_... [truncated]"
 ---
 
 # Day Starter
@@ -11,7 +11,7 @@ allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mc
 
 ### Step 0 — Compute the lookback window
 
-1. Call `mcp__time__get_current_time` to get the current timestamp and day of week.
+1. Get the current timestamp and day of week from session context (today's date is always injected into the session system prompt — do not call a time tool).
 2. Check whether the user specified an explicit override in their invocation:
    - **"reset"** or **"default"**: skip the state file. Use 120h. Write current timestamp to state after the run.
    - **"last N days"** / **"last N hours"** / any explicit time range: use that window. Write current timestamp to state after the run.
@@ -103,19 +103,19 @@ Do NOT attempt to run this as an MCP tool — `Get-SVHComplianceGap` is a PowerS
 Run these in parallel:
 
 - `calendar_list_events` — today's events. Note any meetings in the next 2 hours and any prep required.
-- `planner_get_user_tasks` (user_id: `astevens@shoestringvalley.com`, open_only: true) — all Planner tasks assigned to Aaron across every plan. This is the primary source for **Your tasks**.
-- `planner_list_plans` (IT Team group: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) to catch any newly created plans, then `planner_list_tasks` for the known operational boards:
-  - IT Sysadmin Tasks: `-aZEdilGAUqLC8B8GwOLfmQAAh9M`
-  - IT Recurring Tasks: `ZTlTUrl1gUunMMwExKSDRWQABKjH`
-  - IT Management Tasks: `e0-6qZKUSkyZJUQg9nNbzmQAEjoO`
-  - IT Task Overview: `nyrAlo2ciUKVEv8GXUA78WQAG8mL`
+- `planner_get_user_tasks` (user_id: `config.user.upn`, open_only: true) — all Planner tasks assigned to Aaron across every plan. This is the primary source for **Your tasks**.
+- `planner_list_plans` (IT Team group: `config.groups.it_team`) to catch any newly created plans, then `planner_list_tasks` for the known operational boards:
+  - IT Sysadmin Tasks: `config.planner.sysadmin`
+  - IT Recurring Tasks: `config.planner.recurring`
+  - IT Management Tasks: `config.planner.management`
+  - IT Task Overview: `config.planner.overview`
 
   Also pull `planner_list_tasks` for active project boards and surface them in the **Projects** section (not IT team boards). Each board has an associated project note in `Projects/` — link to it:
-  - Office Network Standardization: `E4PruQekE0K25KH40pWa9WQAAfAr` → [[Projects/Network-Segmentation]]
-  - BDR Testing: `lJQrriNYnUuLKm5u485GX2QAE_WS` → (no vault note yet)
-  - Information Security Program (ISP): `2es7HS5UakyP3K6ZkwRfd2QAF3I_` → (no vault note yet)
-  - CMMC Level 1: `qxQKzAEGd0m3Q6EUysaGVmQADbmg` → (no vault note yet)
-  - Copilot Audit for IT team: `wP9PL7YWCEqGbG6o4aYVT2QADaLq` → (no vault note yet)
+  - Office Network Standardization: `config.planner.office_network` → [[Projects/Network-Segmentation]]
+  - BDR Testing: `config.planner.bdr_testing` → (no vault note yet)
+  - Information Security Program (ISP): `config.planner.isp` → (no vault note yet)
+  - CMMC Level 1: `config.planner.cmmc_l1` → (no vault note yet)
+  - Copilot Audit for IT team: `config.planner.copilot_audit` → (no vault note yet)
 
   For each project board, also compute **stale days** — the number of days since the most recent task update (max `lastModifiedDateTime` across all tasks in the plan, or plan creation date if no tasks have been touched). This drives the stale flag in the Projects section.
 
@@ -123,7 +123,7 @@ Run these in parallel:
 - `todo_list_task_lists` (user_id: `user.entra_id` from config) then `todo_list_tasks` (user_id: `user.entra_id` from config) for each list — personal To Do task lists, anything open or due today. **Always use the Entra object ID, not the UPN** — the UPN returns HTTP 403 with application credentials; the /me fallback returns HTTP 400.
 - `mail_search` — use the exact `last_day_ender` timestamp from the state file as the lower bound: query `received>={last_day_ender_iso}` (e.g. `received>=2026-05-12T17:11:02Z`). If no day-ender timestamp exists, fall back to `received>={lookback_start_iso}`. Focus on external senders, anything flagged, or subjects suggesting action. Skip routine system notifications (NinjaOne bursts, Planner digests, marketing). Always note how many emails were found and whether there is a `@odata.nextLink` indicating more pages — if there is, fetch the next page until you have all mail in the window.
 - For DMs: call `teams_list_my_chats` (top: 50) to get all recent chat threads. Filter the returned list to threads where `lastMessage.createdDateTime >= lookback_start`. Fetch `teams_get_chat_messages` (top: 10, as a **number not a string**) only for those threads — do not fetch threads with no activity in the window. Note: Teams self-chat (Aaron messaging himself) returns HTTP 404 via application auth — skip it and note the limitation; Aaron's self-notes should be captured via email or a dedicated IT Team channel post instead.
-- For IT Team channels: `teams_list_teams` → `teams_list_channels` (team_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`) → `teams_list_messages` on General, Changes, Infrastructure, and Alerts channels. **After fetching, filter messages to only those where `createdDateTime >= lookback_start` before writing to the note.** Do not surface older messages as current activity — if a channel had no posts in the lookback window, write "*No posts since [lookback_start].*" Skip high-volume notification channels (Support).
+- For IT Team channels: `teams_list_teams` → `teams_list_channels` (team_id: `config.groups.it_team`) → `teams_list_messages` on General, Changes, Infrastructure, and Alerts channels. **After fetching, filter messages to only those where `createdDateTime >= lookback_start` before writing to the note.** Do not surface older messages as current activity — if a channel had no posts in the lookback window, write "*No posts since [lookback_start].*" Skip high-volume notification channels (Support).
 - `confluence_search_pages` — search for pages modified in the last N hours in active global spaces (INF, PROC, POL, SITE). Flag anything that looks like a new incident document, outage note, policy change, or major runbook update. Skip personal and archived spaces.
 
 Also run in parallel for the personal digest:
@@ -244,7 +244,7 @@ has_pending_tasks: false
 Always include this section. Nothing is created or changed until Aaron explicitly confirms. Format each task as an editable named subsection — Aaron can change any field in place, then say "push these to Planner."
 
 Default destination for new tasks:
-- **IT Sysadmin Tasks** (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`) — operational/sysadmin follow-ups, security findings, infrastructure issues
+- **IT Sysadmin Tasks** (`config.planner.sysadmin`) — operational/sysadmin follow-ups, security findings, infrastructure issues
 - **Personal To Do** — smaller personal action items not appropriate for the team board
 
 **CREATE format** (one subsection per task):

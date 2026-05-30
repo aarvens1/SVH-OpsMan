@@ -2,7 +2,7 @@
 name: opsman-health
 description: OpsMan integration connectivity check. Fires a lightweight probe against every configured service and reports pass/fail per integration. Use when you suspect a broken data point or after making changes to the MCP server. Trigger phrases: "test all data points", "connectivity check", "opsman health", "is opsman healthy", "test my integrations", "check all data points".
 when_to_use: After MCP server changes, after a BW session expiry, or whenever a tool call fails unexpectedly and you want to know which integrations are up.
-allowed-tools: "mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_logged_on_users mcp__svh-opsman__ninja_get_os_patches mcp__svh-opsman__azure_list_resource_groups mcp__svh-opsman__entra_list_directory_roles mcp__svh-opsman__exo_list_accepted_domains mcp__svh-opsman__intune_list_compliance_policies mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_list_spaces mcp__svh-opsman__wazuh_list_agents mcp__svh-opsman__teams_list_teams mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__onedrive_get_user_drive mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_list_folders mcp__svh-opsman__sp_search_sites"
+allowed-tools: "mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_logged_on_users mcp__svh-opsman__ninja_get_os_patches mcp__svh-opsman__azure_list_resource_groups mcp__svh-opsman__entra_list_directory_roles mcp__svh-opsman__exo_list_accepted_domains mcp__svh-opsman__intune_list_compliance_policies mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_list_spaces mcp__svh-opsman__teams_list_teams mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__onedrive_get_user_drive mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_list_folders mcp__svh-opsman__sp_search_sites"
 ---
 
 # OpsMan Integration Health Check
@@ -17,8 +17,8 @@ Run every call simultaneously. Do not wait for one before starting another.
 - `admin_get_service_health` — M365 tenant health (also validates Graph token)
 - `mail_list_folders` — Exchange Online / mailbox access
 - `teams_list_teams` — Teams access
-- `planner_list_tasks` with `plan_id: "-aZEdilGAUqLC8B8GwOLfmQAAh9M", page_size: 1` — Planner access (list_user_plans is 403 with app-only auth)
-- `todo_list_task_lists` with `user_id: "astevens@shoestringvalley.com"` — To Do access
+- `planner_list_tasks` with `plan_id: "config.planner.sysadmin", page_size: 1` — Planner access (list_user_plans is 403 with app-only auth)
+- `todo_list_task_lists` with `user_id: "config.user.upn"` — To Do access
 - `onedrive_get_user_drive` — OneDrive access
 - `sp_search_sites` with query `"sites"` — SharePoint access
 - `exo_list_accepted_domains` — Exchange admin (separate EXO token)

@@ -2,7 +2,7 @@
 name: runbook-gen
 description: Generate a structured, reusable runbook from a description, rough notes, or existing procedure. Covers prerequisites, numbered steps with commands, expected outputs, verification, and rollback. Trigger phrases: "write a runbook for", "generate a runbook", "make this a runbook", "document this procedure".
 when_to_use: Use when a repeatable IT procedure needs clean documentation for future reference or delegation. Distinct from /scribe (which cleans up existing rough notes) — runbook-gen can start from a verbal description with no prior notes.
-allowed-tools: "mcp__obsidian__* mcp__svh-opsman__confluence_create_page mcp__svh-opsman__confluence_search_pages mcp__time__* Read(*)"
+allowed-tools: " mcp__svh-opsman__confluence_create_page mcp__svh-opsman__confluence_search_pages Read(*)"
 ---
 
 # Runbook Generator

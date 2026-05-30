@@ -2,7 +2,7 @@
 name: project-close
 description: Close out a project — capture a retrospective, archive dated work artifacts under Projects/Archive/, set status to closed, and prompt to close any open Planner tasks. Trigger phrases: "close the [name] project", "wrap up project X", "project close", "close out [project]".
 when_to_use: Use when a project is complete and ready to be retired from active rotation. Do not manually edit a project note's status field — use this skill so the close-out is captured consistently and dated artifacts land in Archive.
-allowed-tools: "mcp__svh-opsman__planner_get_plan mcp__svh-opsman__planner_get_plan_details mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_get_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__confluence_get_page mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__planner_get_plan mcp__svh-opsman__planner_get_plan_details mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_get_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__confluence_get_page"
 ---
 
 # Project Close

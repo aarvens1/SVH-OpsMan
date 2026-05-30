@@ -2,7 +2,7 @@
 name: handoff
 description: Write a session handoff note to Obsidian and add a summary line to today's daily note. Use at the end of any working session where you want to preserve context for later. Trigger phrases: "create a handoff", "write a handoff", "session handoff", "save session context", "handoff note".
 when_to_use: End of any session that produced changes, decisions, or open items worth preserving. Especially useful before context window compaction or when switching between projects.
-allowed-tools: "mcp__obsidian__* mcp__time__*"
+allowed-tools: "Read Write Edit"
 ---
 
 Review the current conversation and produce two outputs.

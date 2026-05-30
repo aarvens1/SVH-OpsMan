@@ -2,7 +2,7 @@
 name: incident-open
 description: Formally declare and document an IT incident. Captures severity, affected systems, timeline, and initial hypothesis. Creates the Obsidian incident note, drafts a Planner tracking card, and stages a Teams alert. Trigger phrases: "open an incident", "declare an incident", "this is an incident", "incident for X".
 when_to_use: Use when a problem is confirmed significant enough to warrant an incident record — not for preliminary investigation. Use /troubleshoot first if you're still diagnosing.
-allowed-tools: "mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__wazuh_search_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_list_plans mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_channels mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_list_plans mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_channels"
 ---
 
 # Incident Open
@@ -88,7 +88,7 @@ Append one line to `System/skill-log.md`:
 
 ```
 #### CREATE — [INC-YYYY-NNN] [name]
-- **Plan:** IT Sysadmin Tasks (`-aZEdilGAUqLC8B8GwOLfmQAAh9M`)
+- **Plan:** IT Sysadmin Tasks (`config.planner.sysadmin`)
 - **Bucket:** In progress
 - **Due:** YYYY-MM-DD (today)
 - **Priority:** Urgent (Critical/High) | Important (Medium) | Medium (Low)
@@ -101,7 +101,7 @@ Append one line to `System/skill-log.md`:
   - [ ] Write post-incident summary
 ```
 
-**Teams alert draft** — IT Team Alerts channel (team_id: `1acb76b4-f2eb-42fc-8ae3-3b2262277516`, channel: Alerts). Not sent until Aaron confirms.
+**Teams alert draft** — IT Team Alerts channel (team_id from `config.yaml groups.it_team`, channel: Alerts). Not sent until Aaron confirms.
 
 Write in Aaron's voice, no greeting, declarative:
 - Lead with severity if Critical or High: `**[CRITICAL]**` or `**[HIGH]**`

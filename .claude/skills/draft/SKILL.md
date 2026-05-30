@@ -2,7 +2,7 @@
 name: draft
 description: Draft an email, Teams message, or meeting invite in Aaron's voice. Accepts rough notes, bullet points, or a plain description of what needs to be said. Output lands in Obsidian as a clearly-labelled draft — nothing is sent. Trigger phrases: "draft an email", "write a message to", "draft this for me", "help me write this", "/draft".
 when_to_use: Any time Aaron needs to write a work communication and wants it to sound right without a rewrite pass.
-allowed-tools: "mcp__obsidian__* mcp__time__*"
+allowed-tools: "Read Write Edit"
 ---
 
 # Draft

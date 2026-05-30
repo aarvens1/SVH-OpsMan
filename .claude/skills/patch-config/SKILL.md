@@ -2,7 +2,7 @@
 name: patch-config
 description: Generate a ready-to-paste Gemini Code prompt for config edits Claude can't make due to self-modification guards (.claude/rules/, .claude/hooks/, .claude/skills/). No Obsidian output — produces a formatted prompt block with exact diffs and verification steps. Trigger phrases: "hit a self-write block", "generate a config patch prompt", "hand this config change to Gemini Code".
 when_to_use: Use when Edit/Write is blocked on a Claude config file, or when delegating to Gemini Code. Output goes directly to chat — nothing written to .gemini/handoff.
-allowed-tools: ["Read"]
+allowed-tools: "Read"
 ---
 
 # patch-config
