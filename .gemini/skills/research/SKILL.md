@@ -89,7 +89,7 @@ Multimodal grounding works the same. With research-tier, an image input can anch
 
 ## What this skill is NOT for
 
-- Single-fact lookups → `web-research`
+- Single-fact lookups → `look-up`
 - Multi-source synthesis without a formal deliverable → `deep-search`
 - Anything involving private SVH data — sanitize first or stay in Claude
 

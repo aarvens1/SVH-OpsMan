@@ -27,7 +27,7 @@ Use it for:
 
 ## Workflow
 
-1. **Restate the question** in one sentence to confirm scope. If it's actually a quick lookup, downgrade to `web-research` and tell the user.
+1. **Restate the question** in one sentence to confirm scope. If it's actually a quick lookup, downgrade to `look-up` and tell the user.
 2. **Decompose into 3–5 sub-queries.** Show them to the user before running. Adjust if asked.
 3. **Run each sub-query with Google grounding.** Capture the top 2–3 sources per query. Aim for 5–10 total unique sources.
 4. **Synthesize across sources.** Don't just summarize each one — combine facts, note where sources agree and where they conflict.
@@ -69,7 +69,7 @@ If fewer than 5 quality sources can be found, say so and proceed with what's ava
 
 ## Image input
 
-Same multimodal support as `web-research` — paste an image and ask. With deep-search, image content can seed multiple sub-queries (e.g. "what is this device" + "what alternatives exist" + "what's its support state").
+Same multimodal support as `look-up` — paste an image and ask. With deep-search, image content can seed multiple sub-queries (e.g. "what is this device" + "what alternatives exist" + "what's its support state").
 
 ---
 
@@ -80,7 +80,7 @@ Switch to `research` when:
 - 10+ sources are warranted
 - Sections need explicit Background and Recommendations parts, not just facets
 
-Switch back to `web-research` when:
+Switch back to `look-up` when:
 - After restating, the question turns out to need only one source
 
 ---

@@ -65,8 +65,9 @@ Full vault review was done on 2026-05-28. Everything below came out of that sess
 - [x] TTL cache on `ninja_list_servers` and `admin_get_service_health` — both already implemented (60s TTL, in-memory Map) as of the time this was written to TODO
 - [x] Shape `teams.ts` write ops — `send_message`, `create_channel`, `add_member` now return shaped responses (id, name, webUrl only) (2026-05-29)
 - [x] Re-enable IR Triage skill — already active (`SKILL.md` exists alongside old `SKILL.md.disabled` backup); DM routing validation mode in place (2026-05-29)
-- [ ] `sa_stevens` / `da_stevens` non-interactive PSRemoting — add `SA_REMOTE_PASSWORD` and `DA_REMOTE_PASSWORD` to BW to enable automated skills that currently require `Get-Credential`
-- [ ] Configure rclone remotes (`onedrive` and `gdrive`) — see `docs/setup/backup.md`
+- [x] `sa_stevens` non-interactive PSRemoting — `SA_REMOTE_PASSWORD` added to BW (2026-05-30)
+- [ ] `da_stevens` non-interactive PSRemoting — deferred; DA credential automation is on hold for now
+- [x] Configure rclone remotes (`onedrive` and `gdrive`) — both configured and working (2026-05-30)
 
 ---
 
