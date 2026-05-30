@@ -44,7 +44,7 @@ Gemini does Google-grounded web research with cited sources across three depths.
 
 | Tier | Gemini skill | Sources | When to recommend |
 |---|---|---|---|
-| Quick | `web-research` | 1–3 | Single-fact lookup: API docs, package versions, error messages, CVE summaries |
+| Quick | `search-up` | 1–3 | Single-fact lookup: API docs, package versions, error messages, CVE summaries |
 | Deep | `deep-search` | 5–10 | Multi-source synthesis: comparisons, consensus checks, multi-faceted questions |
 | Research | `research` | 10–30 | Structured deliverable: vendor briefs, technology surveys, decision-support docs |
 

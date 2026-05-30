@@ -31,7 +31,7 @@ allowed-tools: "tool_a tool_b tool_c"
 ## allowed-tools format
 
 ```yaml
-allowed-tools: "mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__mde_list_alerts mcp__obsidian__* mcp__time__*"
+allowed-tools: "mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__mde_list_alerts mcp__claude_ai_Microsoft_365__* mcp__claude_ai_Fathom__*"
 ```
 
 Keep tools on one line — the value is a single quoted string, not a YAML list.
