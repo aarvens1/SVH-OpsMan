@@ -13,7 +13,7 @@ There are three places work can go. The routing decision is about **which quota 
 ## Lane 1: Claude Ops
 
 **Route here when:**
-- The task requires live MCP tool calls (NinjaOne, Defender, Wazuh, M365, Bitwarden, etc.)
+- The task requires live MCP tool calls (NinjaOne, Defender, M365, Bitwarden, etc.)
 - The output goes to Obsidian, Planner, Teams, or Confluence
 - The task involves private system data — investigations, audits, incident response
 - The work is part of an active ops thread you're already in

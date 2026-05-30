@@ -26,7 +26,7 @@ allowed-tools: "tool_a tool_b tool_c"
 
 - `name` — kebab-case, matches directory name
 - `description` — include trigger phrases here so the skill list in README stays in sync
-- `allowed-tools` — space-separated MCP tool names in a **single quoted string**. Use `mcp__<server>__<tool>` format. Wildcards are supported: `mcp__obsidian__*`. Include every tool the skill needs; Claude will not use tools not listed here.
+- `allowed-tools` — space-separated MCP tool names in a **single quoted string**. Use `mcp__<server>__<tool>` format. Wildcards are supported: `mcp__claude_ai_Fathom__*`. Include every tool the skill needs; Claude will not use tools not listed here.
 
 ## allowed-tools format
 

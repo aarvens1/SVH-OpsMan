@@ -17,12 +17,9 @@ Exchange · Intune · MS Admin"]
         MDE["Defender for Endpoint"]
         AZ["Azure ARM"]
         INFRA["Infrastructure
-NinjaOne · Wazuh
-UniFi Cloud · UniFi Network
-Synology NAS · PrinterLogic"]
-        CONF["Confluence · FreshService"]
-        GOOG["Google
-Gmail · Calendar · Drive"]
+NinjaOne · UniFi Cloud · UniFi Network
+PrinterLogic"]
+        CONF["Confluence"]
         PS["PowerShell
 powershell_discover_commands
 powershell_get_command_parameters"]
@@ -42,12 +39,13 @@ db_query_execute_sql"]
     end
 
     subgraph External["External MCPs"]
-        OBS["Obsidian"]
         GH["GitHub"]
         FATHOM["Fathom"]
         BW["Bitwarden"]
         DC["Desktop Commander"]
-        OTHER["Firecrawl · Time"]
+        OTHER["claude.ai MCPs
+Malwarebytes · Excalidraw
+Microsoft Learn · Atlassian"]
     end
 
     subgraph Collector["Collector (on-demand)"]
@@ -68,10 +66,10 @@ Metrics → db/metrics.db"]
 The system is built on five key layers:
 
 1.  **Claude (The AI):** The reasoning engine from Anthropic. It interprets user prompts, selects the appropriate tools, and synthesizes responses. It runs via the **Claude Code CLI** in your terminal.
-2.  **MCP (Model Context Protocol):** The plugin system that gives Claude access to external tools. This project *is* a custom MCP server (`mcp-server/`), which allows for fine-grained control over tool logic and credential management. It also utilizes several external MCPs for services like Obsidian, GitHub, and Bitwarden.
+2.  **MCP (Model Context Protocol):** The plugin system that gives Claude access to external tools. This project *is* a custom MCP server (`mcp-server/`), which allows for fine-grained control over tool logic and credential management. It also utilizes several external MCPs for services like Fathom, Bitwarden, and Desktop Commander.
 3.  **WSL 2 (The Environment):** All components run inside WSL 2 (Ubuntu 24.04) on your Windows machine. This provides a real Linux environment for the Node.js applications and CLI tools, while still allowing seamless interaction with native Windows applications like Obsidian.
 4.  **Bitwarden (The Credential Store):** All API keys and secrets are stored securely in a single Bitwarden item. The MCP server reads these at startup via the `bw` CLI, ensuring no credentials ever touch the filesystem in plaintext.
-5.  **Obsidian (The Output Layer):** A local-first markdown editor that serves as the "staging area" for all AI output. Reports, drafts, and notes are written here for review before being actioned. The **Obsidian Local REST API** plugin enables this interaction.
+5.  **Obsidian (The Output Layer):** A local-first markdown editor that serves as the "staging area" for all AI output. Reports, drafts, and notes are written here for review before being actioned. Skills write directly to the vault path (`/mnt/c/Users/astevens/vaults/OpsManVault`) using Claude's built-in Write/Edit tools.
 6.  **PowerShell TUIs (The Interactive Layer):** A suite of five terminal applications built with Python's Textual framework. They provide a human-friendly, interactive frontend for the underlying PowerShell modules, used for operator-driven administrative tasks that require real-time input and confirmation.
 
 ## Design Decisions
@@ -100,7 +98,7 @@ For broad queries that require large amounts of data (e.g., `/day-starter`), the
 
 1.  A skill (like Day Starter) determines if the existing data in the `staging/` directory is fresh enough (e.g., < 2 hours old) by calling `staging_status`.
 2.  If the data is stale, the skill calls `collector_run`.
-3.  The collector (`collector/dist/index.js`) executes, running jobs to pull bulk data (e.g., all devices from NinjaOne, all alerts from Wazuh).
+3.  The collector (`collector/dist/index.js`) executes, running jobs to pull bulk data (e.g., all devices from NinjaOne, all alerts from Defender).
 4.  The data is written to a new timestamped directory in `staging/`, along with a `manifest.json` file detailing the run.
 5.  The skill then calls `staging_read` to get the fresh data and proceeds with the synthesis.
 

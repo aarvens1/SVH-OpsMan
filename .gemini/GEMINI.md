@@ -8,7 +8,7 @@ This document defines Gemini's role within the SVH-OpsMan project. Claude is the
 
 **Gemini can access:** The project repository (read-only by convention — code changes belong in Claude Dev). Public APIs and web search via Google Search grounding. Any image attached to the prompt (multimodal native).
 
-**Gemini cannot access:** Live MCP tool integrations (NinjaOne, Defender, Wazuh, M365, Bitwarden). Raw private API responses. Real device names, hostnames, IPs, UPNs, or credentials. Anything that couldn't appear in a public repo.
+**Gemini cannot access:** Live MCP tool integrations (NinjaOne, Defender, M365, Bitwarden). Raw private API responses. Real device names, hostnames, IPs, UPNs, or credentials. Anything that couldn't appear in a public repo.
 
 **Single account.** The three-account strategy is retired. One Gemini account does all Gemini work. Don't paste private data into it.
 

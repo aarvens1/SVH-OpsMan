@@ -94,7 +94,7 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | :---- | :----- | :---------- |
 | **Troubleshoot** | `/troubleshoot` · "X is broken" | Begins a systematic investigation, forming and testing hypotheses based on a library of known failure patterns. Writes to `Investigations/`. |
 | **Incident Open** | `/incident-open` · "Open an incident for X" | Formally declares an incident: captures severity, affected systems, timeline, and creates the Obsidian note, Planner card, and Teams alert draft. Use after `/troubleshoot` confirms significance. |
-| **Event Log Triage**| `/event-log-triage` · "Check event logs on X"| Queries and correlates logs from Wazuh, NinjaOne, and live PowerShell sessions. |
+| **Event Log Triage**| `/event-log-triage` · "Check event logs on X"| Queries and correlates logs from NinjaOne and live PowerShell sessions. |
 | **Event Log Analyzer**| `/event-log-analyzer` · "Analyze this log export"| Parses and analyzes exported log files (`.xml`, `.csv`, `.log`). |
 | **Network Troubleshooter**| `/network-troubleshooter` · "Network issue at [site]"| Traces network paths from UniFi to the endpoint, checking firewall rules, VLANs, and device status. |
 | **Mailflow Investigation**| `/mailflow-investigation` · "Did this email deliver?"| Traces a message through Exchange, Defender, and Entra to determine its delivery status and path. |
@@ -307,7 +307,7 @@ The project includes a suite of Textual terminal UIs. All are launched via `tui/
 | :-- | :---- | :---------- |
 | `main` | `tui` | PowerShell Navigator — searchable form-based browser for all 237 module functions |
 | `ad` | `tui-ad` | Active Directory user management |
-| `alerts` | `tui-alerts` | Alert triage across Wazuh and NinjaOne |
+| `alerts` | `tui-alerts` | Alert triage across NinjaOne and Defender |
 | `net` | `tui-net` | Network ops via SVH.Network functions |
 | `patches` | `tui-patches` | Patch campaign management |
 

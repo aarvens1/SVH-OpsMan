@@ -12,7 +12,7 @@ See `.gemini/GEMINI.md` for Gemini's web research role. See `.claude/config.yaml
 
 OpsMan has all three conditions that make an agentic system dangerous:
 
-1. **Private data** — live MCP access to NinjaOne, Defender, Entra, M365, Azure, Wazuh, UniFi
+1. **Private data** — live MCP access to NinjaOne, Defender, Entra, M365, Azure, UniFi
 2. **Untrusted input** — alert text, email content, log output, and Teams messages flow through the context window
 3. **External comms** — Claude can send Teams messages, create Planner tasks, and post to Confluence
 

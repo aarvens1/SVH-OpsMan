@@ -100,9 +100,4 @@ az role assignment create --assignee <client-id> --role "Cost Management Reader"
 | **UniFi Network** | Local API key on UDM | `UNIFI_{SITE}_URL`, `UNIFI_{SITE}_KEY` |
 | **NinjaOne** | Admin > Apps > API | `NINJA_CLIENT_ID`, `NINJA_CLIENT_SECRET` |
 | **Confluence** | id.atlassian.com API tokens | `CONFLUENCE_DOMAIN`, `CONFLUENCE_EMAIL`, `CONFLUENCE_API_TOKEN` |
-| **Wazuh** | Wazuh manager API user | `WAZUH_URL`, `WAZUH_USERNAME`, `WAZUH_PASSWORD` |
 | **PrinterLogic**| Admin console API token | `PRINTERLOGIC_URL`, `PRINTERLOGIC_API_TOKEN` |
-| **FreshService**| Profile > API Key | `FRESHSERVICE_DOMAIN`, `FRESHSERVICE_API_KEY` |
-| **Synology NAS**| DSM user with appropriate permissions | `SYNOLOGY_HOST`, `SYNOLOGY_USER`, `SYNOLOGY_PASSWORD` |
-| **Google** | GCP Console OAuth 2.0 Client ID | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` |
-| **Obsidian** | Local REST API Plugin | `OBSIDIAN_API_KEY` |

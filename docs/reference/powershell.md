@@ -14,7 +14,6 @@ The PowerShell module suite in `powershell/` is designed for write operations an
 | `SVH.Exchange` | Mailbox settings, forwarding, litigation hold, message trace |
 | `SVH.Azure` | ARM, Defender MDE, and Recovery Services (VMs, storage, NSGs, MDE isolation) |
 | `SVH.NinjaOne` | Device discovery, services, disks, patches, backups, event logs |
-| `SVH.Wazuh` | Alerts, agents, FIM events, vulnerability detections |
 | `SVH.UniFi` | Sites, devices, clients, WLANs, firewall rules |
 | `SVH.Confluence` | Pages, search, comments |
 | `SVH.PrinterLogic` | Printers, drivers, deployment, quotas |
