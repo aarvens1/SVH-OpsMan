@@ -130,13 +130,15 @@ export function registerOutlookMailTools(
     },
     async ({ to, subject, body, body_type, cc, bcc, importance, save_to_sent }) => {
       if (!userId) return cfgErr(NO_USER_MSG);
+      const resolvedBodyType = body_type ?? "text";
+      const resolvedImportance = importance ?? "normal";
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const payload: Record<string, unknown> = {
           message: {
             subject,
-            importance,
-            body: { contentType: body_type, content: body },
+            importance: resolvedImportance,
+            body: { contentType: resolvedBodyType, content: body },
             toRecipients: to.map(addr),
             ...(cc?.length ? { ccRecipients: cc.map(addr) } : {}),
             ...(bcc?.length ? { bccRecipients: bcc.map(addr) } : {}),
@@ -166,12 +168,14 @@ export function registerOutlookMailTools(
     },
     async ({ to, subject, body, body_type, cc, importance }) => {
       if (!userId) return cfgErr(NO_USER_MSG);
+      const resolvedBodyType = body_type ?? "text";
+      const resolvedImportance = importance ?? "normal";
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const payload = {
           subject,
-          importance,
-          body: { contentType: body_type, content: body },
+          importance: resolvedImportance,
+          body: { contentType: resolvedBodyType, content: body },
           toRecipients: to.map(addr),
           ...(cc?.length ? { ccRecipients: cc.map(addr) } : {}),
         };

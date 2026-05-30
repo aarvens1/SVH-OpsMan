@@ -13,7 +13,6 @@ describe("registerHibpTools", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
-    vi.resetModules();
     process.env = { ...originalEnv, HIBP_API_KEY: "fake-key" };
 
     server = new McpServer({ name: "test", version: "0.0.0" });
@@ -25,8 +24,8 @@ describe("registerHibpTools", () => {
 
     const mockClient = { get: vi.fn() };
     mockAxios.create.mockReturnValue(mockClient as any);
+    mockAxios.isAxiosError.mockImplementation((e: unknown) => (e as any)?.isAxiosError === true);
 
-    const { registerHibpTools } = require("../../tools/hibp");
     registerHibpTools(server, true);
   });
 
@@ -37,8 +36,6 @@ describe("registerHibpTools", () => {
 
   it("returns cfgErr if token is not set", async () => {
     process.env["HIBP_API_KEY"] = "";
-    const { registerHibpTools: register } = require("../../tools/hibp");
-    register(server, true);
     const handler = handlers.get("hibp_check_account")!;
     const result = await handler({ email: "test@test.com" });
     expect((result as any).isError).toBe(true);

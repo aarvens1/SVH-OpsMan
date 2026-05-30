@@ -13,7 +13,6 @@ describe("registerCloudflareTools", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
-    vi.resetModules();
     process.env = { ...originalEnv, CLOUDFLARE_API_TOKEN: "fake-token" };
 
     server = new McpServer({ name: "test", version: "0.0.0" });
@@ -26,8 +25,6 @@ describe("registerCloudflareTools", () => {
     const mockGet = vi.fn();
     mockAxios.create.mockReturnValue({ get: mockGet } as any);
 
-    // Reregister tools to pickup mocked env and axios
-    const { registerCloudflareTools } = require("../../tools/cloudflare.js");
     registerCloudflareTools(server, true);
   });
 
@@ -38,9 +35,6 @@ describe("registerCloudflareTools", () => {
 
   it("returns cfgErr if token is not set", async () => {
     process.env["CLOUDFLARE_API_TOKEN"] = "";
-    // Need to re-register to pick up the changed env var
-    const { registerCloudflareTools: register } = require("../../tools/cloudflare.js");
-    register(server, true);
     const handler = handlers.get("cloudflare_list_zones")!;
     const result = await handler({});
     expect((result as any).isError).toBe(true);

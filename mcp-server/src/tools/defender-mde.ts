@@ -17,6 +17,10 @@ function setCached(key: string, data: unknown, ttlMs = 60_000): void {
   responseCache.set(key, { data, expires_at: Date.now() + ttlMs });
 }
 
+export function resetCacheForTesting(): void {
+  responseCache.clear();
+}
+
 export function registerDefenderMdeTools(server: McpServer, enabled: boolean): void {
   if (!enabled) return;
 

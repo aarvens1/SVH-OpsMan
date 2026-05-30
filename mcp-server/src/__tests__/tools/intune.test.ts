@@ -8,6 +8,7 @@ vi.mock("../../auth/graph.js", () => ({
 }));
 
 vi.mock("../../utils/http.js", () => ({
+  formatError: (e: unknown) => (e instanceof Error ? e.message : String(e)),
   graphClient: vi.fn().mockReturnValue({
     get: vi.fn(),
   }),

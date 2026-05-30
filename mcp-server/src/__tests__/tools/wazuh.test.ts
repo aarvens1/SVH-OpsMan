@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerWazuhTools } from "../../tools/wazuh.js";
-import { wazuhClient } from "../../utils/http.js";
+import { registerWazuhTools, resetCachesForTesting } from "../../tools/wazuh.js";
 import axios from "axios";
 
-const mockWazuhClient = {
+const mockWazuhClient = vi.hoisted(() => ({
   get: vi.fn(),
-};
+}));
 
 vi.mock("../../utils/http.js", () => ({
+  formatError: (e: unknown) => (e instanceof Error ? e.message : String(e)),
   wazuhClient: vi.fn().mockReturnValue(mockWazuhClient),
 }));
 
@@ -23,6 +23,7 @@ describe("registerWazuhTools", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    resetCachesForTesting();
     server = new McpServer({ name: "test", version: "0.0.0" });
     handlers = new Map();
     vi.spyOn(server, "registerTool").mockImplementation((name, _schema, handler) => {

@@ -7,12 +7,13 @@ vi.mock("../../auth/graph.js", () => ({
   getGraphToken: vi.fn().mockResolvedValue("fake-token"),
 }));
 
-const mockGraphClient = {
+const mockGraphClient = vi.hoisted(() => ({
   get: vi.fn(),
   post: vi.fn(),
-};
+}));
 
 vi.mock("../../utils/http.js", () => ({
+  formatError: (e: unknown) => (e instanceof Error ? e.message : String(e)),
   graphClient: vi.fn().mockReturnValue(mockGraphClient),
   GRAPH_SCOPE: "https://graph.microsoft.com/.default",
 }));

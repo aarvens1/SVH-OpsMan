@@ -42,6 +42,11 @@ function setCached(key: string, data: unknown, ttlMs = 60_000): void {
   responseCache.set(key, { data, expires_at: Date.now() + ttlMs });
 }
 
+export function resetCachesForTesting(): void {
+  cachedJwt = null;
+  responseCache.clear();
+}
+
 export function registerWazuhTools(server: McpServer, enabled: boolean): void {
   if (!enabled) return;
 

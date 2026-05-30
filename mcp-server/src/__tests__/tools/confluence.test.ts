@@ -4,6 +4,7 @@ import { registerConfluenceTools } from "../../tools/confluence.js";
 import { confluenceClient, confluenceSearchClient } from "../../utils/http.js";
 
 vi.mock("../../utils/http.js", () => ({
+  formatError: (e: unknown) => (e instanceof Error ? e.message : String(e)),
   confluenceClient: vi.fn().mockReturnValue({
     get: vi.fn(),
     post: vi.fn(),

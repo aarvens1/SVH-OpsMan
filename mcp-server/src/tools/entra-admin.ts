@@ -361,9 +361,11 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ user_id, app_display_name, ip_address, status, risk_only, hours, top }) => {
+      const resolvedHours = hours ?? 24;
+      const resolvedTop = top ?? 100;
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const since = new Date(Date.now() - hours * 3_600_000).toISOString();
+        const since = new Date(Date.now() - resolvedHours * 3_600_000).toISOString();
         const filters: string[] = [`createdDateTime ge ${since}`];
         if (user_id) filters.push(`userPrincipalName eq '${user_id}'`);
         if (app_display_name) filters.push(`appDisplayName eq '${app_display_name}'`);
@@ -375,7 +377,7 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
           timeout: 90_000,
           params: {
             $filter: filters.join(" and "),
-            $top: top,
+            $top: resolvedTop,
             $select:
               "id,createdDateTime,userDisplayName,userPrincipalName,appDisplayName,ipAddress,location,status,conditionalAccessStatus,deviceDetail,clientAppUsed,riskLevelDuringSignIn,riskDetail",
           },
@@ -433,9 +435,11 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
       }),
     },
     async ({ category, security_events_only, initiated_by, hours, top }) => {
+      const resolvedHours = hours ?? 24;
+      const resolvedTop = top ?? 100;
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
-        const since = new Date(Date.now() - hours * 3_600_000).toISOString();
+        const since = new Date(Date.now() - resolvedHours * 3_600_000).toISOString();
         const filters: string[] = [`activityDateTime ge ${since}`];
         if (security_events_only) {
           filters.push(
@@ -451,7 +455,7 @@ export function registerEntraAdminTools(server: McpServer, enabled: boolean): vo
         const res = await graphClient(token).get("/auditLogs/directoryAudits", {
           params: {
             $filter: filters.join(" and "),
-            $top: top,
+            $top: resolvedTop,
             $orderby: "activityDateTime desc",
             $select:
               "id,activityDateTime,activityDisplayName,category,result,resultReason,initiatedBy,targetResources",

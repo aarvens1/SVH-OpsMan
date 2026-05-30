@@ -13,7 +13,6 @@ describe("registerFreshServiceTools", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
-    vi.resetModules();
     process.env = { ...originalEnv, FRESHSERVICE_DOMAIN: "test", FRESHSERVICE_API_KEY: "fake-key" };
 
     server = new McpServer({ name: "test", version: "0.0.0" });
@@ -30,7 +29,6 @@ describe("registerFreshServiceTools", () => {
     };
     mockAxios.create.mockReturnValue(mockClient as any);
 
-    const { registerFreshServiceTools } = require("../../tools/freshservice");
     registerFreshServiceTools(server, true);
   });
 

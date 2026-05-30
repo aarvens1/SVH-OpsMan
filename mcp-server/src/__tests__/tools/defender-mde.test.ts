@@ -1,28 +1,17 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerDefenderMdeTools } from "../../tools/defender-mde.js";
-import { mdeClient } from "../../utils/http.js";
+import { registerDefenderMdeTools, resetCacheForTesting } from "../../tools/defender-mde.js";
+
+const mockMdeClient = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
 
 vi.mock("../../auth/mde.js", () => ({
   getMdeToken: vi.fn().mockResolvedValue("fake-token"),
 }));
 
 vi.mock("../../utils/http.js", () => ({
-  mdeClient: vi.fn().mockReturnValue({
-    get: vi.fn(),
-    post: vi.fn(),
-  }),
+  formatError: (e: unknown) => (e instanceof Error ? e.message : String(e)),
+  mdeClient: vi.fn().mockReturnValue(mockMdeClient),
 }));
-
-// Mock the cache functions from the module
-vi.mock("../../tools/defender-mde.js", async (importOriginal) => {
-  const original = await importOriginal<typeof import("../../tools/defender-mde.js")>();
-  return {
-    ...original,
-    // just bypass the cache for testing
-    __esModule: true,
-  };
-});
 
 describe("registerDefenderMdeTools", () => {
   let server: McpServer;
@@ -30,6 +19,7 @@ describe("registerDefenderMdeTools", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    resetCacheForTesting();
     server = new McpServer({ name: "test", version: "0.0.0" });
     handlers = new Map();
     vi.spyOn(server, "registerTool").mockImplementation((name, _schema, handler) => {
@@ -37,15 +27,12 @@ describe("registerDefenderMdeTools", () => {
       return server;
     });
 
-    // We need to re-import and re-register because of the mock pattern
-    const { registerDefenderMdeTools } = require("../../tools/defender-mde");
     registerDefenderMdeTools(server, true);
   });
 
   describe("mde_list_devices", () => {
     it("returns shaped data on success", async () => {
-      const mockGet = vi.mocked(mdeClient("").get);
-      mockGet.mockResolvedValueOnce({
+      mockMdeClient.get.mockResolvedValueOnce({
         data: { value: [{ id: "dev1", computerDnsName: "host.example.com" }] },
       });
 
@@ -56,8 +43,7 @@ describe("registerDefenderMdeTools", () => {
     });
 
     it("returns error on HTTP failure", async () => {
-      const mockGet = vi.mocked(mdeClient("").get);
-      mockGet.mockRejectedValueOnce(new Error("network error"));
+      mockMdeClient.get.mockRejectedValueOnce(new Error("network error"));
 
       const result = await handlers.get("mde_list_devices")!({});
       expect((result as any).isError).toBe(true);
@@ -66,8 +52,7 @@ describe("registerDefenderMdeTools", () => {
 
   describe("mde_get_device", () => {
     it("returns shaped data on success", async () => {
-      const mockGet = vi.mocked(mdeClient("").get);
-      mockGet.mockResolvedValueOnce({ data: { id: "dev1", computerDnsName: "host.example.com" } });
+      mockMdeClient.get.mockResolvedValueOnce({ data: { id: "dev1", computerDnsName: "host.example.com" } });
 
       const result = await handlers.get("mde_get_device")!({ machine_id: "dev1" });
       expect((result as any).isError).toBeUndefined();
@@ -76,8 +61,7 @@ describe("registerDefenderMdeTools", () => {
     });
 
     it("returns error on HTTP failure", async () => {
-      const mockGet = vi.mocked(mdeClient("").get);
-      mockGet.mockRejectedValueOnce(new Error("network error"));
+      mockMdeClient.get.mockRejectedValueOnce(new Error("network error"));
 
       const result = await handlers.get("mde_get_device")!({ machine_id: "dev1" });
       expect((result as any).isError).toBe(true);
@@ -86,28 +70,25 @@ describe("registerDefenderMdeTools", () => {
 
   describe("mde_get_device_vulnerabilities", () => {
     it("returns shaped data on success", async () => {
-        const mockGet = vi.mocked(mdeClient("").get);
-        mockGet.mockResolvedValueOnce({ data: { value: [{ id: "CVE-2021-1234", severity: "High" }] } });
+      mockMdeClient.get.mockResolvedValueOnce({ data: { value: [{ id: "CVE-2021-1234", severity: "High" }] } });
 
-        const result = await handlers.get("mde_get_device_vulnerabilities")!({ machine_id: "dev1" });
-        expect((result as any).isError).toBeUndefined();
-        const parsed = JSON.parse((result as any).content[0].text);
-        expect(parsed.vulnerabilities[0]).toHaveProperty("severity", "High");
+      const result = await handlers.get("mde_get_device_vulnerabilities")!({ machine_id: "dev1" });
+      expect((result as any).isError).toBeUndefined();
+      const parsed = JSON.parse((result as any).content[0].text);
+      expect(parsed.vulnerabilities[0]).toHaveProperty("severity", "High");
     });
 
     it("returns error on HTTP failure", async () => {
-        const mockGet = vi.mocked(mdeClient("").get);
-        mockGet.mockRejectedValueOnce(new Error("network error"));
+      mockMdeClient.get.mockRejectedValueOnce(new Error("network error"));
 
-        const result = await handlers.get("mde_get_device_vulnerabilities")!({ machine_id: "dev1" });
-        expect((result as any).isError).toBe(true);
+      const result = await handlers.get("mde_get_device_vulnerabilities")!({ machine_id: "dev1" });
+      expect((result as any).isError).toBe(true);
     });
   });
 
   describe("mde_list_alerts", () => {
     it("returns shaped data on success", async () => {
-      const mockGet = vi.mocked(mdeClient("").get);
-      mockGet.mockResolvedValueOnce({
+      mockMdeClient.get.mockResolvedValueOnce({
         data: { value: [{ id: "alert1", title: "Suspicious activity" }] },
       });
 
@@ -118,8 +99,7 @@ describe("registerDefenderMdeTools", () => {
     });
 
     it("returns error on HTTP failure", async () => {
-      const mockGet = vi.mocked(mdeClient("").get);
-      mockGet.mockRejectedValueOnce(new Error("network error"));
+      mockMdeClient.get.mockRejectedValueOnce(new Error("network error"));
 
       const result = await handlers.get("mde_list_alerts")!({});
       expect((result as any).isError).toBe(true);
@@ -128,8 +108,7 @@ describe("registerDefenderMdeTools", () => {
 
   describe("mde_list_indicators", () => {
     it("returns shaped data on success", async () => {
-      const mockGet = vi.mocked(mdeClient("").get);
-      mockGet.mockResolvedValueOnce({
+      mockMdeClient.get.mockResolvedValueOnce({
         data: { value: [{ id: "ind1", indicatorValue: "1.2.3.4" }] },
       });
 
@@ -140,8 +119,7 @@ describe("registerDefenderMdeTools", () => {
     });
 
     it("returns error on HTTP failure", async () => {
-      const mockGet = vi.mocked(mdeClient("").get);
-      mockGet.mockRejectedValueOnce(new Error("network error"));
+      mockMdeClient.get.mockRejectedValueOnce(new Error("network error"));
 
       const result = await handlers.get("mde_list_indicators")!({});
       expect((result as any).isError).toBe(true);
@@ -150,8 +128,7 @@ describe("registerDefenderMdeTools", () => {
 
   describe("mde_get_security_recommendations", () => {
     it("returns shaped data on success", async () => {
-      const mockGet = vi.mocked(mdeClient("").get);
-      mockGet.mockResolvedValueOnce({
+      mockMdeClient.get.mockResolvedValueOnce({
         data: { value: [{ id: "rec1", recommendationName: "Update software" }] },
       });
 
@@ -162,8 +139,7 @@ describe("registerDefenderMdeTools", () => {
     });
 
     it("returns error on HTTP failure", async () => {
-      const mockGet = vi.mocked(mdeClient("").get);
-      mockGet.mockRejectedValueOnce(new Error("network error"));
+      mockMdeClient.get.mockRejectedValueOnce(new Error("network error"));
 
       const result = await handlers.get("mde_get_security_recommendations")!({});
       expect((result as any).isError).toBe(true);

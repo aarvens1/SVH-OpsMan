@@ -29,7 +29,7 @@ describe("registerDbQueryTools", () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
       const mockAll = vi.fn().mockReturnValue([{ col1: "val1" }]);
       const mockPrepare = vi.fn().mockReturnValue({ all: mockAll });
-      mockDatabase.mockReturnValue({ prepare: mockPrepare, close: vi.fn() } as any);
+      mockDatabase.mockImplementation(function () { return { prepare: mockPrepare, close: vi.fn() } as any; });
 
       const result = await handlers.get("db_query_execute_sql")!({ sqlQuery: "SELECT * FROM test" });
 
@@ -55,7 +55,7 @@ describe("registerDbQueryTools", () => {
         throw new Error("SQL error");
       });
       const mockPrepare = vi.fn().mockReturnValue({ all: mockAll });
-      mockDatabase.mockReturnValue({ prepare: mockPrepare, close: vi.fn() } as any);
+      mockDatabase.mockImplementation(function () { return { prepare: mockPrepare, close: vi.fn() } as any; });
 
       const result = await handlers.get("db_query_execute_sql")!({ sqlQuery: "SELECT * FROM test" });
 

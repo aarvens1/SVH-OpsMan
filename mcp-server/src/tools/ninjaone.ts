@@ -15,6 +15,10 @@ function setCached(key: string, data: unknown, ttlMs = 60_000): void {
   responseCache.set(key, { data, expires_at: Date.now() + ttlMs });
 }
 
+export function resetCacheForTesting(): void {
+  responseCache.clear();
+}
+
 export function registerNinjaOneTools(server: McpServer, enabled: boolean): void {
   if (!enabled) return;
 
@@ -44,17 +48,19 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ os_filter, org_id, page_size, after }) => {
+      const resolvedOsFilter = os_filter ?? "WINDOWS_SERVER,LINUX_SERVER";
+      const resolvedPageSize = page_size ?? 50;
       try {
-        const cacheKey = `ninja_list_servers:${os_filter}:${org_id ?? ""}:${page_size}:${after ?? ""}`;
+        const cacheKey = `ninja_list_servers:${resolvedOsFilter}:${org_id ?? ""}:${resolvedPageSize}:${after ?? ""}`;
         const cached = getCached(cacheKey);
         if (cached) return ok(cached);
 
         const token = await getNinjaToken();
-        const classes = os_filter.split(",").map((t) => t.trim()).join(",");
+        const classes = resolvedOsFilter.split(",").map((t) => t.trim()).join(",");
         const dfParts: string[] = [`class in (${classes})`];
         if (org_id !== undefined) dfParts.push(`org = ${org_id}`);
         const params: Record<string, string | number> = {
-          pageSize: page_size,
+          pageSize: resolvedPageSize,
           df: dfParts.join(" and "),
         };
         if (after) params["after"] = after;
@@ -1405,10 +1411,11 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
       }),
     },
     async ({ device_id, enabled, duration_hours }) => {
+      const resolvedDurationHours = duration_hours ?? 4;
       try {
         const token = await getNinjaManagementToken();
         if (enabled) {
-          const end = Math.floor((Date.now() + duration_hours * 3600 * 1000) / 1000);
+          const end = Math.floor((Date.now() + resolvedDurationHours * 3600 * 1000) / 1000);
           await ninjaClient(token).post(`/device/${device_id}/maintenance`, { end });
           return ok({ device_id, maintenance: true, ends_at: new Date(end * 1000).toISOString() });
         } else {

@@ -82,8 +82,9 @@ describe("registerStagingTools", () => {
 
   describe("metrics_disk_trend", () => {
     it("returns trend on success", async () => {
-        const mockDb = { prepare: vi.fn().mockReturnThis(), all: vi.fn().mockReturnValue([]), close: vi.fn() };
-        mockedDatabase.mockReturnValue(mockDb as any);
+        const mockStmt = { all: vi.fn().mockReturnValue([]) };
+        const mockDb = { prepare: vi.fn().mockReturnValue(mockStmt), close: vi.fn() };
+        mockedDatabase.mockImplementation(function () { return mockDb as any; });
         mockedFs.existsSync.mockReturnValue(true);
         const result = await handlers.get("metrics_disk_trend")!({ device_id: 'dev1', days: 7 });
         expect((result as any).isError).toBeUndefined();

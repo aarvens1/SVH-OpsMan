@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerMsAdminTools } from "../../tools/ms-admin.js";
+import { registerMsAdminTools, resetCacheForTesting } from "../../tools/ms-admin.js";
 import { graphClient, GRAPH_SCOPE } from "../../utils/http.js";
 
 vi.mock("../../auth/graph.js", () => ({
@@ -8,6 +8,7 @@ vi.mock("../../auth/graph.js", () => ({
 }));
 
 vi.mock("../../utils/http.js", () => ({
+  formatError: (e: unknown) => (e instanceof Error ? e.message : String(e)),
   graphClient: vi.fn().mockReturnValue({
     get: vi.fn(),
   }),
@@ -20,6 +21,7 @@ describe("registerMsAdminTools", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    resetCacheForTesting();
     server = new McpServer({ name: "test", version: "0.0.0" });
     handlers = new Map();
     vi.spyOn(server, "registerTool").mockImplementation((name, _schema, handler) => {
@@ -27,8 +29,6 @@ describe("registerMsAdminTools", () => {
       return server;
     });
 
-    // We need to re-import and re-register because of the mock pattern
-    const { registerMsAdminTools } = require("../../tools/ms-admin");
     registerMsAdminTools(server, true);
   });
 

@@ -60,6 +60,10 @@ async function dsm(
   return (res.data["data"] as A) ?? {};
 }
 
+export function resetSidCacheForTesting(): void {
+  sidCache = null;
+}
+
 export function registerSynologyTools(server: McpServer, enabled: boolean): void {
   if (!enabled) return;
 
