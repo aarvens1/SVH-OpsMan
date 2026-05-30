@@ -26,7 +26,7 @@ opsman
 ## Documentation
 
 - **[Getting Started](./docs/getting_started.md)** — end-to-end setup on a fresh workstation
-- **[User Guide](./docs/user_guide.md)** — daily workflow, skills reference, Gemini accounts
+- **[User Guide](./docs/user_guide.md)** — daily workflow, skills reference, Claude Dev and Gemini routing
 - **[Architecture](./docs/architecture.md)** — system design, data flow, technology decisions
 - **[Development Guide](./docs/development.md)** — repo layout, conventions, extending the system
 
