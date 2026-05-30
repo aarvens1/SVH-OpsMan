@@ -150,7 +150,8 @@ tags: [skill, reference]
 
 1. Create `.claude/skills/<name>/SKILL.md` with the required frontmatter
 2. Add the skill name and trigger phrases to `README.md`
-3. Add tool names to `allowed-tools` — include `mcp__obsidian__*` and `mcp__time__*` for any skill that writes a note
+3. Add tool names to `allowed-tools` — include every MCP tool the skill calls, using the `mcp__<server>__<tool>`
+  format (e.g. `mcp__svh-opsman__*`, `mcp__claude_ai_Microsoft_365__*`)
 4. Add the skill name to the `allowed-tools` list of any higher-level skill that invokes it (rare)
 5. Add a `## Skill log` section at the end of the skill body with the append instruction
 6. Add or verify PowerShell companion functions per the PowerShell companion rule above

@@ -68,7 +68,7 @@ There used to be a `/gemini-handoff` skill that wrote a sanitized spec to `.gemi
 
 ## Quick Google (and beyond)
 
-If the user says "quick Google", "look up", "what's the API for", "latest version of", or asks a public web question: this is Gemini's quick tier (`web-research`). Suggest it.
+If the user says "quick Google", "look up", "what's the API for", "latest version of", or asks a public web question: this is Gemini's quick tier (`search-up`). Suggest it.
 
 If the question is broader — comparisons, consensus, multi-faceted — suggest Gemini's `deep-search` (5–10 sources).
 
