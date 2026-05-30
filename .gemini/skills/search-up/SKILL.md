@@ -1,9 +1,9 @@
 ---
-name: web-research
+name: search-up
 description: Quick web lookups with Google Search grounding. Single-query, 1–3 sources cited. Use for facts, API docs, version numbers, error messages.
 ---
 
-# Skill: Web Research (Quick Tier)
+# Skill: Search Up (Quick Tier)
 
 - **Author:** Gemini
 - **Version:** 2.0
@@ -71,12 +71,10 @@ Switch to a deeper tier when the question grows:
 
 ## Invocation phrases
 
-- "Quick Google: …"
-- "Look up …"
+- "search-up …"
 - "What's the API for …"
 - "Latest version of …"
 - "What does this error mean: …"
-- "web-research"
 
 ---
 

@@ -20,7 +20,8 @@ Gemini's reason for existing in this project is **Google-grounded web research w
 
 | Tier | Skill | Sources | When to use |
 |------|-------|---------|-------------|
-| **Quick** | [`web-research`](skills/web-research/SKILL.md) | 1–3 | Single-fact lookups: API docs, package versions, error messages, CVE summaries |
+| **Instant** | [`look-up`](skills/look-up/SKILL.md) | 0 | Single-sentence fact: trivial one-liners where a source would be noise |
+| **Quick** | [`search-up`](skills/search-up/SKILL.md) | 1–3 | Single-fact lookups: API docs, package versions, error messages, CVE summaries |
 | **Deep** | [`deep-search`](skills/deep-search/SKILL.md) | 5–10 | Multi-source synthesis: comparisons, "what's the consensus", multi-faceted questions |
 | **Research** | [`research`](skills/research/SKILL.md) | 10–30 | Structured deliverable: vendor briefs, technology surveys, decision-support docs |
 
@@ -40,7 +41,7 @@ Frame the request and let the skill do its thing. Each skill has invocation phra
 
 **Examples:**
 
-> "Quick Google: what's the Graph API endpoint for listing sign-in logs?" → `web-research`
+> "Quick Google: what's the Graph API endpoint for listing sign-in logs?" → `search-up`
 >
 > "Compare Tailscale vs ZeroTier for 7-site mesh networking" → `deep-search`
 >
