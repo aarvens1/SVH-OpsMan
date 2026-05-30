@@ -50,7 +50,7 @@ Gemini does Google-grounded web research with cited sources across three depths.
 
 When Claude is in an Ops session and the user asks a public web question, suggest the appropriate tier:
 
-- "Quick Google" / "look up X" / "what's the version of Y" → quick (`web-research`)
+- "Quick Google" / "look up X" / "what's the version of Y" → quick (`search-up`)
 - "Compare X vs Y" / "what's the consensus on Z" → deep (`deep-search`)
 - "Research brief on …" / "comprehensive look at …" / "write me a brief" → research (`research`)
 
