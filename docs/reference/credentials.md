@@ -101,3 +101,4 @@ az role assignment create --assignee <client-id> --role "Cost Management Reader"
 | **NinjaOne** | Admin > Apps > API | `NINJA_CLIENT_ID`, `NINJA_CLIENT_SECRET` |
 | **Confluence** | id.atlassian.com API tokens | `CONFLUENCE_DOMAIN`, `CONFLUENCE_EMAIL`, `CONFLUENCE_API_TOKEN` |
 | **PrinterLogic**| Admin console API token | `PRINTERLOGIC_URL`, `PRINTERLOGIC_API_TOKEN` |
+| **Google** | GCP Console OAuth 2.0 Client ID | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `GOOGLE_USER_EMAIL` |
