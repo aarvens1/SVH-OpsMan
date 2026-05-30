@@ -73,6 +73,8 @@ Keep columns to what you'd actually scan — 3–4 max. Always include a header 
 - State the fact. State the implication only if non-obvious.
 - For findings: `[Device/user] — [what's wrong] — [impact or next move]`
 
+**Briefing implication rule:** Every callout block item in a Day Starter or posture check must answer "so what." State the fact, then state the impact or next move — one sentence each. A finding with no implication is incomplete.
+
 ## Notes section timestamps
 Every main-line entry added to the # Notes section gets a fuzzy timestamp. Today shows # DayStarter — HH:MM; this extends that pattern to mid-day activity.
 Format: ## HH:MM, or **HH:MM** — inline before a standalone bullet.

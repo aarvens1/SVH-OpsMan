@@ -41,6 +41,14 @@ Run in parallel:
 - `gmail_list_recent` — personal Gmail inbox since `last_day_starter`. Unread messages and anything flagged needing a reply.
 - `gtasks_list_task_lists` then `gtasks_list_tasks` for each list — Google Tasks status: what's still open or overdue.
 
+## Step 1.5 — Scan for untracked commitments
+
+Review the current session context for any verbal commitments Aaron made that are not yet captured as Planner tasks or To Do items. Look for phrases like: "I'll...", "I need to...", "I should...", "remind me to...", "I'm going to...", "I have to..."
+
+For each uncaptured commitment found: pre-fill a `#### CREATE —` block in the Evening Tasks section (Step 2, Phase 1). If nothing was committed, skip this step silently.
+
+This compensates for the recurring pattern where in-session intentions don't make it into task tracking.
+
 ## Step 2 — Write to today's note
 
 This is a two-phase write.
