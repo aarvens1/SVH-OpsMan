@@ -1,14 +1,41 @@
 import { execSync } from "child_process";
+import { readFileSync } from "fs";
+import { homedir } from "os";
+import { join } from "path";
 
 // Store all MCP credentials as custom fields on a single Bitwarden vault item.
 // Item name must match VAULT_ITEM exactly — custom field names must match env var keys.
 const VAULT_ITEM = "SVH OpsMan";
+const SESSION_FILE = join(homedir(), ".bw_session");
+
+function resolveSession(): string {
+  // Prefer env var; fall back to ~/.bw_session so the server can restart
+  // even when Claude Code's inherited BW_SESSION is stale.
+  const envSession = process.env["BW_SESSION"] ?? "";
+  if (envSession) {
+    try {
+      execSync(`bw unlock --check --session "${envSession}"`, {
+        encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], timeout: 5_000,
+      });
+      return envSession;
+    } catch {
+      console.error("[svh-opsman] BW_SESSION env var is stale — trying ~/.bw_session");
+    }
+  }
+  try {
+    const fileSession = readFileSync(SESSION_FILE, "utf8").trim();
+    if (fileSession) {
+      process.env["BW_SESSION"] = fileSession;
+      return fileSession;
+    }
+  } catch { /* no file */ }
+  throw new Error(
+    "[svh-opsman] No valid BW session found — run: bwu (in any terminal), then restart Claude Code"
+  );
+}
 
 export async function loadBitwardenSecrets(): Promise<void> {
-  const session = process.env["BW_SESSION"];
-  if (!session) {
-    throw new Error("[svh-opsman] BW_SESSION is not set — run: export BW_SESSION=$(bw unlock --raw)");
-  }
+  const session = resolveSession();
 
   try {
     execSync(`bw sync --session "${session}"`, {
@@ -29,7 +56,7 @@ export async function loadBitwardenSecrets(): Promise<void> {
     });
   } catch (e) {
     throw new Error(
-      "[svh-opsman] BW session is locked or expired — run: export BW_SESSION=$(bw unlock --raw), then restart Claude Code"
+      "[svh-opsman] BW session is locked or expired — run: bwu (in any terminal), then restart Claude Code"
     );
   }
 

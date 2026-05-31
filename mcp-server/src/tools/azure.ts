@@ -436,13 +436,11 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
     async ({ category }) => {
       try {
         const token = await getArmToken();
-        const params: Record<string, string> = { "api-version": "2020-01-01" };
-        if (category) params["$filter"] = `category eq '${category}'`;
         const res = await armClient(token).get(
           `/subscriptions/${sub()}/providers/Microsoft.Advisor/recommendations`,
-          { params }
+          { params: { "api-version": "2020-01-01" } }
         );
-        const recs = (res.data.value ?? []).map((r: A) => ({
+        let recs = (res.data.value ?? []).map((r: A) => ({
           category: r.properties?.category ?? null,
           impact: r.properties?.impact ?? null,
           problem: r.properties?.shortDescription?.problem ?? null,
@@ -453,6 +451,7 @@ export function registerAzureTools(server: McpServer, enabled: boolean): void {
           impacted_value: r.properties?.impactedValue ?? null,
           last_updated: r.properties?.lastUpdated ?? null,
         }));
+        if (category) recs = recs.filter((r: { category: string | null }) => r.category === category);
         return ok(recs);
       } catch (e) {
         return err(e);

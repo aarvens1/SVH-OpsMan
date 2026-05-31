@@ -67,7 +67,7 @@ export function registerMsAdminTools(server: McpServer, enabled: boolean): void 
         status: z
           .enum(["active", "resolved", "all"])
           .default("active")
-          .describe("Filter by incident status"),
+          .describe("Filter by incident status. 'active' = unresolved issues; 'resolved' = resolved issues; 'all' = no filter"),
         top: z.number().int().min(1).max(100).default(25),
       }),
     },
@@ -75,7 +75,8 @@ export function registerMsAdminTools(server: McpServer, enabled: boolean): void 
       try {
         const token = await getGraphToken(GRAPH_SCOPE);
         const params: Record<string, string | number> = { $top: top };
-        if (status !== "all") params["$filter"] = `status eq '${status}'`;
+        if (status === "active") params["$filter"] = "isResolved eq false";
+        else if (status === "resolved") params["$filter"] = "isResolved eq true";
         const res = await graphClient(token).get("/admin/serviceAnnouncement/issues", { params });
         const issues = ((res.data as A)["value"] as A[] ?? []).map((i: A) => ({
           id: i["id"],

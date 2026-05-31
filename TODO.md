@@ -99,3 +99,8 @@ Root cause fixed (zsh -lc skips .zshrc → added ~/.zprofile), 5-tab launcher cr
 - [x] **Restart Windows Terminal** — done
 - [x] **Run `dotfiles/install-windows.ps1`** — done; Start Menu shortcut created
 - [ ] **Remap Copilot key** — PowerToys → Keyboard Manager → Remap a shortcut → Source: Copilot Key → Target: Run Application → `%APPDATA%\Microsoft\Windows\Start Menu\Programs\SVH OpsMan.lnk`
+- [ ] **4-pane layout option** — Aaron asked 2026-05-26 about a 2×2 pane layout with specific connections. Pattern: `wt --profile "P1" ; split-pane -V --profile "P2" ; move-focus left ; split-pane -H --profile "P3" ; move-focus right ; split-pane -H --profile "P4"`. May be superseded by the 5-tab launcher — confirm with Aaron.
+
+---
+
+## Memory-extracted TODOs (from memory-cleanup 2026-05-31)

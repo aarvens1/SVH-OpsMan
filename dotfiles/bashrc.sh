@@ -4,8 +4,8 @@
 #   [ -f ~/SVH-OpsMan/dotfiles/bashrc.sh ] && source ~/SVH-OpsMan/dotfiles/bashrc.sh
 
 # ── Bitwarden ──────────────────────────────────────────────────────────────────
-# Restore BW session from file so new shells (WT tabs, etc.) inherit it automatically
-if [[ -z "${BW_SESSION:-}" && -f "$HOME/.bw_session" ]]; then
+# Always read BW session from file — file is source of truth, overrides stale inherited env
+if [[ -f "$HOME/.bw_session" ]]; then
     export BW_SESSION=$(< "$HOME/.bw_session")
 fi
 

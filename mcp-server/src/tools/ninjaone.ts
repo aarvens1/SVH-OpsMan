@@ -1150,13 +1150,23 @@ export function registerNinjaOneTools(server: McpServer, enabled: boolean): void
         return ok({
           count: results.length,
           cursor: (raw["cursor"] as Record<string, unknown> | undefined)?.["name"],
-          usage: results.map((r) => ({
-            deviceId: r["deviceId"],
-            planName: r["planName"] ?? r["plan"],
-            backupSetSize: r["backupSetSize"] ?? r["size"],
-            lastBackupDate: r["lastBackupDate"] ?? r["lastBackup"],
-            status: r["status"],
-          })),
+          usage: results.map((r) => {
+            const bu = (r["references"] as Record<string, unknown> | undefined)
+              ?.["backupUsage"] as Record<string, unknown> | undefined ?? {};
+            return {
+              deviceId: r["id"],
+              systemName: r["systemName"],
+              organizationId: r["organizationId"],
+              offline: r["offline"] ?? false,
+              localTotalBytes: bu["localTotalSize"] ?? 0,
+              cloudTotalBytes: bu["cloudTotalSize"] ?? 0,
+              revisionsTotalBytes: bu["revisionsTotalSize"] ?? 0,
+              localFileFolderBytes: bu["localFileFolderSize"] ?? 0,
+              cloudFileFolderBytes: bu["cloudFileFolderSize"] ?? 0,
+              localImageBytes: bu["localImageSize"] ?? 0,
+              cloudImageBytes: bu["cloudImageSize"] ?? 0,
+            };
+          }),
         });
       } catch (e) {
         return err(e);
