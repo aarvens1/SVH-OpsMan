@@ -44,6 +44,65 @@ Projects use a `project/<slug>` tag in their frontmatter (e.g. `project/network-
 - Dataview query `FROM #project/<slug>` returns every note touching the project — no manual indexing required.
 - Slug is the kebab-case form of the project filename. One slug per project. Tag the project note itself with its own slug.
 
+## MOC layer
+
+Every major folder has a `folder-home.md` MOC. These are the entry points — link to them, not to the raw folder path. When a skill creates a note in a folder, it should link the new note back to that folder's MOC in its **Related** section.
+
+| Folder | MOC |
+|--------|-----|
+| Vault root | `home.md` |
+| `Briefings/` | `Briefings/briefings-home.md` |
+| `Assets/` | `Assets/assets-home.md` |
+| `Infrastructure/` | `Infrastructure/infrastructure-home.md` |
+| `Sites/` | `Sites/sites-home.md` |
+| `Projects/` | `Projects/projects-home.md` |
+| `Meetings/` | `Meetings/meetings-home.md` |
+| `Incidents/` | `Incidents/incidents-home.md` |
+| `Investigations/` | `Investigations/investigations-home.md` |
+| `Changes/` | `Changes/changes-home.md` |
+| `Vulnerabilities/` | `Vulnerabilities/vulnerabilities-home.md` |
+| `Reviews/` | `Reviews/reviews-home.md` |
+| `References/` | `References/references-home.md` |
+| `Skills/` | `Skills/index.md` |
+
+**When to add a new note to a MOC:** The following MOCs are self-maintaining via Dataview and require no manual updates when new notes are added — Briefings, Meetings, Incidents, Investigations. For all other MOCs (Projects, Assets, Changes, Vulnerabilities, Reviews), manually add a row when creating a new note.
+
+## Dataview
+
+Dataview is installed and enabled. Use it in MOC files to replace manual tables with live queries.
+
+**Installed plugins:** Dataview, Excalidraw, Local REST API, ExcaliBrain, Collapsible Code Blocks, Floating Headings, Collapse All
+
+**Key patterns:**
+
+```dataview
+TABLE date as "Date", severity as "Severity"
+FROM "Incidents/Active"
+SORT date DESC
+```
+
+```dataview
+TABLE date as "Date", tags as "Tags"
+FROM "Investigations"
+WHERE file.folder = "Investigations" AND status = "draft"
+SORT date DESC
+```
+
+```dataview
+TABLE date as "Date", attendees as "Attendees"
+FROM "Meetings"
+WHERE file.name != "meetings-home"
+SORT date DESC
+```
+
+**Status values by note type (for WHERE clauses):**
+- Investigations: `status: draft` (active) → `status: filed` (resolved). NOT "In progress" — use `draft`.
+- Incidents: location-based — `Incidents/Active/` = open; no `WHERE status` filter needed.
+- Projects: `status: active | on-hold | closed`
+- Assets/Infrastructure/Sites: `status: active` always (living docs)
+
+**Project tag queries:** `FROM #project/network-segmentation` returns all notes tagged with that project slug — no manual cross-referencing needed.
+
 ## Vault paths
 
 | Content | Path |
@@ -52,16 +111,16 @@ Projects use a `project/<slug>` tag in their frontmatter (e.g. `project/network-
 | Week Starter / Week Ender | `Briefings/Weekly/YYYY-WW.md` |
 | Incidents | `Incidents/Active/YYYY-MM-DD-name.md` |
 | Investigations | `Investigations/` |
-| Changes | `Changes/` |
+| Changes | `Changes/CHG-YYYY-NNN.md` |
 | Meetings | `Meetings/YYYY-MM-DD-name.md` |
 | Assets | `Assets/[name].md` (persistent — update in place) |
 | Projects (indexes) | `Projects/[ProjectName].md` (evergreen — update in place) |
 | Project work artifacts | `Projects/Archive/slug-YYYY-MM-DD.md` (dated, archived when phase closes) |
 | Initiatives | No separate folder — use a shared `project/<initiative-slug>` tag across related project notes. An initiative is just a Dataview query away. |
-| Access reviews | `Reviews/Access/` |
-| Patch reviews | `Reviews/Patches/` |
+| Access reviews | `Reviews/Access/YYYY-MM-DD-access-review.md` |
+| Patch reviews | `Reviews/Patches/YYYY-MM-DD-patch-review.md` |
 | Task triage / reviews | `Reviews/Tasks/YYYY-MM-DD-triage.md` |
-| Vulnerabilities | `Vulnerabilities/` |
+| Vulnerabilities | `Vulnerabilities/CVE-YYYY-NNNNN.md` |
 | Research (filed Gemini search output) | `Research/YYYY-MM-DD-<slug>.md` (filed via `/import-research`) |
 | Excalidraw diagrams | `Diagrams/<category>/[name].md` |
 | Skill reference pages | `Skills/[skill-name].md` (persistent — update in place) |

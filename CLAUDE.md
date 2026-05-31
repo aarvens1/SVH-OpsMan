@@ -77,6 +77,16 @@ Rules in `.claude/rules/` are advisory — they contribute to behavior but can b
 
 ---
 
+## Vault Structure
+
+The vault has a full MOC layer — every major folder has a `folder-home.md` entry point. See `obsidian-output.md` for the complete table. Key facts:
+
+- **Self-maintaining MOCs** (Dataview queries, no manual rows): Briefings, Meetings, Incidents, Investigations
+- **Manual-update MOCs**: Projects, Assets, Changes, Vulnerabilities, Reviews
+- **Skill-produced notes** include `[[Folder/folder-home]]` in their Related section for navigation, even though the MOC indexes via Dataview
+- **Dataview** is installed. Use `WHERE skill = "skill-name"` to find all notes a skill produced. See `obsidian-output.md` for query patterns and status field values by note type.
+- **Bases** are live in `Bases/` — open-incidents, active-projects, asset-inventory, pending-tasks, change-calendar
+
 ## Vault Maintenance Skills
 
 On-demand skills for keeping the Obsidian vault consistent. Run manually — not automated.

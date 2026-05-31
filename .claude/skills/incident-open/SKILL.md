@@ -66,6 +66,7 @@ Sections:
 - **Supporting signals** — findings from Step 2 (alerts, risky users, M365 incidents)
 - **Next steps** — immediate actions in priority order
 - **Open questions** — what's still unknown
+- **Related** — `[[Incidents/incidents-home]]` as first link, plus affected asset and infrastructure notes
 
 ## Step 5 — Link from daily note
 

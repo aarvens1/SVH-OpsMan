@@ -40,7 +40,7 @@ tags: [review, access, identity]
 ---
 ```
 
-Sections: Subject → Roles/memberships → MFA status → Last active → CA policy coverage → Findings & recommendations.
+Sections: Subject → Roles/memberships → MFA status → Last active → CA policy coverage → Findings & recommendations → Related (`[[Reviews/reviews-home]]` first).
 
 Optionally draft a Confluence audit page (`confluence_create_page`) if the user asks for a formal record.
 

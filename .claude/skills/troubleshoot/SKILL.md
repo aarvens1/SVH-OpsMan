@@ -63,7 +63,7 @@ tags: [investigation, troubleshoot]
 ---
 ```
 
-Sections: Problem statement → Scope → Hypotheses tested → Root cause (or "inconclusive — next steps") → Recommended fix → Follow-up items.
+Sections: Problem statement → Scope → Hypotheses tested → Root cause (or "inconclusive — next steps") → Recommended fix → Follow-up items → Related (`[[Investigations/investigations-home]]` first, then affected asset/infra notes).
 
 ## Daily note
 

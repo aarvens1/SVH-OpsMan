@@ -80,7 +80,7 @@ WHERE skill = "troubleshoot"
 SORT date DESC
 ```
 
-No backlinks or separate index files are needed — the `skill:` frontmatter field is the source of truth.
+The `skill:` frontmatter field is the indexing source of truth — Dataview queries over it replace manual index files. However, skill-produced notes should still include a `## Related` section with a link to their folder's MOC (e.g. `[[Incidents/incidents-home]]`) for one-click navigation. This is a navigation link, not an index backlink — the MOC itself auto-updates via Dataview and needs no manual entry.
 
 ## PowerShell companion rule
 

@@ -43,6 +43,7 @@ Sections:
 - **Open items** — action items from last call, tasks due
 - **Suggested agenda** — blank template to fill in during the call
 - **Questions to raise** — anything that needs answering
+- **Related** — `[[Meetings/meetings-home]]` as first link, plus any project notes this meeting touches
 
 ---
 

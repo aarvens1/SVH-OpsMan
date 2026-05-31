@@ -79,6 +79,7 @@ Incident note structure:
 4. **Enrichment findings** — by source
 5. **Recommended actions** — ordered by urgency
 6. **Drafts** — Teams message draft and Planner card draft (Active/BB only)
+7. **Related** — `[[Incidents/incidents-home]]` as first link, plus affected asset notes
 
 ## Skill log
 

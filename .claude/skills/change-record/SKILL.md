@@ -70,6 +70,8 @@ change_date: YYYY-MM-DD
 
 If Step 1 captured a related project, add `project/<slug>` to the tags array. Otherwise omit it.
 
+Include a `## Related` section: `[[Changes/changes-home]]` as first link, then affected infra and asset notes, then the related project note if applicable.
+
 Also produce (as staged drafts):
 - **Confluence page** — `confluence_create_page` in the IT changes space
 - **Planner card** — `planner_create_task` for tracking
