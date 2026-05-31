@@ -248,7 +248,7 @@ Work is routed across three lanes by quota pool, data exposure, and tool strengt
 | :--- | :------ | :----- | :--------- | :--- |
 | **Claude Ops** | `aa_stevens@shoestringvalley.com` | `opsman` · `opsman-dev` | Yes — full MCP, BW_SESSION | Incidents, briefings, posture, investigations, all vault writes on real data, messages to Teams/Planner/Confluence |
 | **Claude Dev** | `astevens2694@gmail.com` | `claude-dev` | No (by design) | Most OpsMan code work: skills, hooks, MCP server, collector, PowerShell, TUI, tests, type generation, refactors |
-| **Gemini** | Existing Gemini login | Gemini CLI / web | No | Google-grounded web research with cited sources, three depth tiers (quick · deep · research). All tiers accept image input |
+| **Gemini** | Existing Gemini login | Gemini CLI / web | No | Google-grounded web research with cited sources, four tiers (instant · quick · deep · research). Tiers except Instant accept image input |
 
 ### Claude Dev launch
 
@@ -266,15 +266,16 @@ Use `/code-handoff` to create a sanitized spec note in `Handoffs/`. Review it th
 | :-- | :-- |
 | Gemini Account A (active coding) | Claude Dev |
 | Gemini Account B (long-context docs reads, bulk refactors) | Claude Dev |
-| Gemini Account C (web research) | Single remaining Gemini account, expanded to three depth tiers |
+| Gemini Account C (web research) | Single remaining Gemini account, expanded to four tiers (instant · quick · deep · research) |
 
-Most of the previously listed Gemini skills (`test-writer`, `refactor-powershell`, `code-reviewer`, `api-spec`, `ts-linter`, `npm-audit`, `dependency-manager`, `git-helper`, `release-drafter`, `code-documenter`, `log-analyzer`, `config-validator`, `db-query`, `shell-script-converter`) are superseded by Claude Dev. They remain on disk during transition — see `TODO.md`.
+The previously listed Gemini dev skills (`test-writer`, `refactor-powershell`, `code-reviewer`, `api-spec`, `ts-linter`, `npm-audit`, `dependency-manager`, `git-helper`, `release-drafter`, `code-documenter`, `log-analyzer`, `config-validator`, `db-query`, `shell-script-converter`) are superseded by Claude Dev and have been removed from `.gemini/skills/`.
 
-### Gemini search skills (the three tiers)
+### Gemini search skills (the four tiers)
 
 | Tier | Skill | Sources | When to use |
 | :--- | :---- | :------ | :---------- |
-| **Quick** | `web-research` | 1–3 | Single-fact lookups: API docs, package versions, error messages, CVE summaries |
+| **Instant** | `look-up` | 0 | Single-sentence fact: trivial one-liners where a source would be noise |
+| **Quick** | `search-up` | 1–3 | Single-fact lookups: API docs, package versions, error messages, CVE summaries |
 | **Deep** | `deep-search` | 5–10 | Multi-source synthesis: comparisons, consensus checks, multi-faceted questions |
 | **Research** | `research` | 10–30 | Structured deliverable: vendor briefs, technology surveys, decision-support docs |
 

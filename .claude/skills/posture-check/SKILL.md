@@ -71,7 +71,7 @@ Write a timestamped snapshot note (do not overwrite previous ones):
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Security Posture Snapshot
+skill: posture-check
 status: draft
 tags: [posture, security]
 ---

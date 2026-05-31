@@ -54,7 +54,7 @@ Write findings to `Investigations/YYYY-MM-DD-[host]-event-log.md`:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Event Log Triage
+skill: event-log-triage
 status: draft
 tags: [investigation, event-log]
 ---

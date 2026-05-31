@@ -63,7 +63,7 @@ Write analysis to Obsidian:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Event Log Analyzer
+skill: event-log-analyzer
 status: draft
 tags: [investigation, event-log, analysis]
 ---

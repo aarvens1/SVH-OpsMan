@@ -64,7 +64,7 @@ Write `Investigations/YYYY-MM-DD-network-[site]-[topic].md`:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Network Troubleshooter
+skill: network-troubleshooter
 status: draft
 tags: [investigation, network]
 ---

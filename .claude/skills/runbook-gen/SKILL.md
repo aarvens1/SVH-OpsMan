@@ -60,7 +60,7 @@ Write to `Investigations/runbooks/[topic].md`:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Runbook Generator
+skill: runbook-gen
 status: draft
 tags: [runbook, documentation]
 ---

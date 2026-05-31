@@ -46,7 +46,7 @@ Write `Investigations/YYYY-MM-DD-mailflow-[sender-to-recipient].md`:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Mailflow Investigation
+skill: mailflow-investigation
 status: draft
 tags: [investigation, mailflow]
 ---

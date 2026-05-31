@@ -52,7 +52,7 @@ Write `Reviews/Patches/YYYY-MM-DD-patch-campaign.md`:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Patch Campaign
+skill: patch-campaign
 status: draft
 tags: [patching, campaign]
 has_pending_tasks: true

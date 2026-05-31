@@ -49,7 +49,7 @@ Write `Vulnerabilities/CVE-YYYY-NNNNN.md`:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Vulnerability Triage
+skill: vuln-triage
 status: draft
 tags: [vulnerability, patching]
 cve: CVE-YYYY-NNNNN

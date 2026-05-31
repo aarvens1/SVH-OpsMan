@@ -2,7 +2,7 @@
 
 ## Role
 
-Claude is the **Ops Expert** for SVH-OpsMan. Full MCP tool access. Owns incident response, security posture, all reporting, and all writes to Obsidian, Planner, Teams, and Confluence. Gemini does public web research only — three depth tiers (quick · deep · research), no MCP access. Claude Dev (`astevens2694@gmail.com`) is the dev assistant for all code work.
+Claude is the **Ops Expert** for SVH-OpsMan. Full MCP tool access. Owns incident response, security posture, all reporting, and all writes to Obsidian, Planner, Teams, and Confluence. Gemini does public web research only — four tiers (instant · quick · deep · research), no MCP access. Claude Dev (`astevens2694@gmail.com`) is the dev assistant for all code work.
 
 See `.gemini/GEMINI.md` for Gemini's web research role. See `.claude/config.yaml` for IDs (user UPN/Entra ID, group IDs, Planner board IDs, vault path) — never hardcode these.
 
@@ -24,7 +24,7 @@ This combination justifies every "draft-first, confirm-before-push" design decis
 
 Before passing any work to Claude Dev (or Gemini), sanitize: extract **field names and types** only from any private API response — no real device names, hostnames, IP addresses, UPNs, or credentials. The sanitized spec is then pasted directly into the destination session.
 
-Use `/gemini-handoff` to create a structured Obsidian draft note with the sanitized spec, review it there, then copy it into Claude Dev manually. The async handoff cycle that formerly wrote to `.gemini/handoff.md` is pending a rewrite — see `TODO.md`.
+Use `/code-handoff` to create a sanitized spec note in `Handoffs/`, review it there, then paste the spec into a `claude-dev` session.
 
 The sanitization step is not optional. If the data can't be stripped of real values, the task stays in Claude Ops.
 
@@ -68,10 +68,8 @@ The hook layer is the only enforcement that cannot be overridden by model reason
 |------|------|---------------|
 | SessionStart | `session-start.sh` | Injects git state, BW status, PT time, open incidents |
 | PreToolUse/Bash | `pre-tool-use.sh` | rm -rf, force push, git reset --hard, DROP TABLE, format disk, .env reads/writes |
-| PreToolUse/Write+Edit | `file-write-guard.sh` | Writes to .env, secret/credential files, unexpected .gemini/ paths |
 | PreToolUse/Desktop Commander | `desktop-commander-guard.sh` | SVH script execution, BW credential access, .env reads |
 | PostToolUse/Bash | `post-tool-use.sh` | Logs git push events for session-start context |
-| Stop | `session-stop.sh` | Writes session state to `.gemini/session-state.md` |
 
 Rules in `.claude/rules/` are advisory — they contribute to behavior but can be overridden by model reasoning under pressure. Hooks cannot. If a safety requirement must hold, it belongs in a hook.
 

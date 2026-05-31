@@ -9,8 +9,9 @@ allowed-tools: "Read Write Edit"
 
 ## Step 1 — Get the content
 
-The user pastes Gemini output directly into the conversation. The expected shape is one of the three tiers:
+The user pastes Gemini output directly into the conversation. The expected shape is one of the four tiers:
 
+- **Instant** (`look-up`) — single sentence, no Sources section
 - **Quick** — short answer with `[1][2]` inline citations and a **Sources** list
 - **Deep** — structured response with H2 sections, TL;DR, "Where sources disagree" callout, Sources list
 - **Research** — full report with TL;DR, Background, Key findings, Tradeoffs, Recommendations, Sources

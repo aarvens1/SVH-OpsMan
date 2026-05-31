@@ -66,7 +66,7 @@ Write (or update) `Assets/[name].md`:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Asset Investigation
+skill: asset-investigation
 status: draft
 tags: [asset]
 asset_type: server|workstation|user

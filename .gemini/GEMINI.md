@@ -1,6 +1,6 @@
 # Gemini Profile: Web Research
 
-This document defines Gemini's role within the SVH-OpsMan project. Claude is the **Ops Expert** (private integrations, incidents, briefings). Claude Dev (account 2) is the **Dev Assistant** (code, tooling). Gemini is the **Web Research lane** — public web search grounded in Google, across three depth tiers.
+This document defines Gemini's role within the SVH-OpsMan project. Claude is the **Ops Expert** (private integrations, incidents, briefings). Claude Dev (account 2) is the **Dev Assistant** (code, tooling). Gemini is the **Web Research lane** — public web search grounded in Google, across four tiers.
 
 ---
 
@@ -14,9 +14,9 @@ This document defines Gemini's role within the SVH-OpsMan project. Claude is the
 
 ---
 
-## Primary Role: Three-Tier Search
+## Primary Role: Four-Tier Search
 
-Gemini's reason for existing in this project is **Google-grounded web research with cited sources**, across three depths. Pick the tier based on what the question actually needs.
+Gemini's reason for existing in this project is **Google-grounded web research with cited sources**, across four tiers. Pick the tier based on what the question actually needs.
 
 | Tier | Skill | Sources | When to use |
 |------|-------|---------|-------------|
@@ -25,11 +25,13 @@ Gemini's reason for existing in this project is **Google-grounded web research w
 | **Deep** | [`deep-search`](skills/deep-search/SKILL.md) | 5–10 | Multi-source synthesis: comparisons, "what's the consensus", multi-faceted questions |
 | **Research** | [`research`](skills/research/SKILL.md) | 10–30 | Structured deliverable: vendor briefs, technology surveys, decision-support docs |
 
-All three tiers:
+All tiers except Instant:
 - Cite every factual claim inline with `[N]` markers
 - List numbered sources at the bottom with URL + access date
 - Accept image input (paste or `--image`) and reason multimodally
 - Never invent sources. If quality results aren't available, say so.
+
+Instant (`look-up`) returns a single sentence with no sources — use only when a citation would add noise.
 
 ---
 

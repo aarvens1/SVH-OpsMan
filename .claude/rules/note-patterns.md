@@ -75,8 +75,8 @@ Keep columns to what you'd actually scan — 3–4 max. Always include a header 
 
 **Briefing implication rule:** Every callout block item in a Day Starter or posture check must answer "so what." State the fact, then state the impact or next move — one sentence each. A finding with no implication is incomplete.
 
-## Notes section timestamps
-Every main-line entry added to the # Notes section gets a fuzzy timestamp. Today shows # DayStarter — HH:MM; this extends that pattern to mid-day activity.
+## Activity Log timestamps
+Every main-line entry added to the # Activity Log section gets a fuzzy timestamp. Today shows # DayStarter — HH:MM; this extends that pattern to mid-day activity.
 Format: ## HH:MM, or **HH:MM** — inline before a standalone bullet.
 Fuzzy rules:
 - Round to the nearest minute, but prefer "interesting" minutes like :05, :12, :23, :47 — avoid clean :00 and :30 endings.

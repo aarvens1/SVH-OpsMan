@@ -141,11 +141,11 @@ Claude Dev owns: skills, hooks, MCP server changes, collector jobs, PowerShell m
 
 Private system data must not enter a Dev session. Before describing a task to Claude Dev, strip all private values from any ops context — real device names, hostnames, IPs, UPNs, credentials, and alert content are not permitted across the boundary.
 
-Use `/gemini-handoff` in an Ops session to create a structured Obsidian draft note with the sanitized spec. Review it in the vault, then copy the spec into Claude Dev manually. See `TODO.md` for the async handoff rewrite plan.
+Use `/code-handoff` in an Ops session to create a sanitized spec note in `Handoffs/`. Review it in the vault, then paste the spec into a `claude-dev` session.
 
 ### Gemini: web research only
 
-Gemini's role is public web research — three depth tiers (quick · deep · research), cited sources, image input. It is not a code assistant. See `.gemini/GEMINI.md` for tier descriptions and `.claude/rules/gemini-routing.md` for the routing table.
+Gemini's role is public web research — four tiers (instant · quick · deep · research), cited sources, image input. It is not a code assistant. See `.gemini/GEMINI.md` for tier descriptions and `.claude/rules/gemini-routing.md` for the routing table.
 
 ## Dev Tools
 

@@ -108,7 +108,7 @@ Write `Briefings/Weekly/YYYY-WW.md`:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Week Starter
+skill: week-starter
 status: draft
 tags: [briefing, weekly]
 week: YYYY-WW

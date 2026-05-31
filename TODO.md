@@ -88,7 +88,7 @@ Routing rewrite landed (Claude account 2 = Dev, Gemini = quick Google only). The
 
 - [x] **Rename `/gemini-handoff` → `/code-handoff`** — done (2026-05-29). Dir renamed, SKILL.md rewritten with new name/triggers/allowed-tools, docs updated. Handoffs/ vault path kept.
 - [x] **Retire `/handoff-queue` and `/handoff-receive`** — both disabled (`SKILL.md.disabled`) as of 2026-05-29. Gemini async cycle is retired; these skills have no equivalent need with interactive Claude Dev. `Handoffs/` folder and any existing notes can be archived when ready.
-- [x] **Prune retired Gemini dev skills from `.gemini/skills/`** — deleted 17 dirs: api-spec, claude-handoff, code-documenter, code-reviewer, config-validator, create-collector-job, db-query, dependency-manager, git-helper, log-analyzer, npm-audit, refactor-powershell, release-drafter, shell-script-converter, test-writer, test-writer-mcp-server, ts-linter. Remaining: deep-search, research, web-research, pdx-pinball, pdx-weekend-digest (2026-05-29).
+- [x] **Prune retired Gemini dev skills from `.gemini/skills/`** — deleted 17 dirs: api-spec, claude-handoff, code-documenter, code-reviewer, config-validator, create-collector-job, db-query, dependency-manager, git-helper, log-analyzer, npm-audit, refactor-powershell, release-drafter, shell-script-converter, test-writer, test-writer-mcp-server, ts-linter. Remaining: look-up, search-up, deep-search, research, pdx-pinball, pdx-weekend-digest (web-research renamed → search-up; look-up added as Instant tier).
 
 ---
 

@@ -223,7 +223,7 @@ Write `Briefings/Daily/YYYY-MM-DD.md` to the Obsidian vault at `/mnt/c/Users/ast
 ```markdown
 ---
 date: YYYY-MM-DD
-skill: Day Starter
+skill: day-starter
 status: draft
 tags: [briefing, daily]
 has_pending_tasks: false

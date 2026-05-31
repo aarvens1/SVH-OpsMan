@@ -34,7 +34,7 @@ Write `Reviews/Access/YYYY-MM-DD-[name].md`:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Access Review
+skill: access-review
 status: draft
 tags: [review, access, identity]
 ---

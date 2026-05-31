@@ -42,7 +42,7 @@ Determine the right Obsidian path based on content:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Scribe
+skill: scribe
 status: draft
 tags: [documentation]
 ---

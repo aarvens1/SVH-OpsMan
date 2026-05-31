@@ -1,3 +1,3 @@
 # Handoff to Claude
 
-*This file is written by the async Gemini handoff workflow (pending rewrite). It will contain Gemini's result when a handoff completes. Currently empty — no active handoff.*
+*The async Gemini → Claude handoff workflow is retired. This file is no longer written to by any skill. See `/code-handoff` for the current cross-session sanitization flow.*

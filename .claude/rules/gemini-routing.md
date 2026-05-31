@@ -38,12 +38,13 @@ The Dev account is structurally isolated: no `BW_SESSION` (the MCP server fails 
 
 **The data boundary is the rule that matters:** real device names, hostnames, IPs, UPNs, credentials, and alert content must not cross into a Dev session. When ops context is live in a Claude Ops session and the next step is code work, sanitize the spec before pasting across — extract field names and types only.
 
-## Lane 3: Gemini — Three search tiers
+## Lane 3: Gemini — Four search tiers
 
-Gemini does Google-grounded web research with cited sources across three depths. Pick the tier by what the question actually needs. All three accept image input.
+Gemini does Google-grounded web research with cited sources across four depths. Pick the tier by what the question actually needs. All tiers except Instant accept image input.
 
 | Tier | Gemini skill | Sources | When to recommend |
 |---|---|---|---|
+| Instant | `look-up` | 0 | Single-sentence fact: trivial one-liners where a source would be noise |
 | Quick | `search-up` | 1–3 | Single-fact lookup: API docs, package versions, error messages, CVE summaries |
 | Deep | `deep-search` | 5–10 | Multi-source synthesis: comparisons, consensus checks, multi-faceted questions |
 | Research | `research` | 10–30 | Structured deliverable: vendor briefs, technology surveys, decision-support docs |
@@ -64,7 +65,7 @@ The discipline: sanitize before crossing.
 2. Paste the sanitized spec into a Claude Dev session
 3. Receive the code back, integrate in Ops session if the integration needs live testing
 
-There used to be a `/gemini-handoff` skill that wrote a sanitized spec to `.gemini/handoff.md` for an async cycle. The sanitization step is still valuable; the async cycle is not — Claude Dev is interactive. The handoff skills are pending a rewrite (see `TODO.md`); for now, do the sanitization manually when crossing from Ops to Dev.
+Use `/code-handoff` in the Ops session to create a sanitized spec note in `Handoffs/`. Review it there, then paste the spec into a `claude-dev` session. The sanitization step is not optional.
 
 ## Quick Google (and beyond)
 
@@ -74,4 +75,4 @@ If the question is broader — comparisons, consensus, multi-faceted — suggest
 
 If the user wants a deliverable — "write me a brief", "research X", "structured report on Y" — suggest Gemini's `research` (10–30 sources, formal report).
 
-All three tiers cite sources inline and accept image input. Don't answer from training data alone when grounded search would give a better, source-cited result.
+All tiers except Instant cite sources inline and accept image input. Don't answer from training data alone when grounded search would give a better, source-cited result.

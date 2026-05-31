@@ -48,7 +48,7 @@ Write `Incidents/Active/YYYY-MM-DD-[name].md`:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Incident Open
+skill: incident-open
 status: open
 tags: [incident, project/<slug-if-applicable>]
 incident_id: INC-YYYY-NNN

@@ -28,7 +28,7 @@ Write `Meetings/YYYY-MM-DD-[meeting-name].md`:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Meeting Prep
+skill: meeting-prep
 status: draft
 tags: [meeting, prep, project/<slug-if-applicable>]
 attendees: []

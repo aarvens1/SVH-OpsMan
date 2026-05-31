@@ -47,7 +47,7 @@ Write `Investigations/tickets/YYYY-MM-DD-[short-title].md`:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: TicketSmith
+skill: ticketsmith
 status: draft
 tags: [ticket]
 ---

@@ -57,7 +57,7 @@ Write to `Investigations/YYYY-MM-DD-[topic].md` with:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Troubleshoot
+skill: troubleshoot
 status: draft
 tags: [investigation, troubleshoot]
 ---

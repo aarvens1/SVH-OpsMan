@@ -58,7 +58,7 @@ Write `Changes/CHG-YYYY-NNN.md`:
 ```yaml
 ---
 date: YYYY-MM-DD
-skill: Change Record
+skill: change-record
 status: draft
 tags: [change, project/<slug-if-related>]
 change_id: CHG-YYYY-NNN
