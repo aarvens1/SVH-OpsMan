@@ -1,66 +1,67 @@
 ---
 name: change-record
-description: Document a change before or during implementation. Captures scope, risk classification, test plan, rollback procedure, comms plan, and schedule. Produces an impact-scope Excalidraw diagram. Trigger phrases: "about to make a change", "document this rollout", "change record for X", "I'm about to change Y".
-when_to_use: Use before any significant change — config changes, deployments, infrastructure changes, major updates.
-allowed-tools: "mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__confluence_create_page mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_channels"
+description: Draft a Teams Changes channel post before making a change. Goal is to warn the help desk of anything that could generate tickets — not a formal RFC, just a practical heads-up. Composable: can be called mid-skill when another skill (patch-campaign, network-troubleshooter, etc.) is about to push changes. Trigger phrases: "change record for X", "log this change", "post to changes channel", "I'm about to change Y", "about to make a change".
+when_to_use: Use before any change that could cause user-visible effects or help desk calls — config changes, patch windows, network changes, service restarts. Also invoked automatically by other skills that produce a change plan.
+allowed-tools: "mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_send_message"
 ---
 
 # Change Record
 
-## Step 1 — Capture change details
+## When called from another skill
 
-Ask (or infer from context):
-1. **What's changing?** — system, component, configuration
-2. **Why?** — business driver or technical reason
-3. **Scope** — which systems, sites, or users are affected
-4. **Schedule** — proposed date/time and maintenance window
-5. **Risk level** — Low / Medium / High (see below)
-6. **Related project (optional)** — if this change is being made as part of an active project, capture the project slug. List `Projects/*.md` with `status: active` and ask if any apply. Used to add a `project/<slug>` tag in the frontmatter so the change rolls up under the project via Dataview.
+If this skill is invoked mid-flow by patch-campaign, network-troubleshooter, or any skill that has already established a change plan, skip intake questions and use the context already in the conversation. Jump to Step 2.
 
-**Risk classification:**
-- **Low** — reversible, no production downtime, affects < 10 users, tested in lab
-- **Medium** — brief downtime possible, or production system, or no lab test
-- **High** — extended downtime possible, or irreversible, or unknown dependencies
+## Step 1 — Intake (stand-alone invocation)
 
-## Step 2 — Check backup state
+Ask or infer from context — do not ask for more than you need:
 
-`ninja_list_all_backups` — confirm recent successful backup for any affected server before proceeding. Threshold: production servers require a backup within the last 24 hours; non-production within 7 days. If any affected server is outside that window, surface it as a blocker and recommend running a manual backup before the change window.
+1. **What's changing?** System, service, or config being modified.
+2. **When?** Date and time window. If during business hours, flag that.
+3. **Who or what is affected?** Sites, users, or services that could be disrupted.
+4. **What might the help desk see?** Think in terms of inbound tickets: "can't print", "slow VPN", "app not loading", "password reset". If the change is transparent to end users, say so explicitly.
+5. **Risk level** (infer from context, confirm only if unclear):
+   - **Low** — reversible, no expected downtime, < 10 users affected
+   - **Medium** — brief downtime possible, or affects a production system
+   - **High** — extended downtime, irreversible, or unknown dependencies
 
-`ninja_list_servers` — identify all servers in scope.
+For High-risk changes: check `ninja_list_all_backups` to confirm recent backup for any affected server before proceeding. Recommend `/onprem-health` if there's any question about baseline state.
 
-`confluence_search_pages` — check if there's existing documentation for this system.
+## Step 2 — Draft Teams message
 
-For High-risk changes: recommend running `/onprem-health` first to confirm a clean baseline (no active alerts, no stale patches, no disk warnings) before proceeding.
+Write the Teams post in Aaron's voice. No greeting. Lead with what's happening and when. End with what the help desk should watch for.
 
-## Step 3 — Structure the record
+**Format:**
+```
+[What's happening] — [Window or start time].
 
-Produce:
-- **Scope** — what's changing, what's explicitly out of scope
-- **Test plan** — how to verify the change worked
-- **Rollback procedure** — exactly how to revert if something goes wrong
-- **Comms plan** — who needs to know, when, through what channel
-- **Schedule** — start time, expected duration, rollback decision point
+[1–2 sentences: what users or the help desk might see, and whether that's expected or a problem signal.]
 
-## Step 4 — Impact diagram
+[Optional: what to do if they hit an issue / who to contact.]
+```
 
-Create `Diagrams/Changes/CHG-YYYY-NNN.md` showing:
-- What's changing (centre)
-- What depends on it (upstream)
-- What it affects (downstream)
-- What's explicitly out of scope (greyed out)
+**Tone:** Conversational, direct. No "Please be advised." No bullet lists unless there are 3+ distinct impacts. Bold the window if it overlaps business hours.
 
-Embed in the note with `![[CHG-YYYY-NNN.md]]`.
+**Example:**
+```
+Patching all R12 app servers tonight starting at 22:00. Servers will reboot once each — expect ~15 min downtime per server staggered.
 
-## Output
+If CMiC or Textura is slow Monday morning, that's the most likely cause. Reboot cycle should be done by 01:00 but let me know if anything's still down at 08:00.
+```
 
-Write `Changes/CHG-YYYY-NNN.md`:
+Write the draft as a `> [!note] Teams draft — Changes channel` callout in the vault note (Step 3). Do not send until Aaron confirms.
+
+Also check: Does this draft pass the tone check? Scan for defensive framing, blame language, minimizing language, or promises that can't be kept. Flag in one line if any are present.
+
+## Step 3 — Write vault note
+
+Write `Changes/CHG-YYYY-NNN.md`. Increment CHG number from the highest existing in `Changes/`:
 
 ```yaml
 ---
 date: YYYY-MM-DD
 skill: change-record
 status: draft
-tags: [change, project/<slug-if-related>]
+tags: [change]
 change_id: CHG-YYYY-NNN
 risk: low|medium|high
 window: YYYY-MM-DD HH:MM – HH:MM
@@ -68,11 +69,44 @@ change_date: YYYY-MM-DD
 ---
 ```
 
-If Step 1 captured a related project, add `project/<slug>` to the tags array. Otherwise omit it.
+If called from another skill that is tagged with a project slug, add `project/<slug>` to the tags.
 
-Include a `## Related` section: `[[Changes/changes-home]]` as first link, then affected infra and asset notes, then the related project note if applicable.
+**Note structure:**
 
-Also produce (as staged drafts):
-- **Confluence page** — `confluence_create_page` in the IT changes space
-- **Planner card** — `planner_create_task` for tracking
-- **Teams notification draft** — for the IT Team Changes channel (team_id: `config.groups.it_team`, channel: Changes). Not sent until user confirms. Draft in Aaron's voice following the `aaron-voice` rules: no greeting, declarative tone, state what's changing, start time, and expected duration. Bold the maintenance window if users need to plan around it (e.g., `**Maintenance window: Sunday 2026-05-10 22:00–00:00 — file server will be offline.**`). Run the self-check before presenting.
+```
+## What's changing
+[One paragraph: system, scope, reason]
+
+## Timing
+[Window, duration, any business-hours overlap]
+
+## Help desk watch items
+[Bulleted list of what users might report, and whether it's expected]
+
+## If something goes wrong
+[One paragraph: rollback or escalation path]
+
+> [!note] Teams draft — Changes channel
+> [paste the draft from Step 2]
+```
+
+For High-risk changes only, add:
+- `## Test plan` — how to verify the change worked
+- `## Rollback procedure` — exact steps to revert
+
+Include `## Related`: `[[Changes/changes-home]]` first, then affected infrastructure/asset notes, then project note if applicable.
+
+## Step 4 — Push to Teams (after confirmation)
+
+When Aaron says "send it", "push it", or confirms the draft:
+
+1. Look up the Teams channel: `teams_list_teams` → `teams_list_channels` (team: `config.groups.it_team`) → find the **Changes** channel.
+2. Send with `teams_send_message`.
+3. Update the vault note: change `status: draft` → `status: filed` and add `✅ Posted to Changes channel — YYYY-MM-DD HH:MM` below the draft callout.
+
+## Step 5 — Skill log
+
+Append to `System/skill-log.md`:
+```
+YYYY-MM-DD HH:MM | change-record | Changes/CHG-YYYY-NNN.md | [one-line summary of change]
+```
