@@ -106,6 +106,7 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | Skill | Invoke | Description |
 | :---- | :----- | :---------- |
 | **Posture Check**| `/posture-check` · "State of the land" | Generates a Green/Yellow/Red scorecard for Identity, Endpoints, Patching, and other key areas. |
+| **Fleet Health**| `/fleet-health` · "Fleet health" · "How are my servers doing?" | Cross-fleet server health roll-up: disk, patch lag, backup currency, compliance, and active alerts in one summary table. Broader than `/onprem-health` — no PSRemoting, just the aggregate picture across all servers. Writes to `Reviews/`. |
 | **On-Prem Health**| `/onprem-health` · "How are the servers?" | Sweeps NinjaOne, backups, patch status, and runs live PowerShell checks against on-premise infrastructure. |
 | **OpsMan Health**| `/opsman-health` · "test my integrations" | Fires a lightweight probe against every configured service and reports pass/fail. Use after MCP server changes or when a tool call fails unexpectedly. |
 | **Vuln Triage**| `/vuln-triage` · CVE ID | Takes a CVE, identifies exposed devices, and recommends a remediation priority. |
@@ -137,6 +138,7 @@ Skills are pre-defined workflows that the AI can execute. You can trigger them w
 | Skill | Invoke | Description |
 | :---- | :----- | :---------- |
 | **PowerShell Navigator** | `/powershell-navigator` · "How do I X in PowerShell?" | Conversational interface for finding, understanding, and executing commands from the SVH PowerShell modules. |
+| **Patch Config** | `/patch-config` · "hit a self-write block" · "generate a config patch prompt" | Generates a formatted prompt block for delegating `.claude/` config edits to Claude Dev when the self-modification guard blocks direct edits. Output is inline only — no file written. |
 | **PDX Weekend Digest** | `/pdx-weekend-digest` | Curated digest of upcoming weekend events in the Portland, OR area. |
 
 ## Project Lifecycle
@@ -197,6 +199,7 @@ All skill output goes to the Obsidian vault first. This table shows where each s
 | **troubleshoot** | `Investigations/YYYY-MM-DD-[topic].md` | Yes — adds wikilink |
 | **onprem-health** | `Investigations/YYYY-MM-DD-onprem-health.md` | Yes — adds wikilink |
 | **posture-check** | `Reviews/Posture/YYYY-MM-DD.md` | Yes — adds wikilink |
+| **fleet-health** | `Reviews/YYYY-MM-DD-fleet-health.md` | No |
 | **incident-open** | `Incidents/Active/YYYY-MM-DD-name.md` | Yes — adds wikilink |
 | **ir-triage** | `Incidents/Active/YYYY-MM-DD-[name].md` | No |
 | **change-record** | `Changes/CHG-YYYY-NNN.md` + `Diagrams/Changes/` | No |
