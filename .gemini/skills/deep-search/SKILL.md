@@ -1,12 +1,7 @@
----
-name: deep-search
-description: Multi-source synthesis with Google Search grounding. 5–10 sources, 3–5 sub-queries, structured response with section headings. Use for comparisons, "what's the consensus on X", multi-faceted questions.
----
-
 # Skill: Deep Search (Middle Tier)
 
 - **Author:** Gemini
-- **Version:** 1.0
+- **Version:** 1.1
 - **Tier:** Deep (5–10 sources, 3–5 sub-queries, structured response)
 
 ---
@@ -32,7 +27,7 @@ Use it for:
 3. **Run each sub-query with Google grounding.** Capture the top 2–3 sources per query. Aim for 5–10 total unique sources.
 4. **Synthesize across sources.** Don't just summarize each one — combine facts, note where sources agree and where they conflict.
 5. **Write the response** with H2 section headings. Cite every factual claim inline with `[N]`.
-6. **Sources list at the end** — numbered, deduplicated, with access date.
+6. **Finalize Sources List:** Assemble a numbered, deduplicated list of all sources. **Crucially, you must provide the full, direct URL for each source.** If the search tool provides an indirect or incomplete link, you are required to perform a secondary lookup (e.g., by searching for the article title) to find and list the correct URL. The final list should follow the format specified in the Output Format section.
 
 ---
 
@@ -58,8 +53,8 @@ Use it for:
 ---
 
 **Sources**
-[1] Page Title — https://example.com/path — accessed YYYY-MM-DD
-[2] Page Title — https://example.com/path — accessed YYYY-MM-DD
+[1] Page Title — https://full.direct/url — accessed YYYY-MM-DD
+[2] Page Title — https://full.direct/url/to/page — accessed YYYY-MM-DD
 […]
 ```
 

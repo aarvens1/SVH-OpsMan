@@ -1,12 +1,7 @@
----
-name: research
-description: Full structured research brief with Google Search grounding. 10–30 sources, multi-step plan, formal report (TL;DR, Background, Findings, Tradeoffs, Recommendations, Sources). Use for "write me a brief on X", vendor evaluations, technology surveys.
----
-
 # Skill: Research (Deepest Tier)
 
 - **Author:** Gemini
-- **Version:** 1.0
+- **Version:** 1.1
 - **Tier:** Research (10–30 sources, multi-step plan, formal report)
 
 ---
@@ -31,7 +26,8 @@ Use it for:
 2. **For each sub-topic, run grounded searches.** Pull 3–5 sources per sub-topic. Deduplicate across sub-topics — a source cited in two places is still one source in the final list.
 3. **Note disagreements and gaps.** When sources conflict, capture both positions. When a sub-topic has thin sourcing, say so explicitly in the report.
 4. **Write the report** in the structure below. Every factual claim cited inline `[N]`.
-5. **Verify total source count** — 10–30 unique sources for a full report. If you can't reach 10 quality sources, say so in the report and proceed; don't pad.
+5. **Finalize Sources List:** Assemble a numbered, deduplicated list of all sources. **Crucially, you must provide the full, direct URL for each source.** If the search tool provides an indirect or incomplete link, you are required to perform a secondary lookup (e.g., by searching for the article title) to find and list the correct URL.
+6. **Verify total source count** — 10–30 unique sources for a full report. If you can't reach 10 quality sources, say so in the report and proceed; don't pad.
 
 ---
 
@@ -74,8 +70,8 @@ Things the research didn't resolve. Useful for the human reader to know what's s
 ---
 
 **Sources**
-[1] Page Title — https://example.com/path — accessed YYYY-MM-DD
-[2] Page Title — https://example.com/path — accessed YYYY-MM-DD
+[1] Page Title — https://full.direct/url — accessed YYYY-MM-DD
+[2] Page Title — https://full.direct/url/to/page — accessed YYYY-MM-DD
 […]
 ```
 

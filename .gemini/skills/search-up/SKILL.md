@@ -1,12 +1,7 @@
----
-name: search-up
-description: Quick web lookups with Google Search grounding. Single-query, 1–3 sources cited. Use for facts, API docs, version numbers, error messages.
----
-
 # Skill: Search Up (Quick Tier)
 
 - **Author:** Gemini
-- **Version:** 2.0
+- **Version:** 2.1
 - **Tier:** Quick (1–3 sources, single-query)
 
 ---
@@ -30,8 +25,9 @@ Use it for:
 1. **If the question is ambiguous, clarify once** (which library version, which framework, OS context). Don't loop on clarification.
 2. **Run a single Google-grounded search.** Pull the top relevant results.
 3. **Answer in 2–4 sentences** with the key fact up front. Add a code snippet if the question is about usage.
-4. **Cite every factual claim inline** with `[N]` markers tied to the Sources list at the bottom. If a statement is general knowledge (not from a source), append `[no source]` so it's distinguishable.
-5. **Flag freshness** when relevant — "as of YYYY-MM" — because Google's index isn't always current and Gemini's training cutoff isn't either.
+4. **Cite every factual claim inline** with `[N]` markers tied to the Sources list at the bottom.
+5. **Finalize Sources List:** For all cited sources, you **must provide the full, direct URL.** If the search tool provides an indirect or incomplete link, you are required to perform a secondary lookup (e.g., by searching for the article title) to find and list the correct URL.
+6. **Flag freshness** when relevant — "as of YYYY-MM" — because Google's index isn't always current and Gemini's training cutoff isn't either.
 
 ---
 
@@ -43,8 +39,8 @@ Use it for:
 [Optional code snippet]
 
 **Sources**
-[1] Page Title — https://example.com/path — accessed YYYY-MM-DD
-[2] Page Title — https://example.com/path — accessed YYYY-MM-DD
+[1] Page Title — https://full.direct/url — accessed YYYY-MM-DD
+[2] Page Title — https://full.direct/url/to/page — accessed YYYY-MM-DD
 ```
 
 If the answer can't be sourced (no quality result found), say so explicitly: "No authoritative source found — proceeding with model knowledge." Don't fabricate sources.
