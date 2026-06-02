@@ -142,3 +142,22 @@ Vault writes from Claude Code go directly to the Windows filesystem via WSL. Whe
 ## Investigate JSON-structured skill output (from 2026-06-02)
 
 - [ ] Look into using JSON as the output format for skills that feed into downstream processing (e.g. staging reads, Day Starter data sections) instead of narrative descriptions — would make responses more parseable, reduce token overhead, and potentially cut context further
+
+---
+
+## Backlink updater improvements (from 2026-06-02)
+
+Current `/backlink-update` skill only covers bidirectional links in Assets/, Sites/, Infrastructure/. Three gaps:
+
+- [ ] **MOC coverage** — after each run, check the manual-update MOCs (Projects, Assets, Changes, Vulnerabilities, Reviews, Infrastructure) for notes that exist on disk but aren't listed in the MOC; surface them so they can be added
+- [ ] **Frontmatter audit** — flag structural notes missing required frontmatter fields (`date`, `skill`, `status`, `tags`)
+- [ ] **Tag consistency** — verify `project/<slug>` tags are present on all work artifacts that touch an active project (cross-check Projects/ notes against tagged notes via Dataview query pattern)
+
+---
+
+## WSL backup gaps (from 2026-06-02)
+
+Checked `Backups/WSL/` on OneDrive. Two issues found:
+
+- [ ] **`~/.claude/` not in rclone scope** — memory, session history, and global settings are not backed up. Options: (A) symlink `~/.claude/projects/.../memory/` into the git repo so it's committed with everything else, or (B) add `~/.claude/` to the rclone job. Option A covers memory specifically with no extra tooling; Option B covers everything but needs rclone configured. Recommend A for memory + B for the rest.
+- [ ] **Backup snapshot stale since May 26** — `Backups/WSL/vaults/` last modified 2026-05-26 (7 days). Check whether the rclone cron/systemd timer is still running and why it hasn't pushed since then.
