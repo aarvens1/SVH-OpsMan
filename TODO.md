@@ -103,4 +103,42 @@ Root cause fixed (zsh -lc skips .zshrc → added ~/.zprofile), 5-tab launcher cr
 
 ---
 
+## iOS remote terminal access to OpsMan
+
+Goal: SSH into WSL from iOS for interactive OpsMan sessions. Blink Shell preferred over ServerCat.
+
+- [ ] Install Tailscale on Windows (covers WSL2 automatically) + iOS — 10 min setup, no open ports
+- [ ] Install Blink Shell on iOS (not ServerCat)
+- [ ] Configure tmux persistent session on WSL so BW_SESSION survives detach/reattach
+- [ ] Test: connect via Blink → attach tmux → run `opsman` → verify MCP tools live
+
+Note: Teams push notifications (async results) still complement this — terminal is for interactive sessions, Teams/email for background job completion.
+
+---
+
 ## Memory-extracted TODOs (from memory-cleanup 2026-05-31)
+
+---
+
+## S2D / Cluster tooling — from MSDisk audit (2026-06-02)
+
+- [ ] **`/cluster-health` skill** — S2D cluster snapshot: `Get-Cluster`, `Get-ClusterNode`, `Get-ClusterSharedVolume`, `Get-StoragePool`, `Get-VirtualDisk`, `Get-PhysicalDisk`, `Get-ClusterNetwork`. Writes an Infrastructure note with pool health, CSV states, resiliency config, and node states. Needs a NinjaOne stored script or working PS remoting credential path first.
+- [ ] **NinjaOne S2D health script** — Create a stored PowerShell script in NinjaOne that runs the key S2D cmdlets and dumps clean output. Unlocks `ninja_run_script` for ad-hoc cluster queries from any skill without an open PS session. `ninja_list_scripts` currently 404s — investigate why.
+- [ ] **`/patch-cluster` or CAU workflow in `/patch-campaign`** — Safe patching sequence for S2D clusters: drain CSV owners, pause node, update, resume. MSDISK3 (last rebooted 2023-02-13) is the safest first drain. All 6 nodes need patches; 3 have pending WINDOWS_PM reboots.
+
+---
+
+## Obsidian vault writes — Local REST API (from 2026-06-02)
+
+Vault writes from Claude Code go directly to the Windows filesystem via WSL. When Obsidian Sync is active, it can revert these writes if it considers the server version newer — silent data loss with no error surfaced. Day Ender now has a Phase 2.5 verify+retry as a workaround, but the root fix is routing all vault writes through Obsidian's own API.
+
+- [ ] **Enable Obsidian Local REST API plugin** — install `obsidian-local-rest-api` from community plugins; note the API key and port (default 27124)
+- [ ] **Add vault-write MCP tool** — new tool in `mcp-server/` that POSTs to `https://localhost:27124/vault/{path}` with the Local REST API key from BW. Supports `mode: append` and `mode: rewrite`. Replaces direct filesystem writes for all vault operations.
+- [ ] **Update Day Starter + Day Ender skills** to use the new MCP tool instead of native Write/append for daily note writes
+- [ ] **Remove Phase 2.5 verify workaround** from Day Ender once the REST API path is stable
+
+---
+
+## Investigate JSON-structured skill output (from 2026-06-02)
+
+- [ ] Look into using JSON as the output format for skills that feed into downstream processing (e.g. staging reads, Day Starter data sections) instead of narrative descriptions — would make responses more parseable, reduce token overhead, and potentially cut context further

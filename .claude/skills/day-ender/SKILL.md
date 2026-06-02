@@ -169,6 +169,15 @@ After Aaron confirms and you execute any block (CREATE, UPDATE, TODO, REMOVE), t
 
 If any Draft Planner action blocks remain in the daily note at the end of the session (i.e. Aaron did not confirm them), update `has_pending_tasks` to `true` in the daily note's frontmatter using `edit_block`.
 
+**Phase 2.5: Verify write**
+
+Read the daily note file back immediately after Phase 2. Check that `## ✅ Closed today` appears in the content.
+
+- **Present** — continue to Step 3.
+- **Absent** — Obsidian Sync likely reverted the file. Re-attempt Phase 2 (append) once. Read the file back again.
+  - If present on retry: continue to Step 3 and note "⚠️ Day Ender write required a retry (Obsidian Sync conflict)" at the end of your response.
+  - If still absent after retry: **do not proceed silently**. Output the full Day Ender content as a fenced markdown block in the chat so it can be manually pasted. Then surface: "⛔ Day Ender write failed twice — Obsidian Sync conflict. Content is above. Paste into the daily note manually, then confirm and I'll run Steps 3 and 4." Skip Steps 3 and 4 until Aaron confirms the content is in the file.
+
 ## Step 3 — Update state file
 
 After the Obsidian note is appended, update `System/briefing-state.md` in the Obsidian vault:
