@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Write a session handoff note to Obsidian and add a summary line to today's daily note. Use at the end of any working session where you want to preserve context for later. Trigger phrases: "create a handoff", "write a handoff", "session handoff", "save session context", "handoff note".
+description: Write a session handoff note to Obsidian and add a summary line to today's daily note. Use at the end of any working session where you want to preserve context for later. Trigger phrases: "create a handoff", "write a handoff", "session handoff", "save session context", "handoff note", "checkpoint this", "clock this session", "save my place", "save this convo".
 when_to_use: End of any session that produced changes, decisions, or open items worth preserving. Especially useful before context window compaction or when switching between projects.
 allowed-tools: "Read Write Edit"
 ---
@@ -17,9 +17,9 @@ From the conversation, extract:
 
 **Step 2 — Write the handoff note**
 
-Path: `Projects/Archive/[topic]-handoff-YYYY-MM-DD.md`
+Path: `Handoffs/YYYY-MM-DD-HHMM-[topic].md`
 
-Use today's date at the end and a kebab-case topic slug (e.g. `collector-staging-handoff-2026-05-26`).
+Use today's date and current time (24h, no colon — e.g. `1503`) at the front, then a kebab-case topic slug (e.g. `2026-05-26-1503-collector-staging.md`).
 
 Frontmatter:
 ```yaml
@@ -65,7 +65,7 @@ old_string: <!-- DAY-STARTER-END -->
 new_string: <!-- DAY-STARTER-END -->
 
 ## Session handoff — HH:MM
-→ [[Projects/Archive/[topic]-handoff-YYYY-MM-DD]]
+→ [[Handoffs/YYYY-MM-DD-HHMM-[topic]]]
 One sentence summary of what the session produced.
 ```
 
@@ -78,4 +78,4 @@ Confirm both writes. Give the vault path to the handoff note and the one-sentenc
 ## Skill log
 
 After writing the note, append one line to `System/skill-log.md` in the vault:
-`YYYY-MM-DD HH:MM | handoff | Projects/Archive/[topic]-handoff-YYYY-MM-DD.md | [session topic and what changed]`
+`YYYY-MM-DD HH:MM | handoff | Handoffs/YYYY-MM-DD-HHMM-[topic].md | [session topic and what changed]`

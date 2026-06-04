@@ -41,13 +41,24 @@ Run in parallel:
 - `gmail_list_recent` — personal Gmail inbox since `last_day_starter`. Unread messages and anything flagged needing a reply.
 - `gtasks_list_task_lists` then `gtasks_list_tasks` for each list — Google Tasks status: what's still open or overdue.
 
-## Step 1.5 — Scan for untracked commitments
+## Step 1.5 — Scan for untracked commitments and session value
+
+**Part A — Commitment scan**
 
 Review the current session context for any verbal commitments Aaron made that are not yet captured as Planner tasks or To Do items. Look for phrases like: "I'll...", "I need to...", "I should...", "remind me to...", "I'm going to...", "I have to..."
 
 For each uncaptured commitment found: pre-fill a `#### CREATE —` block in the Evening Tasks section (Step 2, Phase 1). If nothing was committed, skip this step silently.
 
 This compensates for the recurring pattern where in-session intentions don't make it into task tracking.
+
+**Part B — Handoff prompt**
+
+Review the current session for: significant investigations, incidents opened, decisions made, open threads that have no note in the vault yet, or any session where losing context would require re-deriving work.
+
+If any of those apply, prompt before continuing:
+> *"Today's [topic] work might be worth a `/handoff` — want me to write one before we close out?"*
+
+If the session was routine (a clean briefing, a few task updates, nothing substantive), skip this silently.
 
 ## Step 2 — Write to today's note
 
