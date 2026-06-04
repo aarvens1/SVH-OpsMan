@@ -141,3 +141,8 @@ After the Obsidian note is written, update `System/briefing-state.md` in the Obs
 - Use `mode: rewrite`.
 
 If any Draft Planner action blocks remain in the weekly note at the end of the session (i.e. Aaron did not confirm them), update `has_pending_tasks` to `true` in the weekly note's frontmatter using `edit_block`.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | week-starter | Briefings/Weekly/YYYY-WW.md | [top priority or "clean week ahead — N tasks staged"]`

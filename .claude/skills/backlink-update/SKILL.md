@@ -271,3 +271,8 @@ Added:
 ## Token Efficiency
 
 Phase 1 stays cheap (scoped to changed files). Phases 2–4 use `grep` and `find` — no file reads unless a gap is found. A full four-phase run on a clean vault is ~40–60 tool calls. Only read file contents when you need to add a backlink (Phase 1) or verify a frontmatter block (Phase 3).
+
+## Skill log
+
+Append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | backlink-update | inline | [N links added, N frontmatter gaps found or "vault clean"]`

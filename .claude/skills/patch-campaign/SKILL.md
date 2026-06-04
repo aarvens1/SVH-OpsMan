@@ -43,7 +43,7 @@ Create tasks: `planner_create_task` per patch group with:
 - Due date: matching timeline
 - Notes: list of affected devices, backup status
 
-Write all CREATE blocks to the Obsidian note using the standard draft format (same as day-starter `### 📝 Draft Planner actions`). Nothing is created until Aaron confirms. After confirmation, execute sequentially — plan first, then buckets, then tasks — and remove each block with `edit_block` after success. Set `has_pending_tasks: true` in the frontmatter until all blocks are pushed.
+Write all CREATE blocks to the Obsidian note using the standard draft format (see `.claude/templates/task-blocks.md`). Nothing is created until Aaron confirms. After confirmation, execute sequentially — plan first, then buckets, then tasks — and remove each block with `edit_block` after success. Set `has_pending_tasks: true` in the frontmatter until all blocks are pushed.
 
 ## Output
 
@@ -60,3 +60,8 @@ has_pending_tasks: true
 ```
 
 Sections: Summary (total patches, by tier) → Emergency items → Tier breakdown table → Planner board link → Backup status → Draft Planner actions.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | patch-campaign | Reviews/Patches/YYYY-MM-DD-patch-campaign.md | [N devices, N patches, priority breakdown]`

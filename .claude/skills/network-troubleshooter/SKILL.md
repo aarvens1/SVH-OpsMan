@@ -71,3 +71,8 @@ tags: [investigation, network]
 ```
 
 Sections: Path description → Findings by layer → Root cause → Recommended fix → Diagram embedded.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | network-troubleshooter | Investigations/YYYY-MM-DD-network-[site]-[topic].md | [root cause or "under investigation"]`

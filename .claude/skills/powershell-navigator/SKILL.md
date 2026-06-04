@@ -37,3 +37,8 @@ pwsh -c ". ./powershell/connect.ps1; <FunctionName> <params> | ConvertTo-Json -D
 ## Step 7 — Display output
 
 Format the JSON output legibly. Flag errors or unexpected empty results and suggest next steps.
+
+## Skill log
+
+Append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | powershell-navigator | inline | [function called and result summary]`

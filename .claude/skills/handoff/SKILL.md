@@ -74,3 +74,8 @@ If today's daily note doesn't exist yet, skip the daily note step and mention it
 **Step 4 — Reply**
 
 Confirm both writes. Give the vault path to the handoff note and the one-sentence summary you used in the daily note.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | handoff | Projects/Archive/[topic]-handoff-YYYY-MM-DD.md | [session topic and what changed]`

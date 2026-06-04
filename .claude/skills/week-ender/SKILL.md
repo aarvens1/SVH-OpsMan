@@ -136,3 +136,8 @@ Wait for it to complete (typically 3–8 minutes on first run, under a minute on
 ## Step 6 — Memory cleanup
 
 Run the `memory-cleanup` skill. This audits all memory files, deletes stale or resolved entries, moves any actionable items to `TODO.md`, and rebuilds the `MEMORY.md` index. Report findings inline — no separate output needed.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | week-ender | Briefings/Weekly/YYYY-WW.md | [N tasks closed, key carry-forward or "clean week"]`

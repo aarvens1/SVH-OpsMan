@@ -49,3 +49,8 @@ tags: [documentation]
 ```
 
 If the user asks to promote to Confluence: `confluence_search_pages` to find an appropriate parent page, then `confluence_create_page` — present as draft for review before creating.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | scribe | [output path from content type] | [output type and topic]`

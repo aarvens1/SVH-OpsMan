@@ -65,7 +65,7 @@ Update (or create) `Meetings/YYYY-MM-DD-[meeting-name].md` with a post-call sect
 [paste Fathom summary/notes here]
 ```
 
-Then append a single line to today's daily note (`Briefings/Daily/YYYY-MM-DD.md`) under `# 📝 Notes`, using the `edit_block` insert-before-Day-Ender pattern from the Obsidian output conventions:
+Then append a single line to today's daily note (`Briefings/Daily/YYYY-MM-DD.md`) in the `# Activity Log` section using the `edit_block` / `<!-- DAY-STARTER-END -->` sentinel:
 
 ```markdown
 - [[Meetings/YYYY-MM-DD-meeting-name]] — [one sentence: key topic and outcome]
@@ -78,3 +78,8 @@ If multiple calls are filed in one session, add one line per meeting. Full conte
 If Fathom's summary includes action items, present them as draft `planner_create_task` or `todo_create_task` calls for review. Nothing creates without confirmation.
 
 If the user asks for a follow-up email or Teams message to attendees, draft it in Aaron's voice following the `aaron-voice` rules. For a post-call recap to attendees, Template E (long-story-short narrative) is usually the right shape. Run the self-check before presenting. Nothing gets sent without explicit instruction.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | meeting-prep | Meetings/YYYY-MM-DD-[meeting-name].md | [meeting name and outcome or prep status]`

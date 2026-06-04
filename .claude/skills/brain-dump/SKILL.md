@@ -38,3 +38,8 @@ One line reply:
 > Logged: "[capture text]"
 
 No other output. No frontmatter, no skill headers, no "I've added..." preamble.
+
+## Skill log
+
+Append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | brain-dump | inline | [captured item text]`

@@ -49,3 +49,8 @@ Optionally draft a Confluence audit page (`confluence_create_page`) if the user 
 - **Suspected active breach or account takeover** → `/tenant-forensics` for a full forensic sweep of the tenant
 - **Recent suspicious activity on a specific user** → `/user-report` for a 7-day activity snapshot
 - **Broad security posture concern** → `/posture-check`
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | access-review | Reviews/Access/YYYY-MM-DD-[name].md | [findings summary: N users reviewed, N issues found]`

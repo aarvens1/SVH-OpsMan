@@ -405,3 +405,8 @@ After the Obsidian briefing note is written, update `System/briefing-state.md` i
 - Use `mode: rewrite` since this is a state file, not a daily note.
 
 If any Draft Planner action blocks remain in the daily note at the end of the session (i.e. Aaron did not confirm them), update `has_pending_tasks` to `true` in the daily note's frontmatter using `edit_block`.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | day-starter | Briefings/Daily/YYYY-MM-DD.md | [top alert or "clean — N tasks staged"]`

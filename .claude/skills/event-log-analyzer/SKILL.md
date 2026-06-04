@@ -75,3 +75,8 @@ Sections:
 3. **Patterns observed** — clusters, sequences, anomalies
 4. **Probable cause** — best assessment given the evidence
 5. **Recommended next steps** — what to investigate live, what to escalate, what to close
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | event-log-analyzer | Investigations/YYYY-MM-DD-[hostname]-log-analysis.md | [probable cause or key finding]`

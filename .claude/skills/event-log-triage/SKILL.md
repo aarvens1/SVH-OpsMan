@@ -61,3 +61,8 @@ tags: [investigation, event-log]
 ```
 
 Timeline of significant events → Notable clusters → Root cause or open questions → Recommended next steps.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | event-log-triage | Investigations/YYYY-MM-DD-[host]-event-log.md | [key cluster or root-cause finding]`

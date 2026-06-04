@@ -110,3 +110,8 @@ After writing: validate JSON, print element count + bounding box.
 - If a network diagram, pull live data (UniFi, NinjaOne) before drawing — don't approximate topology.
 - Add a legend whenever color carries meaning. A legend-less diagram is incomplete.
 - A cluttered diagram is worse than no diagram — prefer two clear diagrams over one dense one.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | diagram | Diagrams/<category>/[name].md | [diagram type and site/scope]`

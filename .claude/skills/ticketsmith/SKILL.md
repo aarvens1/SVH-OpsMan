@@ -54,3 +54,8 @@ tags: [ticket]
 ```
 
 Ticket body ready to paste into your ticketing system.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | ticketsmith | Investigations/tickets/YYYY-MM-DD-[short-title].md | [ticket title and category]`

@@ -75,3 +75,8 @@ Then execute in parallel:
 ## Step 5 — Optional note
 
 Only write a note if the user explicitly asks for a record. If so, append a brief summary to `Briefings/Daily/YYYY-MM-DD.md` in the `# Activity Log` section using the `edit_block` / `<!-- DAY-STARTER-END -->` sentinel pattern from the obsidian-output rules. Keep it to: N closed, N rescheduled, still-open count.
+
+## Skill log
+
+Append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | task-review | inline | [N tasks closed, N rescheduled, still-open count]`

@@ -35,3 +35,8 @@ Missing/failed: <list or "none">
 ```
 
 One callout line at the bottom if anything warrants attention (high alert count, stale data > 4h, failed jobs).
+
+## Skill log
+
+Append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | staging-review | inline | [overall status: N green, N yellow, N red]`

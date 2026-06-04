@@ -133,3 +133,8 @@ Summarize as a count with a representative sample: "12 users have licenses but n
 - For ghost accounts: suggest verifying departure status before reclaiming license — a ghost that's still active is a bigger risk than a wasted license
 - For no-MFA users: suggest staging a Conditional Access enforcement policy draft
 - If cost waste is significant: note that license reclamation can be a monthly Planner campaign
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | license-audit | Reviews/Access/license-audit-YYYY-MM-DD.md | [N licenses audited, key finding or "clean"]`

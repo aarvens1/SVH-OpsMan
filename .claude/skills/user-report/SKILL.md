@@ -71,3 +71,8 @@ If findings warrant escalation, suggest the appropriate next step:
 - Security anomaly → `/incident-open` or `/tenant-forensics`
 - Permission concern → `/access-review`
 - Full profile needed → `/asset-investigation`
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | user-report | Investigations/user-report-YYYY-MM-DD-[name].md | [user reviewed and key finding]`

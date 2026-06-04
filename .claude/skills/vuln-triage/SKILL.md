@@ -62,5 +62,10 @@ Sections: CVE summary → Exposure in environment → Priority score → Recomme
 
 Also produce as staged drafts (nothing created until Aaron confirms):
 - **Confluence draft** — `confluence_create_page` in the IT space, titled "CVE-YYYY-NNNNN — [Short Title]". Present for review before creating.
-- **Planner tickets** — write CREATE blocks in the note using the standard draft format (`### 📝 Draft Planner actions`). One task per affected asset group (servers, workstations, specific apps), due date matching the timeline. Remove each block with `edit_block` after confirmation. Set `has_pending_tasks: true` in frontmatter until all blocks are pushed.
+- **Planner tickets** — write CREATE blocks in the note using the standard draft format (`### Draft Planner actions`). One task per affected asset group (servers, workstations, specific apps), due date matching the timeline. Remove each block with `edit_block` after confirmation. Set `has_pending_tasks: true` in frontmatter until all blocks are pushed.
 - If multiple CVEs need coordinating across devices: suggest `/patch-campaign` instead of individual vuln tickets.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | vuln-triage | Vulnerabilities/CVE-YYYY-NNNNN.md | [CVE ID and priority score]`

@@ -129,3 +129,8 @@ Based on findings:
 - If nothing explains the break: suggest `/event-log-triage` on the affected host (covers PowerShell Operational, Task Scheduler, WMI — channels not in NinjaOne), or `/network-troubleshooter` if it's connectivity
 - If a suspicious actor is found but no clear break: suggest `/user-report` for a 7-day activity snapshot, and stage a Planner task to review
 - If findings are serious enough to declare: suggest `/incident-open`
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | tenant-forensics | Investigations/YYYY-MM-DD-tenant-forensics-HHmm.md | [window covered and key finding or "no changes found"]`

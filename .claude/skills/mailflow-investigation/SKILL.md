@@ -55,3 +55,8 @@ tags: [investigation, mailflow]
 Sections: Message details → Trace timeline → Root cause → Recommended action.
 
 If the message was blocked by Defender correctly (known-bad sender/URL), note that — no further action needed. If incorrectly blocked, document steps to request release or whitelist adjustment.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | mailflow-investigation | Investigations/YYYY-MM-DD-mailflow-[sender-to-recipient].md | [root cause or "message found / blocked correctly"]`

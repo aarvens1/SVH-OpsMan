@@ -220,3 +220,8 @@ Teams only: "Oh duh lmao"
 | Teams chat (single thought) | 1 line, lowercase okay |
 | Teams chat (thinking out loud) | 2–5 short messages, each its own thought |
 | Group meeting invite body | 2–8 lines, line-broken list |
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | draft | Drafts/YYYY-MM-DD-[topic].md | [recipient and message type]`

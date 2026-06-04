@@ -67,3 +67,8 @@ tags: [runbook, documentation]
 ```
 
 If the user asks to promote to Confluence: find the appropriate parent page in INF or PROC space using `confluence_search_pages`, then `confluence_create_page` — present as a staged draft for review before creating.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | runbook-gen | Investigations/runbooks/[topic].md | [procedure name and scope]`

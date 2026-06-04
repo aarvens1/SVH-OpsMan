@@ -135,3 +135,8 @@ bash ~/SVH-OpsMan/scripts/backup.sh --onedrive-only
 Wait for it to complete (typically 3–8 minutes on first run, under a minute on subsequent runs). Report the result inline:
 - **Success** — note "✅ OneDrive backup complete" at the end of your response.
 - **Failure** — note it as `⚠️ OneDrive backup failed — check log at ~/.local/share/svh-opsman/backup-YYYY-MM-DD.log` and surface it in **Active issues at EOD** in the daily note via `edit_block`.
+
+## Skill log
+
+After writing the note, append one line to `System/skill-log.md` in the vault:
+`YYYY-MM-DD HH:MM | day-ender | Briefings/Daily/YYYY-MM-DD.md | [N tasks closed, key EOD finding or "clean close"]`
