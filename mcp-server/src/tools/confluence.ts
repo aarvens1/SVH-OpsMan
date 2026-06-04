@@ -253,12 +253,18 @@ export function registerConfluenceTools(server: McpServer, enabled: boolean): vo
     },
     async ({ page_id, version_number, title, body, status }) => {
       try {
+        // Confluence v2 PUT requires title on every request — fetch current if omitted
+        let resolvedTitle = title;
+        if (!resolvedTitle) {
+          const current = await confluenceClient().get(`/pages/${page_id}`);
+          resolvedTitle = (current.data as A)["title"] as string;
+        }
         const payload: Record<string, unknown> = {
           id: page_id,
+          title: resolvedTitle,
           status,
           version: { number: version_number + 1 },
         };
-        if (title) payload["title"] = title;
         if (body) payload["body"] = { representation: "storage", value: body };
         const res = await confluenceClient().put(`/pages/${page_id}`, payload);
         const p = res.data as A;
