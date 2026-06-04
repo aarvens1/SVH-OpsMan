@@ -122,6 +122,7 @@ SORT date DESC
 | Task triage / reviews | `Reviews/Tasks/YYYY-MM-DD-triage.md` |
 | Vulnerabilities | `Vulnerabilities/CVE-YYYY-NNNNN.md` |
 | Research (filed Gemini search output) | `Research/YYYY-MM-DD-<slug>.md` (filed via `/import-research`) |
+| S2D cluster health snapshots | `Infrastructure/s2d-cluster-health-YYYY-MM-DD.md` |
 | Excalidraw diagrams | `Diagrams/<category>/[name].md` |
 | Skill reference pages | `Skills/[skill-name].md` (persistent — update in place) |
 
