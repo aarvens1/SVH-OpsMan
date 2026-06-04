@@ -147,11 +147,9 @@ Vault writes from Claude Code go directly to the Windows filesystem via WSL. Whe
 
 ## Backlink updater improvements (from 2026-06-02)
 
-Current `/backlink-update` skill only covers bidirectional links in Assets/, Sites/, Infrastructure/. Three gaps:
-
-- [ ] **MOC coverage** — after each run, check the manual-update MOCs (Projects, Assets, Changes, Vulnerabilities, Reviews, Infrastructure) for notes that exist on disk but aren't listed in the MOC; surface them so they can be added
-- [ ] **Frontmatter audit** — flag structural notes missing required frontmatter fields (`date`, `skill`, `status`, `tags`)
-- [ ] **Tag consistency** — verify `project/<slug>` tags are present on all work artifacts that touch an active project (cross-check Projects/ notes against tagged notes via Dataview query pattern)
+- [x] **MOC coverage** — Phase 2 implemented in skill (2026-06-04)
+- [x] **Frontmatter audit** — Phase 3 implemented in skill (2026-06-04)
+- [x] **Tag consistency** — Phase 4 implemented in skill (2026-06-04)
 
 ---
 
