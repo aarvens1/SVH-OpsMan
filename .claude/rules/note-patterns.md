@@ -107,16 +107,48 @@ Top-level sections — plain text, no emoji in the header:
 
 Section order inside Day Starter:
 1. Needs attention now (callout block)
-2. Carried from yesterday (if any)
+2. Carried from yesterday (if any — omit items already in Planner as overdue tasks)
 3. Today (calendar table)
-4. Mail
-5. Teams
+4. Infrastructure (always include even when clean)
+5. Communications (DMs/channels first, then mail — merged section)
 6. Inbox (if any brain-dump entries since last day-starter)
 7. Your tasks
 8. Projects
 9. IT team boards
 10. Worth watching (callout block)
 11. Tenant activity
-12. Next moves
-13. Infrastructure
-14. Draft Planner actions
+12. Personal
+13. Next moves (last — synthesis after all data)
+
+Day Ender section order (appended):
+1. ✅ Closed today
+2. 📨 Communications close-out
+3. 🔴 Active issues at EOD
+4. 🔄 Still open — yours
+5. Personal close-out
+6. 🌅 First move tomorrow
+7. 📌 Carry Forward
+
+Week Starter section order:
+1. Needs attention now (callout block)
+2. Suggested first move
+3. Calendar (day-by-day)
+4. Communications (DMs/channels first, then mail)
+5. Infrastructure status
+6. Your tasks
+7. Projects
+8. IT team boards
+9. Things to watch (callout block)
+10. Personal
+11. Draft Planner actions (#### subsection format)
+
+Week Ender sections (appended to weekly note):
+1. ✅ Shipped this week
+2. 🔄 Slipped to next week
+3. 🌱 Seeds for next week
+4. Personal
+5. Summary draft (optional)
+6. 🖥 Thu snapshot — Infrastructure
+7. ⛔ Before you close out
+8. 🌅 First thing Monday
+9. Draft Planner actions (#### subsection format)

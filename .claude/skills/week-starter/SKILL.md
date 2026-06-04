@@ -2,7 +2,7 @@
 name: week-starter
 description: Monday morning weekly briefing. Last week's loose ends plus this week's load — what closed, open threads, upcoming calendar and tasks, anything stale that needs a nudge, and a suggested first move. Trigger phrases: "week starter", "what does the week look like", "weekly briefing".
 when_to_use: Use at the start of the work week (Monday) for a broader picture than the daily briefing.
-allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__collector_run mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_list_expiring_secrets mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups"
+allowed-tools: "Read mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__collector_run mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_list_expiring_secrets mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups"
 ---
 
 # Week Starter
@@ -116,23 +116,22 @@ has_pending_tasks: false
 ---
 ```
 
-Sections:
+Sections (in this order):
 1. **🔴 Needs attention now** — unresolved alerts, risky users, active incidents carrying over from last week
-2. **📅 This week's calendar** — day-by-day summary, heavy days flagged, anything needing prep
-3. **📨 Mail** — unread or high-importance messages from the last N days needing action
-4. **📋 Your tasks** — tasks assigned to Aaron (by user ID or Planner label) + To Do items. Overdue first, then due this week, then upcoming
-5. **🗂 Projects** — active project-type Planner boards (e.g. Office Network Standardization). Open milestones or blockers, separate from operational boards
-6. **📋 IT team boards** — open tasks from IT plans Aaron isn't on. Group by plan. Context only
-7. **🟡 Things to watch** — expiring secrets, pending patches, stale alerts, anything that could escalate
-8. **💬 Teams** — unread DMs and IT Team channel messages from the last N days needing follow-up. If nothing actionable: "No open threads."
-9. **Personal** — personal life digest for the week:
-   - **Google Calendar** — personal events this week in day order. Flag anything that needs prep or conflicts with the work calendar.
-   - **Gmail** — unread messages from the last N days needing a reply. One line per thread: sender + subject. Skip marketing, newsletters, and automated notifications.
-   - **Google Tasks** — all tasks due this week or overdue, across all lists. Format: `[list] — [task]` + due date. If all clear: "No overdue Google Tasks."
-   - If any Google tool fails: `*Google [service]: unavailable this session.*` and skip that subsection.
-10. **🖥 Infrastructure status** — Always include. NinjaOne: all servers (discover via `ninja_list_servers`), grouped by org, status per device. UniFi: all sites table (site name, ISP, clients, devices, offline, alerts). Confluence: pages modified since lookback start in INF/PROC/POL/SITE, or "No changes this week."
-11. **💡 Suggested first move** — single most important thing to tackle Monday
-12. **📝 Draft Planner actions** — Always include. Nothing is created or changed until Aaron explicitly confirms. Use CREATE / UPDATE / REMOVE / TODO format (same as Day Starter). Default plan: IT Sysadmin Tasks (`config.planner.sysadmin`). After Aaron confirms any block, remove it from the note with `edit_block`.
+2. **💡 Suggested first move** — single most important thing to tackle Monday. Place this early so the week's top priority is visible before diving into the full briefing.
+3. **📅 This week's calendar** — day-by-day summary, heavy days flagged, anything needing prep
+4. **💬 Communications** — DMs and @mentions first (highest signal), then mail. **DMs and channels:** unread DMs (`teams_list_my_chats` + `teams_get_chat_messages`) and IT Team channel posts (General, Changes, Infrastructure, Alerts) from the last N days. Focus on threads directed at Aaron. Skip high-volume notification channels. **Mail:** unread or high-importance messages from the last N days needing action. External senders first. Skip routine system notifications. If nothing actionable in either: "No open threads or actionable mail."
+5. **🖥 Infrastructure status** — Always include. NinjaOne: all servers (via `ninja_list_servers`), grouped by org, one row per device. UniFi: all sites table (site name, ISP, clients, devices, offline, alerts). Confluence: pages modified since lookback start in INF/PROC/POL/SITE, or "No changes this week." M365 service incidents: any active incidents carrying over.
+6. **📋 Your tasks** — tasks assigned to Aaron (by user ID or Planner label) + To Do items. Overdue first, then due this week, then upcoming
+7. **🗂 Projects** — active project-type Planner boards. Open milestones or blockers, separate from operational boards
+8. **📋 IT team boards** — open tasks from IT plans Aaron isn't on. Group by plan. Context only
+9. **🟡 Things to watch** — expiring secrets, pending patches, stale alerts, anything that could escalate
+10. **Personal** — personal life digest for the week:
+    - **Google Calendar** — personal events this week in day order. Flag anything that needs prep or conflicts with work.
+    - **Gmail** — unread messages from the last N days needing a reply. One line per thread. Skip marketing and automated notifications.
+    - **Google Tasks** — all tasks due this week or overdue. Format: `[list] — [task]` + due date. If all clear: "No overdue Google Tasks."
+    - If any Google tool fails: `*Google [service]: unavailable this session.*` and skip that subsection.
+11. **📝 Draft Planner actions** — Always include. Nothing is created or changed until Aaron explicitly confirms. Use `#### CREATE —` / `#### UPDATE —` / `#### TODO —` / `#### REMOVE —` subsection format (same as daily notes, defined in `.claude/templates/task-blocks.md`). Default plan: IT Sysadmin Tasks (`config.planner.sysadmin`). After Aaron confirms any block, remove it from the note with `edit_block`. If any blocks remain unprocessed at session end, set `has_pending_tasks: true` in frontmatter.
 
 ## Step 4 — Update state file
 

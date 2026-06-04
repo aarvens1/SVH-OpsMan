@@ -141,7 +141,7 @@ Vault writes from Claude Code go directly to the Windows filesystem via WSL. Whe
 
 ## Investigate JSON-structured skill output (from 2026-06-02)
 
-- [ ] Look into using JSON as the output format for skills that feed into downstream processing (e.g. staging reads, Day Starter data sections) instead of narrative descriptions — would make responses more parseable, reduce token overhead, and potentially cut context further
+- [x] Template extraction done 2026-06-04: task blocks → `.claude/templates/task-blocks.md` (shared), UniFi sites → `config.yaml`, day-starter -18% / day-ender -31%. JSON-as-skill-output (vs. narrative) is a future pass — the staging layer already uses structured JSON between collector and skills.
 
 ---
 
@@ -159,5 +159,5 @@ Current `/backlink-update` skill only covers bidirectional links in Assets/, Sit
 
 Checked `Backups/WSL/` on OneDrive. Two issues found:
 
-- [ ] **`~/.claude/` not in rclone scope** — memory, session history, and global settings are not backed up. Options: (A) symlink `~/.claude/projects/.../memory/` into the git repo so it's committed with everything else, or (B) add `~/.claude/` to the rclone job. Option A covers memory specifically with no extra tooling; Option B covers everything but needs rclone configured. Recommend A for memory + B for the rest.
-- [ ] **Backup snapshot stale since May 26** — `Backups/WSL/vaults/` last modified 2026-05-26 (7 days). Check whether the rclone cron/systemd timer is still running and why it hasn't pushed since then.
+- [x] **`~/.claude/` not in rclone scope** — fixed 2026-06-04: backup.sh now syncs `*/memory/` from both `~/.claude/` and `~/.claude-dev/` plus `settings.json`. Excludes sessions, telemetry, cache.
+- [x] **Backup snapshot stale since May 26** — false alarm; backup was running daily. Logs confirmed healthy through June 4.

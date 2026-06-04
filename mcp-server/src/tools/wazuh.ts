@@ -11,6 +11,10 @@ const tlsAgent = new https.Agent({ rejectUnauthorized: false });
 let cachedJwt: { token: string; expires_at: number } | null = null;
 
 async function getJwt(): Promise<string> {
+  // Raw token path (Wazuh Cloud) — skip the username/password exchange entirely
+  const rawToken = process.env["WAZUH_TOKEN"];
+  if (rawToken) return rawToken;
+
   if (cachedJwt && Date.now() < cachedJwt.expires_at - 60_000) {
     return cachedJwt.token;
   }
@@ -396,6 +400,115 @@ export function registerWazuhTools(server: McpServer, enabled: boolean): void {
           total: data["total_affected_items"],
           count: items.length,
           rules: items,
+        });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "wazuh_get_config",
+    {
+      description:
+        "Read the Wazuh manager configuration. Returns parsed JSON for a specific section " +
+        "(e.g. 'integration', 'ms-graph', 'global'), or the raw ossec.conf XML when raw=true.",
+      inputSchema: z.object({
+        section: z
+          .string()
+          .optional()
+          .describe("Config section to return (e.g. 'integration', 'ms-graph', 'global'). Omit for all sections."),
+        raw: z
+          .boolean()
+          .default(false)
+          .describe("Return raw ossec.conf XML instead of parsed JSON"),
+      }),
+    },
+    async ({ section, raw }) => {
+      try {
+        const jwt = await getJwt();
+        if (raw) {
+          const res = await wazuhClient(jwt).get("/manager/files", {
+            params: { path: "etc/ossec.conf" },
+          });
+          return ok({ config: res.data });
+        }
+        const params: Record<string, string> = {};
+        if (section) params.section = section;
+        const res = await wazuhClient(jwt).get("/manager/configuration", { params });
+        const data = (res.data as A)["data"] as A;
+        return ok({ config: (data["affected_items"] as unknown[]) ?? data });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "wazuh_update_config",
+    {
+      description:
+        "Append an XML configuration block to ossec.conf. " +
+        "Reads the current config, injects the block before </ossec_config>, and writes it back. " +
+        "Use wazuh_restart_manager after to apply changes.",
+      inputSchema: z.object({
+        xml_block: z
+          .string()
+          .describe("Valid XML block to append (e.g. a full <ms-graph>...</ms-graph> stanza)"),
+      }),
+    },
+    async ({ xml_block }) => {
+      try {
+        const jwt = await getJwt();
+        // Read current raw config
+        const getRes = await wazuhClient(jwt).get<string>("/manager/files", {
+          params: { path: "etc/ossec.conf" },
+          responseType: "text",
+        });
+        const current: string = typeof getRes.data === "string"
+          ? getRes.data
+          : JSON.stringify(getRes.data);
+
+        if (!current.includes("</ossec_config>")) {
+          return err("ossec.conf does not contain </ossec_config> — aborting to avoid corrupting config");
+        }
+
+        const updated = current.replace(
+          "</ossec_config>",
+          `\n${xml_block.trim()}\n</ossec_config>`
+        );
+
+        await wazuhClient(jwt).put("/manager/files", updated, {
+          params: { path: "etc/ossec.conf", overwrite: true },
+          headers: { "Content-Type": "application/octet-stream" },
+        });
+
+        return ok({
+          result: "Config updated — run wazuh_restart_manager to apply",
+          bytes_written: updated.length,
+        });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "wazuh_restart_manager",
+    {
+      description:
+        "Restart the Wazuh manager to apply configuration changes. " +
+        "Expect 10–30 seconds of agent reconnection activity after restart.",
+      inputSchema: z.object({}),
+    },
+    async () => {
+      try {
+        const jwt = await getJwt();
+        const res = await wazuhClient(jwt).put("/manager/restart");
+        const data = (res.data as A)["data"] as A | undefined;
+        return ok({
+          result: "Restart initiated",
+          detail: data,
         });
       } catch (e) {
         return err(e);

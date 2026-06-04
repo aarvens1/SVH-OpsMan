@@ -2,7 +2,7 @@
 name: day-ender
 description: End-of-day wrap-up. Covers the period since the last day-starter or day-ender ran, with a 24-hour cap. Falls back to 12h if no state exists. Override with "last N hours" or "reset" to use defaults. Trigger phrases: "day ender", "wrap up today", "end of day", "EOD".
 when_to_use: Use at the end of each workday to close out the day cleanly.
-allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search"
+allowed-tools: "Read mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search"
 ---
 
 # Day Ender
@@ -55,74 +55,12 @@ This is a two-phase write.
 
 **Phase 1: Inject Evening Tasks into Activity Log**
 
-First, use `edit_block` to insert the drafted Planner actions for the evening into the `# Activity Log`. This ensures they are co-located with the morning's tasks.
+Use `edit_block` to insert the Evening Tasks section immediately before `# Day Ender`:
 
--   **`old_string`**: `\n# Day Ender\n`
--   **`new_string`**: `\n### Evening Tasks — HH:MM\n[task blocks]\n\n# Day Ender\n`
+- **`old_string`**: `\n# Day Ender\n`
+- **`new_string`**: `\n### Evening Tasks — HH:MM\n\n*Edit fields in place, then say "push these to Planner." Formats: CREATE · UPDATE · TODO · REMOVE — see `.claude/templates/task-blocks.md`.*\n\n*EOD focus: UPDATE completed tasks to 100%, UPDATE overdue due dates, CREATE any new items from EOD findings.*\n\n[task blocks here]\n\n# Day Ender\n`
 
-The `[task blocks]` placeholder should be replaced with the full `### 📝 Draft Planner actions` content, including all the format documentation. The section content itself is unchanged, only its location.
-
-The full content to inject is:
-```markdown
-### Evening Tasks — HH:MM
-
-Always include this section. Nothing is created or changed until Aaron explicitly confirms. Format each task as an editable named subsection — Aaron can change any field in place, then say "push these to Planner."
-
-Focus at EOD on:
-- **UPDATE** tasks that were completed today (set percentComplete to 100)
-- **UPDATE** tasks that are overdue and need a new due date
-- **CREATE** any new tasks surfaced by EOD findings (security alerts, infra issues, follow-ups from Teams/mail)
-
-Default destination for new tasks:
-- **IT Sysadmin Tasks** (`config.planner.sysadmin`) — operational/sysadmin follow-ups, security findings, infrastructure issues
-- **Personal To Do** — smaller personal action items not appropriate for the team board
-
-**UPDATE format** (one subsection per task):
-
-```
-#### UPDATE — "[existing task title]"
-- **Plan:** [plan name]
-- **Change:** [what to update: set percentComplete to 100 / new due date YYYY-MM-DD / new assignee / etc.]
-- **Notes:** [optional — reason for the update]
-```
-
-**CREATE format** (one subsection per task):
-
-```
-#### CREATE — [task title]
-- **Plan:** [plan name] (`plan_id`)
-- **Bucket:** [bucket name or leave blank]
-- **Due:** YYYY-MM-DD
-- **Start:** [YYYY-MM-DD or leave blank]
-- **Priority:** [Urgent / Important / Medium / Low — or leave blank]
-- **Assigned:** Aaron Stevens
-- **Labels:** [label names or leave blank]
-- **Attachments:** [filepath or URL — or leave blank]
-- **Notes:** [1–2 sentences of context. Include process suggestions or approach notes here — not in the checklist.]
-- **Checklist:**
-  - [ ] [what needs to happen — outcome, not steps]
-  - [ ] [what needs to happen]
-  - [ ] [what needs to happen]
-```
-
-Checklist items are **what** needs to happen, not **how**. Each should be a short outcome phrase (5–10 words). Keep 3–5 items max. Put process guidance, suggestions, and approach notes in the Notes field.
-
-**REMOVE format** (discard a draft — no Planner action, just delete the block):
-
-```
-#### REMOVE — [task title or brief reason]
-- **Reason:** [optional — why this draft is being dropped]
-```
-
-**TODO format** (routes to personal To Do instead of Planner):
-
-```
-#### TODO — [task title]
-- **List:** [To Do list name — or leave blank for default]
-- **Due:** [YYYY-MM-DD or leave blank]
-- **Notes:** [1–2 sentences of context]
-```
-```
+Generate all task blocks using the formats in `.claude/templates/task-blocks.md` (Read it if needed). EOD priority order: UPDATE completed → UPDATE overdue → CREATE new items from security/infra/comms findings.
 
 **Phase 2: Append close-out narrative**
 
@@ -134,14 +72,14 @@ The appended content must NOT include the Draft Planner actions section, as it n
 ## ✅ Closed today
 - [What actually got done — based on Planner task state from Step 1 vs. what was open this morning]
 
-## 🔄 Still open — yours
-- [Aaron's tasks only. One line each: task + one-line next action. Not the team board. If the task has a related investigation, incident, or change note, link to it: `→ [[Investigations/YYYY-MM-DD-topic]]`]
+## 📨 Communications close-out
+- [Emails needing a response from the mail search. External senders and flagged items first. Unresolved DMs or @mentions. This section surfaces findings that feed the Active issues and Still open sections below.]
 
 ## 🔴 Active issues at EOD
 - [Only alerts or infra problems still live right now, or new since morning. If everything cleared: "✅ No active issues at EOD." Link to any open incident notes: `→ [[Incidents/Active/YYYY-MM-DD-name]]`]
 
-## 📨 Communications close-out
-- [Emails needing a response from the mail search. External senders and flagged items first. Unresolved DMs or @mentions.]
+## 🔄 Still open — yours
+- [Aaron's tasks only. One line each: task + one-line next action. Not the team board. If the task has a related investigation, incident, or change note, link to it: `→ [[Investigations/YYYY-MM-DD-topic]]`]
 
 ## Personal close-out
 - [Personal Gmail: unread messages needing a reply tonight, from `gmail_list_recent`. One line per thread: sender + subject. If nothing: "No personal mail needing attention."]

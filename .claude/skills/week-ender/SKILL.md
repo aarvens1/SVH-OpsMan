@@ -2,7 +2,7 @@
 name: week-ender
 description: Thursday pre-meeting wrap-up. What shipped, what slipped, seeds for next week, and an optional summary draft. Run before the Thursday admin meeting so the week's state is visible going in. Trigger phrases: "week ender", "wrap up the week", "weekly wrap".
 when_to_use: Use Thursday morning before the admin meeting. The Day Ender still runs at EOD to capture Thursday afternoon — the weekly note stays as a pre-meeting snapshot.
-allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__calendar_list_events mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages"
+allowed-tools: "Read mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__calendar_list_events mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_list_device_alerts mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__confluence_search_pages mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages"
 ---
 
 # Week Ender
@@ -74,7 +74,9 @@ Append a **Week Ender** section to `Briefings/Weekly/YYYY-WW.md` (or create if i
 ### 🌱 Seeds for next week
 ### Personal
 ### 📝 Summary draft (optional)
-### 🖥 Infrastructure status
+### 🖥 Thu snapshot — Infrastructure
+### ⛔ Before you close out
+### 🌅 First thing Monday
 ### 📝 Draft Planner actions
 ```
 
@@ -86,9 +88,19 @@ The **summary draft** (for a manager or team update) goes at the bottom, clearly
 
 Optionally stage as a Confluence draft if the user asks.
 
-### 🖥 Infrastructure status
+### 🖥 Thu snapshot — Infrastructure
 
-**Always include this section.** NinjaOne: all servers (via `ninja_list_servers`), grouped by org, alert status per device. UniFi: all sites table (site name, ISP, clients, devices, offline, alerts). Confluence: pages modified since lookback start in INF/PROC/POL/SITE worth flagging. Teams: any unread DMs or @mentions still outstanding. Each subsection gets a ✅ clean or a list of findings.
+**Always include this section.** This is Thursday's end-of-week snapshot — distinct from Monday's Week Starter infrastructure data in the same weekly note. NinjaOne: all servers (via `ninja_list_servers`), grouped by org, alert status per device. UniFi: all sites table (site name, ISP, clients, devices, offline, alerts). Confluence: pages modified since lookback start in INF/PROC/POL/SITE worth flagging. Teams: any unread DMs or @mentions still outstanding. Each subsection gets a ✅ clean or a list of findings.
+
+### ⛔ Before you close out
+
+Things that cannot wait until Monday — open fires Aaron must handle or hand off before EOD Thursday. Sources: active incidents from NinjaOne/Defender/Entra, expiring secrets within 72h, anything in the Slipped section with an imminent hard deadline, uncommitted commitments made this week (scan session context for "I'll...", "I need to...").
+
+Format: one bullet per item, with the specific next action or hand-off. If nothing: "✅ Nothing requires action before weekend close."
+
+### 🌅 First thing Monday
+
+Single highest-priority item for Monday morning — the thing that should be the first move after standup. Derived from Seeds for next week and Before you close out. One sentence.
 
 ### 📝 Draft Planner actions
 
@@ -97,7 +109,7 @@ Always include. Nothing is created or changed until Aaron explicitly confirms. F
 - **UPDATE** slipped tasks (adjust due dates, note reason)
 - **CREATE** tasks for seeds that need a Planner card next week
 
-Use CREATE / UPDATE / REMOVE / TODO format (same as Day Starter). Default plan: IT Sysadmin Tasks (`config.planner.sysadmin`). After Aaron confirms any block, remove it with `edit_block`.
+Use `#### CREATE —` / `#### UPDATE —` / `#### TODO —` / `#### REMOVE —` subsection format (see `.claude/templates/task-blocks.md`). Default plan: IT Sysadmin Tasks (`config.planner.sysadmin`). After Aaron confirms any block, remove it with `edit_block`. If any blocks remain unprocessed at session end, set `has_pending_tasks: true` in frontmatter.
 
 ## Step 4 — Update state file
 

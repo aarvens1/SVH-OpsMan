@@ -77,7 +77,7 @@ const services = {
   unifiCloud: checkEnv("UNIFI_API_KEY"),
   unifiController: checkEnv("UNIFI_SVH_URL", "UNIFI_SVH_KEY"),
   ninjaone: checkEnv("NINJA_CLIENT_ID", "NINJA_CLIENT_SECRET"),
-  wazuh: checkEnv("WAZUH_URL", "WAZUH_USERNAME", "WAZUH_PASSWORD"),
+  wazuh: checkEnv("WAZUH_URL") && (!!process.env["WAZUH_TOKEN"] || checkEnv("WAZUH_USERNAME", "WAZUH_PASSWORD")),
   confluence: checkEnv("CONFLUENCE_DOMAIN", "CONFLUENCE_EMAIL", "CONFLUENCE_API_TOKEN"),
   printerlogic: checkEnv("PRINTERLOGIC_URL", "PRINTERLOGIC_API_TOKEN"),
   google: checkEnv("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REFRESH_TOKEN"),

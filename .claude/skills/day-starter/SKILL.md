@@ -2,7 +2,7 @@
 name: day-starter
 description: Morning briefing. Covers the period since the last Day Ender ran (on Mondays) or since the last Day Starter ran (other days), with a 120-hour cap. Falls back to 120h if no state exists (no shorter default). Override with "last N days/hours" or "reset" to use defaults. Trigger phrases: "day starter", "morning briefing", "what's on my plate", "start of day".
 when_to_use: Use at the start of each workday to get a prioritized digest of what needs attention.
-allowed-tools: "mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__collector_run mcp__svh-opsman__metrics_disk_over_threshold mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_get_backup_usage mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__admin_list_subscriptions mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__svh-opsman_... [truncated]"
+allowed-tools: "Read mcp__svh-opsman__staging_status mcp__svh-opsman__staging_read mcp__svh-opsman__collector_run mcp__svh-opsman__metrics_disk_over_threshold mcp__svh-opsman__ninja_list_alerts mcp__svh-opsman__ninja_list_fleet_volumes mcp__svh-opsman__ninja_get_device_health mcp__svh-opsman__ninja_list_servers mcp__svh-opsman__ninja_list_organizations mcp__svh-opsman__ninja_list_pending_patches mcp__svh-opsman__ninja_list_all_backups mcp__svh-opsman__ninja_get_backup_usage mcp__svh-opsman__ninja_get_event_logs mcp__svh-opsman__mde_list_alerts mcp__svh-opsman__mde_get_device mcp__svh-opsman__entra_list_risky_users mcp__svh-opsman__entra_get_audit_logs mcp__svh-opsman__entra_get_sign_in_logs mcp__svh-opsman__intune_list_devices mcp__svh-opsman__intune_get_device_compliance mcp__svh-opsman__admin_get_service_health mcp__svh-opsman__admin_list_service_incidents mcp__svh-opsman__admin_list_subscriptions mcp__svh-opsman__unifi_list_sites mcp__svh-opsman__calendar_list_events mcp__svh-opsman__planner_get_user_tasks mcp__svh-opsman__planner_list_tasks mcp__svh-opsman__planner_list_plans mcp__svh-opsman__planner_create_task mcp__svh-opsman__planner_update_task mcp__svh-opsman__todo_list_tasks mcp__svh-opsman__todo_list_task_lists mcp__svh-opsman__mail_search mcp__svh-opsman__teams_list_messages mcp__svh-opsman__teams_list_channels mcp__svh-opsman__teams_list_teams mcp__svh-opsman__teams_list_my_chats mcp__svh-opsman__teams_get_chat_messages mcp__svh-opsman__confluence_search_pages mcp__claude_ai_Fathom__list_meetings mcp__svh-opsman_... [truncated]"
 ---
 
 # Day Starter
@@ -241,88 +241,9 @@ has_pending_tasks: false
 
 ### Morning Tasks — HH:MM
 
-Always include this section. Nothing is created or changed until Aaron explicitly confirms. Format each task as an editable named subsection — Aaron can change any field in place, then say "push these to Planner."
+*Edit fields in place, then say "push these to Planner" to create. Formats: CREATE · UPDATE · TODO · REMOVE · IGNORE · CARRYOVER — see `.claude/templates/task-blocks.md` for full spec.*
 
-Default destination for new tasks:
-- **IT Sysadmin Tasks** (`config.planner.sysadmin`) — operational/sysadmin follow-ups, security findings, infrastructure issues
-- **Personal To Do** — smaller personal action items not appropriate for the team board
-
-**CREATE format** (one subsection per task):
-
-```
-#### CREATE — [task title]
-- **Plan:** [plan name] (`plan_id`)
-- **Bucket:** [bucket name or leave blank]
-- **Due:** YYYY-MM-DD
-- **Priority:** [Urgent / Important / Medium / Low]
-- **Assigned:** Aaron Stevens
-- **Tag:** Aaron (category23)
-- **Notes:** [1–2 sentences of context. Include process suggestions or approach notes here — not in the checklist.]
-- **Checklist:**
-  - [ ] [what needs to happen — outcome, not steps]
-  - [ ] [what needs to happen]
-  - [ ] [what needs to happen]
-```
-
-**Tag field** — always include. Default is `Aaron (category23)` for IT Sysadmin Tasks. When assigned to Sam, use `Sam (category21)`. The category number must match the plan's label mapping — use `planner_get_plan_details` to verify on plans other than IT Sysadmin Tasks.
-
-**Priority field** — always include. Map to Graph API integer when pushing: Urgent=0, Important=1, Medium=3, Low=5.
-
-Checklist items are **what** needs to happen, not **how**. Each should be a short outcome phrase (5–10 words). Keep 3–5 items max. Put process guidance, suggestions, and approach notes in the Notes field.
-
-**When pushing a CREATE block**, pass `priority` (integer), `notes`, `labels` (category key), and `checklist_items` to `planner_create_task` — all in a single call. Do not make a separate `planner_update_task_notes` call unless the create fails.
-
-**UPDATE format** (one subsection per task):
-
-```
-#### UPDATE — "[existing task title]"
-- **Plan:** [plan name]
-- **Change:** [what to update: new due date / set percent complete / new assignee / etc.]
-- **Notes:** [optional — reason for the update]
-```
-
-**REMOVE format** (discard a draft — no Planner action, just delete the block):
-
-```
-#### REMOVE — [task title or brief reason]
-- **Reason:** [optional — why this draft is being dropped]
-```
-
-**TODO format** (routes to personal To Do instead of Planner):
-
-```
-#### TODO — [task title]
-- **List:** [To Do list name — or leave blank for default]
-- **Due:** [YYYY-MM-DD or leave blank]
-- **Notes:** [1–2 sentences of context]
-```
-
-**IGNORE format** (discard a draft — no Planner action, remove from note):
-
-```
-#### IGNORE — [task title or brief reason]
-```
-
-Same outcome as REMOVE — remove the block. No entry anywhere. Use when Aaron explicitly dismisses a draft.
-
-**CARRYOVER format** (defer to tomorrow — remove block, add deferred entry):
-
-```
-#### CARRYOVER — [task title]
-- **Reason:** [why it's being deferred]
-```
-
-Remove the full block from the note. Add a one-line entry to a `### Deferred` subsection within `### Draft Planner actions`:
-
-```
-- 📌 **[task title]** — [reason]. Full context in [[Briefings/Daily/YYYY-MM-DD]].
-```
-
-Step 2b (carry forward) reads the `### Deferred` list from yesterday's note alongside the Day Ender section.
-
-**Processing and cleanup:**
-
-After Aaron confirms and you execute any block — CREATE pushed to Planner, UPDATE pushed to Planner, TODO pushed to To Do, REMOVE/IGNORE discarded, CARRYOVER deferred — immediately remove that subsection from the daily note using `edit_block`. When all action blocks in the section have been processed (only the `### Deferred` list may remain), remove the section header if nothing remains.
+[task blocks drafted from morning findings go here]
 
 ---
 
@@ -330,6 +251,8 @@ After Aaron confirms and you execute any block — CREATE pushed to Planner, UPD
 
 *To be completed at end of day.*
 ```
+
+Generate all task blocks using the formats defined in `.claude/templates/task-blocks.md`. Read it if you need the spec. Default destination: IT Sysadmin Tasks (`config.planner.sysadmin`) for operational items, Personal To Do for personal items.
 
 All day-starter content (the sections below) goes under the `# Day Starter — HH:MM` header.
 
@@ -345,7 +268,7 @@ Use an Obsidian callout block as the opening summary, then detail below only whe
 Any Critical/High alerts, risky users, active M365 incidents, or overdue tasks. One bullet per item with source. If an incident note or investigation already exists for a finding, link to it inline (`→ [[Incidents/Active/YYYY-MM-DD-name]]`). If the finding is serious enough to open a new note, do so and link from here.
 
 ### Carried from yesterday
-Items surfaced by Step 2b — open threads, unpushed draft tasks, and unresolved worth-watching items from the previous day's note. Omit this section if there is nothing to carry forward.
+Items from Step 2b that would otherwise be lost — open narrative threads, uncommitted items, and unresolved worth-watching items from the previous day. **Do not re-list items that already appear as overdue Planner tasks in Your tasks** — they're captured there. Omit this section entirely if there's nothing to carry that isn't already in Planner.
 
 ### Today
 Calendar events in time order. Flag any meeting that needs prep. If a meeting-prep note already exists (`Meetings/YYYY-MM-DD-name.md`), link to it inline rather than restating the prep details.
@@ -356,62 +279,6 @@ For each meeting on today's calendar, check whether a Fathom recording already e
 - If not yet filed, note "Fathom recording available — run /meeting-prep to file notes"
 
 If no recordings exist for today's meetings, no mention needed.
-
-### Mail
-Unread or high-importance messages from the last N hours needing action. External senders and flagged items first. Skip routine system notifications.
-
-### Teams
-Unread DMs (from `teams_list_my_chats` + `teams_get_chat_messages`) and IT Team channel @mentions (from `teams_list_messages`) from the last N hours. Focus on messages directed at Aaron. Skip high-volume notification channels. If nothing actionable: state "No unread DMs or @mentions."
-
-### Inbox
-Brain-dump entries captured since the last day-starter (per Step 2d). Render as a compact list — one line per entry, preserving the original timestamp. Below each entry add a single italicised triage suggestion: *"→ Planner CREATE block?"*, *"→ To Do?"*, *"→ Dismiss?"*, or *"→ Investigate"*. If nothing fits, leave the entry without a suggestion. Omit this section entirely if no Inbox entries were captured in the window.
-
-### Your tasks
-Tasks assigned to Aaron (by user ID or Planner label) across all plans and personal board, plus To Do items. Use a table for overdue/due-today items, compact list for upcoming. Due today or overdue first, then upcoming.
-
-### Projects
-Active project-type Planner boards paired with their vault project notes. One row per registered project:
-
-```
-| Project | Open tasks | Last touched | Notes |
-|---------|-----------|--------------|-------|
-| [[Projects/Network-Segmentation]] (Office Network Std.) | 4 | 2 days ago | rolling out at PDX |
-| BDR Testing (no vault note) | 1 | 6 days ago | — |
-| [[Projects/ISP]] (Info Sec Program) | 0 | ⚠️ 12d stale | P1 — flag |
-```
-
-Apply the stale flag thresholds from Step 2 (P1≥7d, P2≥14d, P3 silent). For P3 projects, omit from this section entirely unless they have open tasks Aaron is assigned to. If no project boards have activity or open tasks: state "*No active project work since [date].*"
-
-### IT team boards
-Open tasks from IT plans that Aaron isn't assigned to or tagged on. Group by plan. Overdue items only get a full row; everything else is a one-liner. Context only.
-
-### Worth watching
-Use an Obsidian callout block as the opening summary:
-
-```
-> [!warning] N items to monitor
-> ⚠️ [subject] — [status or trend]
-```
-
-Medium-severity findings, anything that could escalate. No action required yet. If nothing: state `> [!success] Nothing elevated — all watches clear.`
-
-### Tenant activity
-Sourced from `entra_get_audit_logs` and `entra_get_sign_in_logs` pulled in Step 1. Present as a compact timeline grouped by actor — not a raw dump. Surface: role assignments, MFA resets, app consent grants, policy changes, bulk operations, suspicious sign-in patterns. If an actor appears in both admin audit logs AND risky sign-ins, call it out explicitly (e.g., "⚠️ jsmith made 2 admin changes AND had a risky sign-in at 02:14 from Romania"). If nothing of note: one line — "No admin actions or risky sign-ins in the last N hours." Keep this section tight — it's a trip-wire, not a log dump.
-
-### Next moves
-2–3 concrete recommendations (e.g., "Dismiss risky user X after reviewing sign-in logs", "Prep agenda for 2pm call").
-
-### Personal
-
-Personal life digest sourced from Google Calendar, Gmail, and Google Tasks (gathered in Step 2).
-
-**Personal calendar** — today's Google Calendar events in time order. Flag any that conflict with the work calendar or need prep. If nothing scheduled: "No personal events today."
-
-**Personal inbox** — unread Gmail messages needing attention or a reply. One line per thread: sender + subject + one-sentence summary. Skip marketing, newsletters, and automated notifications. If nothing: "No personal mail needing attention."
-
-**Google Tasks** — tasks due today or overdue across all lists. Format: `[list name] — [task title]` + due date. If nothing due: "No Google Tasks due today."
-
-If any Google tools fail (auth error, timeout), note it inline with `*Google [service]: unavailable this session.*` and skip that subsection.
 
 ### Infrastructure
 
@@ -430,22 +297,7 @@ Show a table with one row per site. Columns: **Site name**, ISP, Wifi clients, W
 
 Site names: UniFi Cloud returns all sites as `name: "default"` and `desc: "Default"` — this is a Cloud limitation. Cross-reference by gateway MAC and ISP using the known site name table below. If a site MAC is not in the table, label it as "Unknown (MAC: xx:xx:xx:xx:xx:xx)" so it can be identified and added.
 
-**Known site name table — cross-reference by `wans.WAN.externalIp`:**
-| WAN IP | Gateway MAC | Site name |
-|--------|-------------|-----------|
-| 96.18.48.186 | ac:8b:a9:6c:2b:d5 | BOI-Main Office |
-| 24.119.221.58 | d8:b3:70:4f:66:cf | BOI-Warehouse |
-| 216.115.11.190 | d8:b3:70:59:f1:d0 | EUG-Main Office |
-| 69.9.133.37 | 0c:ea:14:6e:9c:e9 | EUG-Warehouse |
-| 50.109.229.58 | d8:b3:70:36:c6:31 | FGT-Main Office 2 |
-| 50.155.66.230 | 8c:30:66:b2:36:09 | KP trailer |
-| 73.67.183.144 | 70:a7:41:ac:65:cf | PDX-Kaiser Warehouse |
-| 50.227.115.162 | e4:38:83:83:a0:89 | PDX-MAIN Office |
-| 50.222.10.170 | e4:38:83:83:9f:c9 | SEA-Main Office |
-| 173.160.252.90 | d0:21:f9:d9:7e:7f | SEA-WAREHOUSE |
-| 50.145.204.110 | 0c:ea:14:d6:b1:b5 | SVH-Main Office |
-| 50.188.182.109 | d8:b3:70:99:f5:df | SYL-Main Office |
-| 67.169.216.157 | 6c:63:f8:a2:79:69 | Unknown — needs ID |
+**Known site name table:** use `config.unifi_sites` — cross-reference by `wans.WAN.externalIp`. Table is in `.claude/config.yaml`.
 
 Notes:
 - PDX Kaiser Suite 230 (10.1.10.179) and NVR appliances (PDX-MAINOFFICE-NVR, SEA-MAIN OFFICE-NVR, SEA-WAREHOUSE-NVR) have internal IPs and will not appear in `unifi_list_sites` results.
@@ -487,6 +339,63 @@ Thresholds:
 SVH runs intentionally lean — 1 available seat is normal and healthy, not a warning.
 
 If `admin_list_subscriptions` returned no data or timed out: note "License data unavailable this session" and skip the section.
+
+### Communications
+DMs and @mentions first (highest signal), then mail.
+
+**DMs and channels** — Unread DMs (from `teams_list_my_chats` + `teams_get_chat_messages`) and IT Team channel posts (from `teams_list_messages`) from the last N hours. Focus on messages directed at Aaron. Skip high-volume notification channels. If nothing actionable: "No unread DMs or @mentions."
+
+**Mail** — Unread or high-importance messages from the last N hours needing action. External senders and flagged items first. Skip routine system notifications.
+
+### Inbox
+Brain-dump entries captured since the last day-starter (per Step 2d). Render as a compact list — one line per entry, preserving the original timestamp. Below each entry add a single italicised triage suggestion: *"→ Planner CREATE block?"*, *"→ To Do?"*, *"→ Dismiss?"*, or *"→ Investigate"*. If nothing fits, leave the entry without a suggestion. Omit this section entirely if no Inbox entries were captured in the window.
+
+### Your tasks
+Tasks assigned to Aaron (by user ID or Planner label) across all plans and personal board, plus To Do items. Use a table for overdue/due-today items, compact list for upcoming. Due today or overdue first, then upcoming.
+
+### Projects
+Active project-type Planner boards paired with their vault project notes. One row per registered project:
+
+```
+| Project | Open tasks | Last touched | Notes |
+|---------|-----------|--------------|-------|
+| [[Projects/Network-Segmentation]] (Office Network Std.) | 4 | 2 days ago | rolling out at PDX |
+| BDR Testing (no vault note) | 1 | 6 days ago | — |
+| [[Projects/ISP]] (Info Sec Program) | 0 | ⚠️ 12d stale | P1 — flag |
+```
+
+Apply the stale flag thresholds from Step 2 (P1≥7d, P2≥14d, P3 silent). For P3 projects, omit from this section entirely unless they have open tasks Aaron is assigned to. If no project boards have activity or open tasks: state "*No active project work since [date].*"
+
+### IT team boards
+Open tasks from IT plans that Aaron isn't assigned to or tagged on. Group by plan. Overdue items only get a full row; everything else is a one-liner. Context only.
+
+### Worth watching
+Use an Obsidian callout block as the opening summary:
+
+```
+> [!warning] N items to monitor
+> ⚠️ [subject] — [status or trend]
+```
+
+Medium-severity findings, anything that could escalate. No action required yet. If nothing: state `> [!success] Nothing elevated — all watches clear.`
+
+### Tenant activity
+Sourced from `entra_get_audit_logs` and `entra_get_sign_in_logs` pulled in Step 1. Present as a compact timeline grouped by actor — not a raw dump. Surface: role assignments, MFA resets, app consent grants, policy changes, bulk operations, suspicious sign-in patterns. If an actor appears in both admin audit logs AND risky sign-ins, call it out explicitly (e.g., "⚠️ jsmith made 2 admin changes AND had a risky sign-in at 02:14 from Romania"). If nothing of note: one line — "No admin actions or risky sign-ins in the last N hours." Keep this section tight — it's a trip-wire, not a log dump.
+
+### Personal
+
+Personal life digest sourced from Google Calendar, Gmail, and Google Tasks (gathered in Step 2).
+
+**Personal calendar** — today's Google Calendar events in time order. Flag any that conflict with the work calendar or need prep. If nothing scheduled: "No personal events today."
+
+**Personal inbox** — unread Gmail messages needing attention or a reply. One line per thread: sender + subject + one-sentence summary. Skip marketing, newsletters, and automated notifications. If nothing: "No personal mail needing attention."
+
+**Google Tasks** — tasks due today or overdue across all lists. Format: `[list name] — [task title]` + due date. If nothing due: "No Google Tasks due today."
+
+If any Google tools fail (auth error, timeout), note it inline with `*Google [service]: unavailable this session.*` and skip that subsection.
+
+### Next moves
+2–3 concrete recommendations synthesizing everything above (e.g., "Dismiss risky user X after reviewing sign-in logs", "Prep agenda for 2pm call"). This is the synthesis — it comes last so it can reference findings from any section above.
 
 ## Step 4 — Update state file
 

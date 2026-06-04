@@ -27,3 +27,21 @@ planner:
   isp: "2es7HS5UakyP3K6ZkwRfd2QAF3I_"            # Information Security Program
   cmmc_l1: "qxQKzAEGd0m3Q6EUysaGVmQADbmg"        # CMMC Level 1
   copilot_audit: "wP9PL7YWCEqGbG6o4aYVT2QADaLq"  # Copilot Audit for IT team
+
+# UniFi site name lookup — cross-reference by wans.WAN.externalIp (primary key)
+# All sites return name: "default" from UniFi Cloud; use WAN IP to identify.
+unifi_sites:
+  - wan_ip: "96.18.48.186"     gateway_mac: "ac:8b:a9:6c:2b:d5"  name: "BOI-Main Office"
+  - wan_ip: "24.119.221.58"    gateway_mac: "d8:b3:70:4f:66:cf"  name: "BOI-Warehouse"
+  - wan_ip: "216.115.11.190"   gateway_mac: "d8:b3:70:59:f1:d0"  name: "EUG-Main Office"
+  - wan_ip: "69.9.133.37"      gateway_mac: "0c:ea:14:6e:9c:e9"  name: "EUG-Warehouse"
+  - wan_ip: "50.109.229.58"    gateway_mac: "d8:b3:70:36:c6:31"  name: "FGT-Main Office 2"
+  - wan_ip: "50.155.66.230"    gateway_mac: "8c:30:66:b2:36:09"  name: "KP trailer"
+  - wan_ip: "73.67.183.144"    gateway_mac: "70:a7:41:ac:65:cf"  name: "PDX-Kaiser Warehouse"
+  - wan_ip: "50.227.115.162"   gateway_mac: "e4:38:83:83:a0:89"  name: "PDX-MAIN Office"
+  - wan_ip: "50.222.10.170"    gateway_mac: "e4:38:83:83:9f:c9"  name: "SEA-Main Office"
+  - wan_ip: "173.160.252.90"   gateway_mac: "d0:21:f9:d9:7e:7f"  name: "SEA-WAREHOUSE"
+  - wan_ip: "50.145.204.110"   gateway_mac: "0c:ea:14:d6:b1:b5"  name: "SVH-Main Office"
+  - wan_ip: "50.188.182.109"   gateway_mac: "d8:b3:70:99:f5:df"  name: "SYL-Main Office"
+  - wan_ip: "67.169.216.157"   gateway_mac: "6c:63:f8:a2:79:69"  name: "Unknown — needs ID"
+  # Note: PDX Kaiser Suite 230 (10.1.10.179) and NVR appliances have internal IPs — not in unifi_list_sites results

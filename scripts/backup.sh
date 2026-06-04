@@ -129,6 +129,28 @@ if { [[ "$MODE" == "both" ]] || [[ "$MODE" == "onedrive" ]]; } && $ONEDRIVE_OK; 
       ok "$f" || true
   done
 
+  step "OneDrive — Claude memory + settings"
+  # Back up project memories and settings for both Claude accounts.
+  # Excludes large transient data (sessions, telemetry, cache, shell-snapshots).
+  for account in .claude .claude-dev; do
+    ACCT_DIR="$HOME/$account"
+    [ -d "$ACCT_DIR" ] || continue
+    DEST="onedrive:Backups/WSL/$account"
+
+    # Settings file
+    [ -f "$ACCT_DIR/settings.json" ] && \
+      rclone copyto "$ACCT_DIR/settings.json" "$DEST/settings.json" "${RCLONE_FLAGS[@]}" && \
+      ok "$account/settings.json"
+
+    # Project memories (memory/ subdirs only — skip sessions, cache, telemetry)
+    [ -d "$ACCT_DIR/projects" ] && \
+      rclone sync "$ACCT_DIR/projects/" "$DEST/projects/" \
+        --filter "+ */memory/**" \
+        --filter "- *" \
+        "${RCLONE_FLAGS[@]}" && \
+      ok "$account/projects/*/memory/ synced"
+  done
+
   update_state_field "last_onedrive_backup" "$(date --iso-8601=seconds)"
 fi
 
