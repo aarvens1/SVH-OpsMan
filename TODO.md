@@ -4,6 +4,32 @@ Active tasks. This file is updated by the memory-cleanup skill.
 
 ---
 
+## Day Starter skill — cleanup items
+
+- [ ] **Remove Personal section** from `day-starter/SKILL.md` — Google tools never configured; section is always empty and generates a data gap warning every run. Just rip it out entirely (lines 385–395 roughly; the `### Personal` section and the `Also run in parallel for the personal digest:` block in Step 2 lines 129–132).
+- [ ] **Remove self-chat boilerplate** from `day-starter/SKILL.md` — replace the end of the DMs bullet (line 125) with: `Skip self-chat threads silently (they return HTTP 404 via application auth).`
+- [ ] **Add IT Team channels** to day-starter monitoring (currently only checks General, Changes, Infrastructure, Alerts). Add:
+  - Fought: `19:41e99a0050824d7e93ae05bef7015382@thread.skype`
+  - Washington: `19:8fe01cf4269b40ed96f3ec94f2f6faae@thread.skype`
+  - SYLO: `19:748dfa957021491da3b10b89a89be9d8@thread.skype`
+  - Oregon: `19:b38cd0ba8a1c4a268a3fdd53444373c2@thread.skype`
+  - Support: `19:dc43e0e10f5e4e8da22b02a561389369@thread.skype` *(high-volume helpdesk — Aaron explicitly wants this monitored)*
+- [ ] **Add System Monitor team channels** to day-starter monitoring (team_id: `bc9d02e3-b6ae-4b02-9e4f-c3963f928fe4`). All channels are automated alert feeds:
+  - Server Alerts: `19:0aad79fd5d0e41aa8b4665f1b09753d8@thread.tacv2` — monitoring sources
+  - Ninja Backup Alerts: `19:524829f2ee1d4008bff053448e94eaec@thread.tacv2`
+  - Entra Cert Alerts: `19:8149a7e139d4424cb6a368460fdeed70@thread.tacv2`
+  - Microsoft Alerts: `19:926bb440dc354c77a28b1f78726b428b@thread.tacv2` — Defender + M365
+  - SSL Cert Alerts: `19:0430fe9af28d4beab1d774805a231ad3@thread.tacv2` — haveibeenexpired.com
+  - Unifi Alerts: `19:4477833c038d4a3296c0aee779efe641@thread.tacv2`
+  - Backup Alerts: `19:c8fde96a81394fa9b20d70a981ce0452@thread.tacv2` — Cloudberry (legacy, may be stale)
+  - General: `19:SUF0pCKJgaU0uEH9u-22P9hAWu16JWk4XxlIH7xQvkQ1@thread.tacv2`
+- [ ] **Service Bot chat** — not found in `teams_list_my_chats` results. Clarify with Aaron what this is (helpdesk bot? specific app?) and get the chat/channel ID.
+- [ ] **Replace dynamic channel discovery with a static list** — remove the `teams_list_teams` → `teams_list_channels` discovery steps from the skill. Instead, read a fixed list of `{team_id, channel_id, name}` entries from `config.yaml` and call `teams_list_messages` directly on each. Put the channel list in `config.yaml` under `teams.channels` so IDs can be updated without touching the skill file. This saves 2 API calls per run and makes the monitored set explicit and intentional.
+
+All edits require `opsman-dev` mode (skills dir is blocked in `opsman`).
+
+---
+
 ## Bitwarden — add credentials for pending services
 
 These services will fail until credentials are added to the **SVH OpsMan** BW item. See `references/credentials.md` for the exact field names and setup instructions per service.

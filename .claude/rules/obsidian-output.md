@@ -62,7 +62,6 @@ Every major folder has a `folder-home.md` MOC. These are the entry points — li
 | `Changes/` | `Changes/changes-home.md` |
 | `Vulnerabilities/` | `Vulnerabilities/vulnerabilities-home.md` |
 | `Reviews/` | `Reviews/reviews-home.md` |
-| `References/` | `References/references-home.md` |
 | `Skills/` | `Skills/index.md` |
 
 **When to add a new note to a MOC:** The following MOCs are self-maintaining via Dataview and require no manual updates when new notes are added — Briefings, Meetings, Incidents, Investigations. For all other MOCs (Projects, Assets, Changes, Vulnerabilities, Reviews), manually add a row when creating a new note.
@@ -133,7 +132,6 @@ SORT date DESC
 | `Infrastructure/` | kebab-case | `kemp-load-balancer.md` |
 | `Assets/` | UPPERCASE device name | `ACCOCOLOKEMP.md` |
 | `Sites/` | PascalCase or kebab-case | `ACCO-Colo.md` |
-| `References/` | kebab-case | `common-event-clusters.md` |
 | `Projects/` (indexes) | PascalCase-kebab | `Network-Segmentation.md` |
 | `Projects/Archive/` | `slug-YYYY-MM-DD.md` (date at end) | `network-snapshot-pdx-2026-05-17.md` |
 | `Briefings/`, `Incidents/`, `Investigations/`, `Meetings/` | `YYYY-MM-DD-slug.md` (date first — calendar-indexed) | `2026-05-29-cmdb-audit.md` |
