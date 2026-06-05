@@ -47,7 +47,7 @@ Run in parallel:
 
 Review the current session context for any verbal commitments Aaron made that are not yet captured as Planner tasks or To Do items. Look for phrases like: "I'll...", "I need to...", "I should...", "remind me to...", "I'm going to...", "I have to..."
 
-For each uncaptured commitment found: pre-fill a `#### CREATE —` block in the Evening Tasks section (Step 2, Phase 1). If nothing was committed, skip this step silently.
+For each uncaptured commitment found: pre-fill a `#### CREATE —` block in `### Staged Tasks` in the `# Day Ender` section (Step 2, Phase 1). If nothing was committed, skip this step silently.
 
 This compensates for the recurring pattern where in-session intentions don't make it into task tracking.
 
@@ -64,20 +64,22 @@ If the session was routine (a clean briefing, a few task updates, nothing substa
 
 This is a two-phase write.
 
-**Phase 1: Inject Evening Tasks into Activity Log**
+**Phase 1: Add EOD task blocks to Staged Tasks**
 
-Use `edit_block` to insert the Evening Tasks section immediately before `# Day Ender`:
+The Day Starter already created `### Staged Tasks` inside `# Day Ender`. Add any EOD task blocks from Step 1 findings directly below the morning blocks using `edit_block`:
 
-- **`old_string`**: `\n# Day Ender\n`
-- **`new_string`**: `\n### Evening Tasks — HH:MM\n\n*Edit fields in place, then say "push these to Planner." Formats: CREATE · UPDATE · TODO · REMOVE — see `.claude/templates/task-blocks.md`.*\n\n*EOD focus: UPDATE completed tasks to 100%, UPDATE overdue due dates, CREATE any new items from EOD findings.*\n\n[task blocks here]\n\n# Day Ender\n`
+- **`old_string`**: the last line of the existing `### Staged Tasks` block content (match it precisely — do not target the section header itself)
+- **`new_string`**: that last line + a blank line + `#### EOD additions — HH:MM` + the EOD task blocks below it
 
-Generate all task blocks using the formats in `.claude/templates/task-blocks.md` (Read it if needed). EOD priority order: UPDATE completed → UPDATE overdue → CREATE new items from security/infra/comms findings.
+*EOD focus: UPDATE completed tasks to 100%, UPDATE overdue due dates, CREATE any new items from security/infra/comms findings.*
+
+Generate all task blocks using the formats in `.claude/templates/task-blocks.md` (Read it if needed). EOD priority order: UPDATE completed → UPDATE overdue → CREATE new items from security/infra/comms findings. If there are no new EOD task blocks to add, skip Phase 1 silently.
 
 **Phase 2: Append close-out narrative**
 
 After injecting the evening tasks, append the close-out narrative to the end of the file. **Always use `mode: append`.** Never `mode: rewrite`.
 
-The appended content must NOT include the Draft Planner actions section, as it now lives in the Activity Log.
+The appended content must NOT include task blocks — those live in `### Staged Tasks` above.
 
 ```markdown
 ## ✅ Closed today
@@ -114,7 +116,7 @@ Keep the Carry Forward section tight — 25 lines max. Only include items that w
 
 **Processing and cleanup:**
 
-After Aaron confirms and you execute any block (CREATE, UPDATE, TODO, REMOVE), the `edit_block` call to remove the processed subsection must target the block inside the `### Evening Tasks` subsection of the `# Activity Log`.
+After Aaron confirms and you execute any block (CREATE, UPDATE, TODO, REMOVE), the `edit_block` call to remove the processed block must target it inside `### Staged Tasks` in the `# Day Ender` section.
 
 If any Draft Planner action blocks remain in the daily note at the end of the session (i.e. Aaron did not confirm them), update `has_pending_tasks` to `true` in the daily note's frontmatter using `edit_block`.
 

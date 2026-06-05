@@ -158,8 +158,8 @@ Read the previous business day's briefing note (`Briefings/Daily/YYYY-MM-DD.md`)
 1.  Check the frontmatter of yesterday's note for `has_pending_tasks: true`.
 2.  If `true`, read the content of yesterday's `# Activity Log` section.
 3.  Find any task blocks starting with `#### CREATE —`, `#### UPDATE —`, or `#### TODO —`. These are tasks that were drafted but not pushed.
-4.  If any are found, create a `### Carried from YYYY-MM-DD` subsection in **today's** `# Activity Log`. This new subsection must be placed *before* the `### Morning Tasks` section.
-5.  Copy the complete, unresolved task blocks from yesterday's note into this new subsection, preserving their content exactly.
+4.  If any are found, append them into the `### Staged Tasks` subsection in **today's** `# Day Ender` section using `edit_block`. Add a heading comment like `#### Carried from YYYY-MM-DD` above the blocks so they're visually distinct from morning findings.
+5.  Copy the complete, unresolved task blocks from yesterday's note into that subsection, preserving their content exactly.
 6.  If `has_pending_tasks` is `false` or the flag is missing, skip this part entirely.
 
 **Part 2: Carry forward open narrative items**
@@ -168,7 +168,7 @@ In parallel with Part 1, check two locations in yesterday's note for narrative i
 - The `# Day Ender` section for any "🔄 Still open" or "🟡 Worth watching" items.
 - The `# Activity Log` section for a `### Deferred` subsection containing items marked for CARRYOVER.
 
-Write a **"Carried from yesterday"** section in the main body of the new `# Day Starter` content (this is separate from the task-block carry-over in the Activity Log). Place it immediately after **Needs attention now**.
+Write a **"Carried from yesterday"** section in the main body of the new `# Day Starter` content (this is separate from the task-block carry-over in `### Staged Tasks`). Place it immediately after **Needs attention now**.
 
 Format each narrative item as:
 ```
@@ -239,17 +239,17 @@ has_pending_tasks: false
 
 # Activity Log
 
-### Morning Tasks — HH:MM
-
-*Edit fields in place, then say "push these to Planner" to create. Formats: CREATE · UPDATE · TODO · REMOVE · IGNORE · CARRYOVER — see `.claude/templates/task-blocks.md` for full spec.*
-
-[task blocks drafted from morning findings go here]
+*Timestamped work log — investigation links, meeting summaries, findings, and decisions.*
 
 ---
 
 # Day Ender
 
-*To be completed at end of day.*
+### Staged Tasks — HH:MM
+
+*Edit fields in place, then say "push these to Planner." Formats: CREATE · UPDATE · TODO · REMOVE · IGNORE · CARRYOVER — see `.claude/templates/task-blocks.md` for full spec.*
+
+[task blocks drafted from morning findings go here]
 ```
 
 Generate all task blocks using the formats defined in `.claude/templates/task-blocks.md`. Read it if you need the spec. Default destination: IT Sysadmin Tasks (`config.planner.sysadmin`) for operational items, Personal To Do for personal items.

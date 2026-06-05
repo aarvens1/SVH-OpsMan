@@ -75,18 +75,6 @@ Keep columns to what you'd actually scan — 3–4 max. Always include a header 
 
 **Briefing implication rule:** Every callout block item in a Day Starter or posture check must answer "so what." State the fact, then state the impact or next move — one sentence each. A finding with no implication is incomplete.
 
-## Activity Log timestamps
-Every main-line entry added to the # Activity Log section gets a fuzzy timestamp. Today shows # DayStarter — HH:MM; this extends that pattern to mid-day activity.
-Format: ## HH:MM, or **HH:MM** — inline before a standalone bullet.
-Fuzzy rules:
-- Round to the nearest minute, but prefer "interesting" minutes like :05, :12, :23, :47 — avoid clean :00 and :30 endings.
-- If writing multiple entries at once, space them 15–35 minutes apart so the log reads like an active day, not a batch dump.
-- Stay inside plausible work hours: 08:00–17:30.
-- Never use the current time. Always offset by -5 to -15 minutes.
-Example: if it's actually 14:47 and you're adding an investigation note, use a time like 14:32 or 14:41, not 14:47 or 15:02.
-
----
-
 ## Activity Log inclusion rule
 
 Skills that produce a note linked to today's work (incident triage, investigations, task triage, access reviews, patch campaigns) add a wikilink entry to `# Activity Log`. Skills that produce reference material (asset profiles, skill pages, runbooks, diagrams, project indexes) do not — those notes stand alone.
@@ -120,14 +108,15 @@ Section order inside Day Starter:
 12. Personal
 13. Next moves (last — synthesis after all data)
 
-Day Ender section order (appended):
-1. ✅ Closed today
-2. 📨 Communications close-out
-3. 🔴 Active issues at EOD
-4. 🔄 Still open — yours
-5. Personal close-out
-6. 🌅 First move tomorrow
-7. 📌 Carry Forward
+Day Ender section order:
+1. Staged Tasks — task blocks accumulated since morning, processed in one pass here (written by Day Starter, added to by Day Ender before processing)
+2. ✅ Closed today (appended)
+3. 📨 Communications close-out (appended)
+4. 🔴 Active issues at EOD (appended)
+5. 🔄 Still open — yours (appended)
+6. Personal close-out (appended)
+7. 🌅 First move tomorrow (appended)
+8. 📌 Carry Forward (appended)
 
 Week Starter section order:
 1. Needs attention now (callout block)

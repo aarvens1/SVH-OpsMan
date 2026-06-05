@@ -157,17 +157,17 @@ See `.claude/rules/note-patterns.md` for the full design spec: functional emoji 
 
 Daily notes have three fixed top-level sections: `# Day Starter`, `# Activity Log`, `# Day Ender`. The Day Ender is always the last section. No emojis in top-level section headers.
 
-The `# Activity Log` section replaces the former `# Notes` section. Its placeholder text should be: "*Task drafts (morning and evening), resolutions, mid-day findings, and investigation links. Structured by generation time.*"
+The `# Activity Log` section is a pure work log. Its placeholder text should be: "*Timestamped work log — investigation links, meeting summaries, findings, and decisions.*"
 
-**Day Starter** — written once at the start of day using `mode: rewrite`. This creates the initial structure including the `# Day Starter`, `# Activity Log`, and `# Day Ender` headers. The initial write populates the `# Day Starter` content and the `### Morning Tasks` subsection within the `# Activity Log`.
+**Day Starter** — written once at the start of day using `mode: rewrite`. Creates the initial three-section structure. The initial write populates `# Day Starter` content and a `### Staged Tasks — HH:MM` subsection inside `# Day Ender` (not the Activity Log).
 
-**Day Ender** — appended at end of day. The `day-ender` skill first injects `### Evening Tasks` into the `# Activity Log` via `edit_block`, then appends the close-out narrative to the end of the file using `mode: append`.
+**Day Ender** — adds any EOD task blocks to `### Staged Tasks` in the `# Day Ender` section via `edit_block`, then processes all staged tasks in one pass, then appends the close-out narrative to the end of the file using `mode: append`.
 
-**Mid-day additions** — Free-form notes (e.g., investigation links, meeting summaries) are inserted into the `# Activity Log` using `edit_block` targeting the `<!-- DAY-STARTER-END -->` sentinel. This places them after the Day Starter content but before the task blocks.
+**Mid-day additions** — Free-form notes (investigation links, meeting summaries, findings) are inserted into the `# Activity Log` using `edit_block` targeting the `<!-- DAY-STARTER-END -->` sentinel.
 - `old_string`: `<!-- DAY-STARTER-END -->`
 - `new_string`: `<!-- DAY-STARTER-END -->\n\n[new content]`
 
-Draft tasks created mid-day should be added to the appropriate `### Morning Tasks` or `### Evening Tasks` subsection.
+Draft tasks created mid-day go into `### Staged Tasks` in the `# Day Ender` section, not the Activity Log.
 
 **If a read of an existing daily note returns no body content:** assume the file has content that the tool failed to surface — not that the file is empty. Never rewrite a daily note without confirming the file is actually empty or brand new.
 
