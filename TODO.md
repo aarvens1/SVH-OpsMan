@@ -145,6 +145,13 @@ Vault writes from Claude Code go directly to the Windows filesystem via WSL. Whe
 
 ---
 
+## Obsidian workflow improvements (from Steph Ango vault comparison, 2026-06-04)
+
+- [ ] **Unresolved links as breadcrumbs** — in incident and investigation notes, write `[[Assets/DEVICENAME]]` wikilinks even before the asset note exists. Surfaces CMDB gaps automatically via Obsidian Graph view; makes `/asset-investigation` and `/backlink-update` runs more targeted. Add this to the IR Triage and investigation skill prompts as a reminder.
+- [ ] **Random revisit habit / vault-audit skill** — periodic session using the Obsidian random note hotkey to surface stale content skills don't automatically find: asset pages predating current frontmatter schema, investigations stuck at `draft`, incidents never archived. Could be a lightweight `/vault-audit` skill or just a recurring habit note.
+
+---
+
 ## Backlink updater improvements (from 2026-06-02)
 
 - [x] **MOC coverage** — Phase 2 implemented in skill (2026-06-04)

@@ -21,8 +21,8 @@ bwu() {
     chmod 600 "$HOME/.bw_session"
     echo "✓ BW_SESSION set"
     # Restart status daemon so it picks up the new session
-    pkill -f "dotfiles/status-refresh.sh" 2>/dev/null && sleep 0.3
-    nohup bash "$OPSMANDIR/dotfiles/status-refresh.sh" >/dev/null 2>&1 &
+    pkill -f "scripts/status-refresh.sh" 2>/dev/null && sleep 0.3
+    nohup bash "$OPSMANDIR/scripts/status-refresh.sh" >/dev/null 2>&1 &
     disown
     echo "✓ Status daemon (re)started — first refresh in ~5s"
 }
@@ -60,7 +60,7 @@ alias gs='gemini'
 
 # ── Git ────────────────────────────────────────────────────────────────────────
 alias gst='git status -sb'
-alias gl='git log --oneline --graph -20'
+alias gl='git log --oneline --graph --decorate -20'
 alias gd='git diff'
 alias gdc='git diff --cached'
 
@@ -184,8 +184,8 @@ opsman() {
         echo "⚠  Bitwarden session invalid or expired — unlocking..."
         bwu || return 1
     fi
-    if ! pgrep -f "dotfiles/status-refresh.sh" >/dev/null 2>&1; then
-        nohup bash "$OPSMANDIR/dotfiles/status-refresh.sh" >/dev/null 2>&1 &
+    if ! pgrep -f "scripts/status-refresh.sh" >/dev/null 2>&1; then
+        nohup bash "$OPSMANDIR/scripts/status-refresh.sh" >/dev/null 2>&1 &
         disown
         echo "✓ Status refresh daemon started"
     fi
@@ -200,8 +200,8 @@ opsman-dev() {
         echo "⚠  Bitwarden session invalid or expired — unlocking..."
         bwu || return 1
     fi
-    if ! pgrep -f "dotfiles/status-refresh.sh" >/dev/null 2>&1; then
-        nohup bash "$OPSMANDIR/dotfiles/status-refresh.sh" >/dev/null 2>&1 &
+    if ! pgrep -f "scripts/status-refresh.sh" >/dev/null 2>&1; then
+        nohup bash "$OPSMANDIR/scripts/status-refresh.sh" >/dev/null 2>&1 &
         disown
         echo "✓ Status refresh daemon started"
     fi
