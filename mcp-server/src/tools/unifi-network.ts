@@ -455,4 +455,86 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
       }
     }
   );
+
+  server.registerTool(
+    "unifi_create_network",
+    {
+      description:
+        "Create a new VLAN / network on a UniFi site using the classic Network API. " +
+        "Sets subnet, DHCP range, IGMP snooping, and IPv6 state explicitly — never relies on defaults. " +
+        "Use unifi_list_networks first to confirm the VLAN ID is not already in use.",
+      inputSchema: z.object({
+        controller: CONTROLLER_PARAM,
+        site_id: SITE_PARAM,
+        name: z.string().describe("Network name (e.g. 'PDX-Printers')"),
+        vlan: z.number().int().min(1).max(4094).describe("VLAN ID (e.g. 13)"),
+        ip_subnet: z.string().describe("CIDR subnet (e.g. '172.18.13.0/24')"),
+        dhcpd_start: z.string().describe("First DHCP address (e.g. '172.18.13.100')"),
+        dhcpd_stop: z.string().describe("Last DHCP address (e.g. '172.18.13.200')"),
+        purpose: z.string().default("corporate").describe("Network purpose — 'corporate' for all standard VLANs, 'guest' only for Guest network"),
+        igmp_snooping: z.boolean().default(false).describe("Enable IGMP snooping — use true for IoT VLANs only"),
+      }),
+    },
+    async ({ controller, site_id, name, vlan, ip_subnet, dhcpd_start, dhcpd_stop, purpose, igmp_snooping }) => {
+      try {
+        const payload = {
+          name,
+          purpose,
+          vlan_enabled: true,
+          vlan,
+          ip_subnet,
+          dhcpd_enabled: true,
+          dhcpd_start,
+          dhcpd_stop,
+          dhcpd_dns_enabled: false,
+          igmp_snooping,
+          ipv6_interface_type: "none",
+          auto_scale_enabled: false,
+        };
+        const res = await createControllerClient(controller).post(
+          `/api/s/${site_id}/rest/networkconf`,
+          payload
+        );
+        const created = classicData(res.data)[0] ?? {};
+        return ok({
+          controller,
+          site_id,
+          id: created["_id"],
+          name: created["name"],
+          vlan: created["vlan"],
+          ip_subnet: created["ip_subnet"],
+          dhcpd_start: created["dhcpd_start"],
+          dhcpd_stop: created["dhcpd_stop"],
+        });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
+
+  server.registerTool(
+    "unifi_rename_network",
+    {
+      description:
+        "Rename an existing UniFi network (label change only — no IP, subnet, or VLAN ID changes). " +
+        "Use unifi_list_networks to get the network_id. Safe to run on live networks — only the display name changes.",
+      inputSchema: z.object({
+        controller: CONTROLLER_PARAM,
+        site_id: SITE_PARAM,
+        network_id: z.string().describe("Network config ID from unifi_list_networks (the 'id' field)"),
+        new_name: z.string().describe("New display name for the network"),
+      }),
+    },
+    async ({ controller, site_id, network_id, new_name }) => {
+      try {
+        await createControllerClient(controller).put(
+          `/api/s/${site_id}/rest/networkconf/${network_id}`,
+          { name: new_name }
+        );
+        return ok({ controller, site_id, network_id, new_name, renamed: true });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
 }
