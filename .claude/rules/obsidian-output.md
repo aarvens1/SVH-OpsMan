@@ -108,7 +108,8 @@ SORT date DESC
 |---------|------|
 | Day Starter / Day Ender | `Briefings/Daily/YYYY-MM-DD.md` |
 | Week Starter / Week Ender | `Briefings/Weekly/YYYY-WW.md` |
-| Incidents | `Incidents/Active/YYYY-MM-DD-name.md` |
+| Incidents (open/contained) | `Incidents/Active/YYYY-MM-DD-name.md` |
+| Incidents (closed) | `Incidents/Closed/YYYY-MM-DD-name.md` |
 | Investigations | `Investigations/` |
 | Changes | `Changes/CHG-YYYY-NNN.md` |
 | Meetings | `Meetings/YYYY-MM-DD-name.md` |
