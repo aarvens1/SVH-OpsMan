@@ -131,6 +131,21 @@ registerStagingTools(server, services.staging);
 registerPowerShellTools(server, services.powershell);
 registerDbQueryTools(server, services.db_query);
 
+// Admin — reload BW credentials without restarting the server
+server.tool(
+  "refresh_secrets",
+  "Reload all credentials from Bitwarden without restarting the server. Call this after updating the SVH OpsMan Bitwarden item — new API keys and URLs will be picked up immediately.",
+  {},
+  async () => {
+    try {
+      await loadBitwardenSecrets();
+      return { content: [{ type: "text" as const, text: "Secrets reloaded from Bitwarden successfully." }] };
+    } catch (e) {
+      return { content: [{ type: "text" as const, text: `Failed to reload secrets: ${e instanceof Error ? e.message : String(e)}` }] };
+    }
+  }
+);
+
 const enabledCount = Object.values(services).filter(Boolean).length;
 console.error(
   `[svh-opsman] Starting — ${enabledCount}/${Object.keys(services).length} service groups configured`
