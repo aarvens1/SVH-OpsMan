@@ -318,7 +318,7 @@ The project includes a suite of Textual terminal UIs. All are launched via `tui/
 **Start:** `tui/run-tui.sh [app]` — defaults to `main` if no app is specified.
 
 **PowerShell Navigator features:**
--   Browse and search all 237 functions by module.
+-   Browse and search all 270 functions by module.
 -   Fill parameters in a simple form.
 -   Preview the command before execution.
 -   Risk color-coding for commands (Read, Write, Destructive).

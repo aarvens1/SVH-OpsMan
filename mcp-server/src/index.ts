@@ -23,6 +23,12 @@ import { registerAzureTools } from "./tools/azure.js";
 // Infrastructure / network
 import { registerUnifiCloudTools } from "./tools/unifi-cloud.js";
 import { registerUnifiNetworkTools } from "./tools/unifi-network.js";
+import { registerUnifiClientsTools } from "./tools/unifi-clients.js";
+import { registerUnifiWlanTools } from "./tools/unifi-wlan.js";
+import { registerUnifiFirewallTools } from "./tools/unifi-firewall.js";
+import { registerUnifiPortForwardTools } from "./tools/unifi-portforward.js";
+import { registerUnifiRoutingTools } from "./tools/unifi-routing.js";
+import { registerUnifiAlertsTools } from "./tools/unifi-alerts.js";
 import { registerNinjaOneTools } from "./tools/ninjaone.js";
 import { registerWazuhTools } from "./tools/wazuh.js";
 import { registerSynologyTools } from "./tools/synology.js";
@@ -111,6 +117,12 @@ registerAzureTools(server, services.azure);
 // Infrastructure
 registerUnifiCloudTools(server, services.unifiCloud);
 registerUnifiNetworkTools(server, services.unifiController);
+registerUnifiClientsTools(server, services.unifiController);
+registerUnifiWlanTools(server, services.unifiController);
+registerUnifiFirewallTools(server, services.unifiController);
+registerUnifiPortForwardTools(server, services.unifiController);
+registerUnifiRoutingTools(server, services.unifiController);
+registerUnifiAlertsTools(server, services.unifiController);
 registerNinjaOneTools(server, services.ninjaone);
 registerWazuhTools(server, services.wazuh);
 registerSynologyTools(server, services.synology);

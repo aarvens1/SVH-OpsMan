@@ -537,4 +537,50 @@ export function registerUnifiNetworkTools(server: McpServer, enabled: boolean): 
       }
     }
   );
+
+  server.registerTool(
+    "unifi_update_network",
+    {
+      description:
+        "Update configurable fields on an existing UniFi network — NAT mode and/or DHCP auto-scale. " +
+        "Only provided fields are changed; all other settings are preserved. " +
+        "Use unifi_rename_network to change the display name. " +
+        "Use unifi_list_networks to get the network_id.",
+      inputSchema: z.object({
+        controller: CONTROLLER_PARAM,
+        site_id: SITE_PARAM,
+        network_id: z.string().describe("Network config ID from unifi_list_networks (the 'id' field)"),
+        is_nat: z.boolean().optional().describe(
+          "Enable or disable NAT/masquerade for outbound traffic on this VLAN. " +
+          "true = UDM NATs traffic to WAN (standard for corporate VLANs). " +
+          "false = traffic is routed without NAT."
+        ),
+        auto_scale_enabled: z.boolean().optional().describe(
+          "Enable or disable DHCP auto-scale. false pins the DHCP pool to the configured range. " +
+          "Recommended: false on all production networks."
+        ),
+      }),
+    },
+    async ({ controller, site_id, network_id, is_nat, auto_scale_enabled }) => {
+      try {
+        if (is_nat === undefined && auto_scale_enabled === undefined) {
+          return err(new Error("At least one field (is_nat, auto_scale_enabled) must be provided"));
+        }
+        const client = createControllerClient(controller);
+        const res = await client.get(`/api/s/${site_id}/rest/networkconf/${network_id}`);
+        const existing = classicData(res.data)[0];
+        if (!existing) return err(new Error(`Network ${network_id} not found`));
+
+        const changes: { is_nat?: boolean; auto_scale_enabled?: boolean } = {};
+        if (is_nat !== undefined) changes.is_nat = is_nat;
+        if (auto_scale_enabled !== undefined) changes.auto_scale_enabled = auto_scale_enabled;
+
+        const updated = { ...existing, ...changes };
+        await client.put(`/api/s/${site_id}/rest/networkconf/${network_id}`, updated);
+        return ok({ controller, site_id, network_id, applied: changes, success: true });
+      } catch (e) {
+        return err(e);
+      }
+    }
+  );
 }
