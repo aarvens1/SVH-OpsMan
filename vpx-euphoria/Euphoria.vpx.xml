@@ -1,0 +1,543 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Euphoria (LE) — VPX Table Definition
+  Format: VPX XML export (import via File > Import XML in VPX 10.7+)
+  All primitive/texture/sound asset paths are relative to this file.
+  See Euphoria.vbs for the complete game script.
+-->
+<root>
+
+  <!-- ================================================================
+       TABLE PROPERTIES
+       ================================================================ -->
+  <TableInfo>
+    <TableName>Euphoria (LE)</TableName>
+    <AuthorName>Claude / SVH</AuthorName>
+    <TableVersion>1.0.0</TableVersion>
+    <ReleaseDate>2026-06-28</ReleaseDate>
+    <AuthorEmail></AuthorEmail>
+    <AuthorWebSite></AuthorWebSite>
+    <TableDescription>
+      Virtual pinball recreation of a Stern Spike 2 style widebody machine
+      themed to Euphoria (HBO). Features Ferris Wheel 3-ball lock,
+      Spiral sub-playfield with mini-flippers, Bathroom Door motorized drop
+      target, Glitter Drop Spinner, M-A-D-D-Y drop target bank, and
+      All For Us wizard mode with BPM-synced flashers.
+    </TableDescription>
+    <TableRules></TableRules>
+    <TableSaveDate>2026-06-28</TableSaveDate>
+    <TableSaveRev>1</TableSaveRev>
+  </TableInfo>
+
+  <!-- ================================================================
+       PHYSICS / ENVIRONMENT
+       ================================================================ -->
+  <TablePhysics>
+    <!-- 6.5-degree pitch — standard fast-flow modern table -->
+    <Gravity>0.97</Gravity>
+    <Friction>0.075</Friction>
+    <Elasticity>0.25</Elasticity>
+    <ElasticityFalloff>0.0</ElasticityFalloff>
+    <Scatter>0.0</Scatter>
+    <DefaultScatter>0.0</DefaultScatter>
+    <NudgeTime>5</NudgeTime>
+    <PlungerNormalize>100</PlungerNormalize>
+    <PlungerFilter>false</PlungerFilter>
+    <PhysicsMaxLoops>0</PhysicsMaxLoops>
+    <RenderDecals>true</RenderDecals>
+    <RenderEMReels>true</RenderEMReels>
+    <OverridePhysics>0</OverridePhysics>
+    <OverridePhysicsFlipper>false</OverridePhysicsFlipper>
+  </TablePhysics>
+
+  <TableDimensions>
+    <!-- Stern widebody: 20.25" x 42.0" scaled to VPX units -->
+    <Width>2025</Width>
+    <Height>4200</Height>
+    <GlassHeight>210</GlassHeight>
+    <BallRadius>27</BallRadius>
+    <BallMass>1.0</BallMass>
+  </TableDimensions>
+
+  <!-- ================================================================
+       FLIPPERS
+       ================================================================ -->
+  <Flippers>
+    <!-- Main Lower Left — 3" -->
+    <Flipper name="Flipper_LeftMain">
+      <X>590</X><Y>3720</Y>
+      <StartAngle>121</StartAngle>
+      <EndAngle>70</EndAngle>
+      <Length>350</Length>
+      <Width>24</Width>
+      <Elasticity>0.88</Elasticity>
+      <Friction>0.6</Friction>
+      <Return>0.058</Return>
+      <RampUp>3.0</RampUp>
+      <Strength>2200</Strength>
+      <TorqueDamping>0.75</TorqueDamping>
+      <TorqueDampingAngle>6.0</TorqueDampingAngle>
+      <Surface>Playfield</Surface>
+      <Image></Image>
+      <Material>Flipper_Rubber</Material>
+    </Flipper>
+
+    <!-- Main Lower Right — 3" -->
+    <Flipper name="Flipper_RightMain">
+      <X>1435</X><Y>3720</Y>
+      <StartAngle>59</StartAngle>
+      <EndAngle>110</EndAngle>
+      <Length>350</Length>
+      <Width>24</Width>
+      <Elasticity>0.88</Elasticity>
+      <Friction>0.6</Friction>
+      <Return>0.058</Return>
+      <RampUp>3.0</RampUp>
+      <Strength>2200</Strength>
+      <TorqueDamping>0.75</TorqueDamping>
+      <TorqueDampingAngle>6.0</TorqueDampingAngle>
+      <Surface>Playfield</Surface>
+      <Image></Image>
+      <Material>Flipper_Rubber</Material>
+    </Flipper>
+
+    <!-- Upper Mini Left — 2" (The Spiral sub-playfield) -->
+    <Flipper name="Flipper_UpperLeft">
+      <X>510</X><Y>1060</Y>
+      <StartAngle>121</StartAngle>
+      <EndAngle>70</EndAngle>
+      <Length>230</Length>
+      <Width>18</Width>
+      <Elasticity>0.82</Elasticity>
+      <Friction>0.6</Friction>
+      <Return>0.058</Return>
+      <RampUp>3.0</RampUp>
+      <Strength>1600</Strength>
+      <TorqueDamping>0.75</TorqueDamping>
+      <TorqueDampingAngle>6.0</TorqueDampingAngle>
+      <Surface>SubPlayfield_Spiral</Surface>
+      <Enabled>false</Enabled>
+    </Flipper>
+
+    <!-- Upper Mini Right — 2" (The Spiral sub-playfield) -->
+    <Flipper name="Flipper_UpperRight">
+      <X>790</X><Y>1060</Y>
+      <StartAngle>59</StartAngle>
+      <EndAngle>110</EndAngle>
+      <Length>230</Length>
+      <Width>18</Width>
+      <Elasticity>0.82</Elasticity>
+      <Friction>0.6</Friction>
+      <Return>0.058</Return>
+      <RampUp>3.0</RampUp>
+      <Strength>1600</Strength>
+      <TorqueDamping>0.75</TorqueDamping>
+      <TorqueDampingAngle>6.0</TorqueDampingAngle>
+      <Surface>SubPlayfield_Spiral</Surface>
+      <Enabled>false</Enabled>
+    </Flipper>
+  </Flippers>
+
+  <!-- ================================================================
+       BUMPERS — "Prom Lights" Cluster
+       ================================================================ -->
+  <Bumpers>
+    <Bumper name="Bumper1">
+      <X>920</X><Y>900</Y>
+      <Radius>45</Radius>
+      <Force>15</Force>
+      <Threshold>1.0</Threshold>
+      <Image>bumper_prom_cap</Image>
+      <ImageSkew>bumper_prom_ring</ImageSkew>
+      <Surface>Playfield</Surface>
+      <IsCollidable>true</IsCollidable>
+      <IsVisible>true</IsVisible>
+    </Bumper>
+    <Bumper name="Bumper2">
+      <X>1100</X><Y>900</Y>
+      <Radius>45</Radius>
+      <Force>15</Force>
+      <Threshold>1.0</Threshold>
+      <Image>bumper_prom_cap</Image>
+      <ImageSkew>bumper_prom_ring</ImageSkew>
+      <Surface>Playfield</Surface>
+      <IsCollidable>true</IsCollidable>
+      <IsVisible>true</IsVisible>
+    </Bumper>
+    <Bumper name="Bumper3">
+      <X>1010</X><Y>750</Y>
+      <Radius>45</Radius>
+      <Force>15</Force>
+      <Threshold>1.0</Threshold>
+      <Image>bumper_prom_cap</Image>
+      <ImageSkew>bumper_prom_ring</ImageSkew>
+      <Surface>Playfield</Surface>
+      <IsCollidable>true</IsCollidable>
+      <IsVisible>true</IsVisible>
+    </Bumper>
+  </Bumpers>
+
+  <!-- ================================================================
+       KICKERS / SCOOPS
+       ================================================================ -->
+  <Kickers>
+    <!-- Scoop 1 — The Stage Scoop (under Bathroom Door) -->
+    <Kicker name="Scoop1">
+      <X>1012</X><Y>2200</Y>
+      <Radius>50</Radius>
+      <Orientation>0</Orientation>
+      <Type>Hole</Type>
+      <Surface>Playfield</Surface>
+      <Material>Kicker_Metal</Material>
+    </Kicker>
+  </Kickers>
+
+  <!-- ================================================================
+       TRIGGERS (ball path detection, optos)
+       ================================================================ -->
+  <Triggers>
+    <Trigger name="TriggerEnter_StageRamp">
+      <X>950</X><Y>1400</Y><Radius>40</Radius>
+      <Shape>Circle</Shape><IsEnabled>true</IsEnabled>
+    </Trigger>
+    <Trigger name="TriggerExit_StageRamp">
+      <X>950</X><Y>1050</Y><Radius>40</Radius>
+      <Shape>Circle</Shape><IsEnabled>true</IsEnabled>
+    </Trigger>
+    <Trigger name="TriggerEnter_FerrisRamp">
+      <X>1560</X><Y>1600</Y><Radius>40</Radius>
+      <Shape>Circle</Shape><IsEnabled>true</IsEnabled>
+    </Trigger>
+    <Trigger name="TriggerExit_FerrisRamp">
+      <X>1560</X><Y>1200</Y><Radius>40</Radius>
+      <Shape>Circle</Shape><IsEnabled>true</IsEnabled>
+    </Trigger>
+    <Trigger name="TriggerEnter_LeftOrbit">
+      <X>260</X><Y>1800</Y><Radius>35</Radius>
+      <Shape>Circle</Shape><IsEnabled>true</IsEnabled>
+    </Trigger>
+    <Trigger name="TriggerExit_LeftOrbit">
+      <X>260</X><Y>500</Y><Radius>35</Radius>
+      <Shape>Circle</Shape><IsEnabled>true</IsEnabled>
+    </Trigger>
+    <Trigger name="TriggerEnter_RightOrbit">
+      <X>1780</X><Y>1800</Y><Radius>35</Radius>
+      <Shape>Circle</Shape><IsEnabled>true</IsEnabled>
+    </Trigger>
+    <Trigger name="TriggerExit_RightOrbit">
+      <X>1780</X><Y>500</Y><Radius>35</Radius>
+      <Shape>Circle</Shape><IsEnabled>true</IsEnabled>
+    </Trigger>
+    <!-- Opto inside The Spiral loop -->
+    <Trigger name="Opto_SpiralLoop">
+      <X>650</X><Y>620</Y><Radius>30</Radius>
+      <Shape>Circle</Shape><IsEnabled>true</IsEnabled>
+    </Trigger>
+    <!-- Glitter Drop Spinner opto -->
+    <Trigger name="Opto_GlitterSpinner">
+      <X>1830</X><Y>1550</Y><Radius>30</Radius>
+      <Shape>Circle</Shape><IsEnabled>true</IsEnabled>
+    </Trigger>
+  </Triggers>
+
+  <!-- ================================================================
+       DROP TARGETS — M-A-D-D-Y Bank
+       ================================================================ -->
+  <HitTargets>
+    <HitTarget name="DropTarget_M" type="DropTarget">
+      <X>420</X><Y>1780</Y>
+      <DropSpeed>0.5</DropSpeed>
+      <IsDropped>false</IsDropped>
+      <RaiseDelay>100</RaiseDelay>
+      <Image>target_maddy_M</Image>
+    </HitTarget>
+    <HitTarget name="DropTarget_A" type="DropTarget">
+      <X>560</X><Y>1780</Y>
+      <DropSpeed>0.5</DropSpeed>
+      <IsDropped>false</IsDropped>
+      <RaiseDelay>100</RaiseDelay>
+      <Image>target_maddy_A</Image>
+    </HitTarget>
+    <HitTarget name="DropTarget_D1" type="DropTarget">
+      <X>700</X><Y>1780</Y>
+      <DropSpeed>0.5</DropSpeed>
+      <IsDropped>false</IsDropped>
+      <RaiseDelay>100</RaiseDelay>
+      <Image>target_maddy_D</Image>
+    </HitTarget>
+    <HitTarget name="DropTarget_D2" type="DropTarget">
+      <X>840</X><Y>1780</Y>
+      <DropSpeed>0.5</DropSpeed>
+      <IsDropped>false</IsDropped>
+      <RaiseDelay>100</RaiseDelay>
+      <Image>target_maddy_D</Image>
+    </HitTarget>
+    <HitTarget name="DropTarget_Y" type="DropTarget">
+      <X>980</X><Y>1780</Y>
+      <DropSpeed>0.5</DropSpeed>
+      <IsDropped>false</IsDropped>
+      <RaiseDelay>100</RaiseDelay>
+      <Image>target_maddy_Y</Image>
+    </HitTarget>
+    <!-- Bathroom Door face target (feeds Scoop1) -->
+    <HitTarget name="Target_BathroomDoor" type="FaceTarget">
+      <X>1012</X><Y>2120</Y>
+      <Image>door_target_face</Image>
+    </HitTarget>
+  </HitTargets>
+
+  <!-- ================================================================
+       SOLENOIDS (mapped to VPX plunger coil objects)
+       ================================================================ -->
+  <Plungers>
+    <!-- Ferris Wheel eject (fires 3× to release locked balls) -->
+    <Plunger name="Sol_FerrisEject">
+      <X>1620</X><Y>2100</Y>
+      <Width>20</Width><Height>80</Height>
+      <PullSpeed>5.0</PullSpeed>
+      <ReleaseSpeed>80</ReleaseSpeed>
+      <FireSpeed>80</FireSpeed>
+      <AutoPlunger>false</AutoPlunger>
+    </Plunger>
+    <!-- Scoop 1 eject -->
+    <Plunger name="Sol_Scoop1Eject">
+      <X>1012</X><Y>2260</Y>
+      <Width>20</Width><Height>80</Height>
+      <PullSpeed>5.0</PullSpeed>
+      <ReleaseSpeed>80</ReleaseSpeed>
+      <FireSpeed>80</FireSpeed>
+      <AutoPlunger>false</AutoPlunger>
+    </Plunger>
+    <!-- M-A-D-D-Y bank reset solenoid -->
+    <Plunger name="Sol_MaddyReset">
+      <X>700</X><Y>1860</Y>
+      <Width>20</Width><Height>60</Height>
+      <PullSpeed>5.0</PullSpeed>
+      <ReleaseSpeed>60</ReleaseSpeed>
+      <FireSpeed>60</FireSpeed>
+      <AutoPlunger>false</AutoPlunger>
+    </Plunger>
+  </Plungers>
+
+  <!-- ================================================================
+       PRIMITIVES (3D models)
+       ================================================================ -->
+  <Primitives>
+    <!-- Ferris Wheel toy — rotates on Z-axis via script (ObjRotZ) -->
+    <Primitive name="FerrisWheelPrimitive">
+      <X>1620</X><Y>2000</Y><Z>20</Z>
+      <RotX>0</RotX><RotY>0</RotY><RotZ>0</RotZ>
+      <ScaleX>1.0</ScaleX><ScaleY>1.0</ScaleY><ScaleZ>1.0</ScaleZ>
+      <Image>ferris_wheel_diffuse</Image>
+      <NormalMap>ferris_wheel_normal</NormalMap>
+      <Mesh>ferris_wheel.obj</Mesh>
+      <IsCollidable>false</IsCollidable>
+      <IsToy>true</IsToy>
+      <StaticRendering>false</StaticRendering>
+    </Primitive>
+
+    <!-- Bathroom Door — translates on Y-axis via script (TransY) -->
+    <Primitive name="BathroomDoorPrimitive">
+      <X>1012</X><Y>2080</Y><Z>10</Z>
+      <RotX>0</RotX><RotY>0</RotY><RotZ>0</RotZ>
+      <ScaleX>1.0</ScaleX><ScaleY>1.0</ScaleY><ScaleZ>1.0</ScaleZ>
+      <TransX>0</TransX><TransY>0</TransY><TransZ>0</TransZ>
+      <Image>bathroom_door_diffuse</Image>
+      <Mesh>bathroom_door.obj</Mesh>
+      <IsCollidable>true</IsCollidable>
+      <IsToy>true</IsToy>
+      <StaticRendering>false</StaticRendering>
+    </Primitive>
+  </Primitives>
+
+  <!-- ================================================================
+       LIGHTS
+       ================================================================ -->
+  <Lights>
+    <Light name="Bumper1Light">
+      <X>920</X><Y>900</Y>
+      <Color>0xFF1493</Color>
+      <Color2>0x800080</Color2>
+      <Radius>55</Radius>
+      <Intensity>1.0</Intensity>
+      <FadeSpeedUp>0.2</FadeSpeedUp>
+      <FadeSpeedDown>0.2</FadeSpeedDown>
+      <State>1</State>
+    </Light>
+    <Light name="Bumper2Light">
+      <X>1100</X><Y>900</Y>
+      <Color>0xFF1493</Color>
+      <Color2>0x00FFFF</Color2>
+      <Radius>55</Radius>
+      <Intensity>1.0</Intensity>
+      <State>1</State>
+    </Light>
+    <Light name="Bumper3Light">
+      <X>1010</X><Y>750</Y>
+      <Color>0xFF1493</Color>
+      <Color2>0x800080</Color2>
+      <Radius>55</Radius>
+      <Intensity>1.0</Intensity>
+      <State>1</State>
+    </Light>
+    <Light name="SpiralLight">
+      <X>650</X><Y>700</Y>
+      <Color>0x9775fa</Color>
+      <Color2>0x800080</Color2>
+      <Radius>120</Radius>
+      <Intensity>0.8</Intensity>
+      <State>0</State>
+    </Light>
+    <Light name="MaddyBankLight">
+      <X>700</X><Y>1780</Y>
+      <Color>0xFF1493</Color>
+      <Color2>0xb91c1c</Color2>
+      <Radius>180</Radius>
+      <Intensity>1.0</Intensity>
+      <State>0</State>
+    </Light>
+    <Light name="Light_SpinnerLane">
+      <X>1830</X><Y>1550</Y>
+      <Color>0x00FFFF</Color>
+      <Color2>0x800080</Color2>
+      <Radius>40</Radius>
+      <Intensity>1.0</Intensity>
+      <State>0</State>
+    </Light>
+
+    <!-- Euphoria Meter inserts (10 LEDs, left rail) -->
+    <Light name="Meter_1"><X>180</X><Y>1900</Y><Color>0xFF1493</Color><Radius>18</Radius><State>0</State></Light>
+    <Light name="Meter_2"><X>180</X><Y>1960</Y><Color>0xFF1493</Color><Radius>18</Radius><State>0</State></Light>
+    <Light name="Meter_3"><X>180</X><Y>2020</Y><Color>0xFF1493</Color><Radius>18</Radius><State>0</State></Light>
+    <Light name="Meter_4"><X>180</X><Y>2080</Y><Color>0xFF1493</Color><Radius>18</Radius><State>0</State></Light>
+    <Light name="Meter_5"><X>180</X><Y>2140</Y><Color>0xFF1493</Color><Radius>18</Radius><State>0</State></Light>
+    <Light name="Meter_6"><X>180</X><Y>2200</Y><Color>0xFF1493</Color><Radius>18</Radius><State>0</State></Light>
+    <Light name="Meter_7"><X>180</X><Y>2260</Y><Color>0xFF1493</Color><Radius>18</Radius><State>0</State></Light>
+    <Light name="Meter_8"><X>180</X><Y>2320</Y><Color>0xc2255c</Color><Radius>18</Radius><State>0</State></Light>
+    <Light name="Meter_9"><X>180</X><Y>2380</Y><Color>0xc2255c</Color><Radius>18</Radius><State>0</State></Light>
+    <Light name="Meter_10"><X>180</X><Y>2440</Y><Color>0xc2255c</Color><Radius>18</Radius><State>0</State></Light>
+
+    <!-- Playfield flashers -->
+    <Light name="Flasher_Left">
+      <X>300</X><Y>2000</Y>
+      <Color>0xFF1493</Color>
+      <Color2>0x800080</Color2>
+      <Radius>80</Radius>
+      <Intensity>0</Intensity>
+      <BulbLight>true</BulbLight>
+      <BulbModulate>true</BulbModulate>
+    </Light>
+    <Light name="Flasher_Right">
+      <X>1720</X><Y>2000</Y>
+      <Color>0x00FFFF</Color>
+      <Color2>0xFF1493</Color2>
+      <Radius>80</Radius>
+      <Intensity>0</Intensity>
+      <BulbLight>true</BulbLight>
+      <BulbModulate>true</BulbModulate>
+    </Light>
+    <Light name="Flasher_Back">
+      <X>1012</X><Y>500</Y>
+      <Color>0x800080</Color>
+      <Color2>0xFF1493</Color2>
+      <Radius>120</Radius>
+      <Intensity>0</Intensity>
+      <BulbLight>true</BulbLight>
+      <BulbModulate>true</BulbModulate>
+    </Light>
+  </Lights>
+
+  <!-- ================================================================
+       TIMERS
+       ================================================================ -->
+  <Timers>
+    <Timer name="TimerMode">
+      <Interval>1000</Interval>
+      <Enabled>false</Enabled>
+    </Timer>
+    <Timer name="TimerCombo">
+      <Interval>5000</Interval>
+      <Enabled>false</Enabled>
+    </Timer>
+    <Timer name="TimerBathroomDoor">
+      <Interval>500</Interval>
+      <Enabled>false</Enabled>
+    </Timer>
+    <Timer name="TimerFerrisRotate">
+      <Interval>150</Interval>
+      <Enabled>false</Enabled>
+    </Timer>
+  </Timers>
+
+  <!-- ================================================================
+       SCRIPT REFERENCE (attach Euphoria.vbs in VPX script window)
+       ================================================================ -->
+  <Script>
+    <!-- Paste contents of Euphoria.vbs into the VPX Script Editor window.
+         This XML definition does not embed the script directly — import
+         both files, then copy-paste the .vbs contents. -->
+  </Script>
+
+  <!-- ================================================================
+       ASSET MANIFEST
+       Textures, sounds, and 3D meshes to import via VPX asset managers.
+       ================================================================ -->
+  <AssetManifest>
+    <Textures>
+      <Texture id="playfield_diffuse"     src="assets/textures/playfield_diffuse.png"/>
+      <Texture id="playfield_plastic"     src="assets/textures/playfield_plastic.png"/>
+      <Texture id="bumper_prom_cap"       src="assets/textures/bumper_cap_pink.png"/>
+      <Texture id="bumper_prom_ring"      src="assets/textures/bumper_ring_cyan.png"/>
+      <Texture id="ferris_wheel_diffuse"  src="assets/textures/ferris_diffuse.png"/>
+      <Texture id="ferris_wheel_normal"   src="assets/textures/ferris_normal.png"/>
+      <Texture id="bathroom_door_diffuse" src="assets/textures/door_diffuse.png"/>
+      <Texture id="target_maddy_M"        src="assets/textures/dt_M.png"/>
+      <Texture id="target_maddy_A"        src="assets/textures/dt_A.png"/>
+      <Texture id="target_maddy_D"        src="assets/textures/dt_D.png"/>
+      <Texture id="target_maddy_Y"        src="assets/textures/dt_Y.png"/>
+      <Texture id="door_target_face"      src="assets/textures/door_target.png"/>
+    </Textures>
+    <Sounds>
+      <!-- All sounds: 32-bit PCM, 44100 Hz WAV for VPX compatibility -->
+      <Sound id="game_start_fanfare"     src="assets/sounds/game_start_fanfare.wav"/>
+      <Sound id="attract_music_loop"     src="assets/sounds/attract_loop.wav"/>
+      <Sound id="bonus_count_music"      src="assets/sounds/bonus_count.wav"/>
+      <Sound id="game_over_sting"        src="assets/sounds/game_over.wav"/>
+      <Sound id="ramp_whoosh_01"         src="assets/sounds/ramp_whoosh_01.wav"/>
+      <Sound id="ramp_whoosh_02"         src="assets/sounds/ramp_whoosh_02.wav"/>
+      <Sound id="orbit_whoosh_left"      src="assets/sounds/orbit_left.wav"/>
+      <Sound id="orbit_whoosh_right"     src="assets/sounds/orbit_right.wav"/>
+      <Sound id="spiral_entry_jingle"    src="assets/sounds/spiral_entry.wav"/>
+      <Sound id="spiral_loop_sfx"        src="assets/sounds/spiral_loop.wav"/>
+      <Sound id="ball_lock_clunk"        src="assets/sounds/lock_clunk.wav"/>
+      <Sound id="crowd_cheer_short"      src="assets/sounds/cheer_short.wav"/>
+      <Sound id="crowd_cheer_medium"     src="assets/sounds/cheer_med.wav"/>
+      <Sound id="multiball_launch_siren" src="assets/sounds/mb_siren.wav"/>
+      <Sound id="jackpot_fanfare"        src="assets/sounds/jackpot.wav"/>
+      <Sound id="target_drop_hit"        src="assets/sounds/drop_hit.wav"/>
+      <Sound id="maddy_scream_cue"       src="assets/sounds/maddy_scream.wav"/>
+      <Sound id="door_creak_lower"       src="assets/sounds/door_lower.wav"/>
+      <Sound id="door_creak_raise"       src="assets/sounds/door_raise.wav"/>
+      <Sound id="scoop_thunk"            src="assets/sounds/scoop_thunk.wav"/>
+      <Sound id="spinner_click"          src="assets/sounds/spinner.wav"/>
+      <Sound id="bumper_pop_01"          src="assets/sounds/bumper_01.wav"/>
+      <Sound id="bumper_pop_02"          src="assets/sounds/bumper_02.wav"/>
+      <Sound id="bumper_pop_03"          src="assets/sounds/bumper_03.wav"/>
+      <Sound id="combo_escalate"         src="assets/sounds/combo_up.wav"/>
+      <Sound id="mode_warning_10s"       src="assets/sounds/mode_warning.wav"/>
+      <Sound id="wizard_end_sting"       src="assets/sounds/wizard_end.wav"/>
+      <Sound id="crowd_cheer_ticker"     src="assets/sounds/cheer_ticker.wav"/>
+      <!-- Music tracks: slice from Labrinth Euphoria OST to looping WAV -->
+      <Sound id="labrinth_track_cassie"  src="assets/sounds/music_cassie_mode.wav"/>
+      <Sound id="labrinth_track_party"   src="assets/sounds/music_party_mode.wav"/>
+      <Sound id="labrinth_track_fezco"   src="assets/sounds/music_fezco_mode.wav"/>
+      <Sound id="labrinth_all_for_us_intro" src="assets/sounds/all_for_us_intro.wav"/>
+      <Sound id="all_for_us_full_track"  src="assets/sounds/all_for_us_full.wav"/>
+    </Sounds>
+    <Meshes>
+      <Mesh id="ferris_wheel.obj"  src="assets/meshes/ferris_wheel.obj"/>
+      <Mesh id="bathroom_door.obj" src="assets/meshes/bathroom_door.obj"/>
+    </Meshes>
+  </AssetManifest>
+
+</root>
