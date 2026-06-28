@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Euphoria (LE) — B2S Backglass Definition
+  Format: B2S Server XML (rename to Euphoria.directb2s when using B2S Server)
+  Canvas: 1280 x 1024 (standard B2S backglass resolution)
+
+  Lamp IDs match Controller.B2SSetData calls in Euphoria_Addendum.vbs:
+    ID 1 → Wizard lamp (EUPHORIA / All For Us glow)
+    ID 2 → Ball lock count indicator (0-3 segments)
+    ID 3 → Mode active lamp
+    ID 4 → Euphoria Meter level (0-10)
+    ID 5 → Playfield multiplier indicator (0-3 = 1x-4x)
+
+  Score display uses 6 x 7-segment digit groups (standard B2S scores).
+  All coordinates in pixels, origin top-left.
+-->
+<B2SBackglassData Version="1.0">
+
+  <Name>Euphoria (LE)</Name>
+  <TableType>2</TableType>  <!-- 2 = Solid State -->
+  <DMDType>1</DMDType>      <!-- 1 = 128x32 -->
+  <Animations AnimationCount="3">
+    <!-- Attract mode: pulsing backglass title glow -->
+    <Animation Name="AttractPulse" Loops="0" Sync="false" Active="true">
+      <AnimationFrame Name="F1" Milliseconds="400" Picture="bg_frame_1"/>
+      <AnimationFrame Name="F2" Milliseconds="400" Picture="bg_frame_2"/>
+    </Animation>
+    <!-- Wizard mode: color sweep -->
+    <Animation Name="WizardSweep" Loops="0" Sync="false" Active="false">
+      <AnimationFrame Name="W1" Milliseconds="150" Picture="bg_wizard_1"/>
+      <AnimationFrame Name="W2" Milliseconds="150" Picture="bg_wizard_2"/>
+      <AnimationFrame Name="W3" Milliseconds="150" Picture="bg_wizard_3"/>
+      <AnimationFrame Name="W4" Milliseconds="150" Picture="bg_wizard_4"/>
+    </Animation>
+    <!-- Multiball strobe -->
+    <Animation Name="MultiballStrobe" Loops="0" Sync="false" Active="false">
+      <AnimationFrame Name="M1" Milliseconds="80" Picture="bg_mb_1"/>
+      <AnimationFrame Name="M2" Milliseconds="80" Picture="bg_frame_1"/>
+    </Animation>
+  </Animations>
+
+  <!-- ================================================================
+       SCORE DISPLAYS
+       ================================================================ -->
+  <Scores>
+    <!-- Player 1 score — top-left quadrant -->
+    <Score Player="1">
+      <Digits>8</Digits>
+      <X>40</X><Y>60</Y>
+      <Width>380</Width><Height>80</Height>
+      <Color>0xFF1493</Color>       <!-- Deep pink -->
+      <Glow>true</Glow>
+      <FontSize>60</FontSize>
+    </Score>
+    <!-- Ball in play indicator -->
+    <Score Player="Ball">
+      <Digits>1</Digits>
+      <X>580</X><Y>900</Y>
+      <Width>80</Width><Height>50</Height>
+      <Color>0x00FFFF</Color>
+      <Glow>false</Glow>
+      <FontSize>36</FontSize>
+    </Score>
+  </Scores>
+
+  <!-- ================================================================
+       LAMPS (mapped to B2SSetData IDs)
+       ================================================================ -->
+  <Lamps>
+
+    <!-- ID 1: Wizard mode master glow (title "EUPHORIA" illumination) -->
+    <Lamp ID="1" Name="Wizard_Glow">
+      <X>420</X><Y>80</Y>
+      <Width>440</Width><Height>200</Height>
+      <OffImage>lamp_wizard_off</OffImage>
+      <OnImage>lamp_wizard_on</OnImage>
+      <Intensity>255</Intensity>
+      <Glow>true</Glow>
+    </Lamp>
+
+    <!-- ID 2: Ferris Wheel lock indicators (3 segments) -->
+    <Lamp ID="2" Name="Lock_Seg_1">
+      <X>150</X><Y>400</Y><Width>60</Width><Height>60</Height>
+      <OffImage>lock_seg_off</OffImage>
+      <OnImage>lock_seg_on</OnImage>
+      <Glow>true</Glow>
+    </Lamp>
+    <Lamp ID="2" Name="Lock_Seg_2">
+      <X>230</X><Y>400</Y><Width>60</Width><Height>60</Height>
+      <OffImage>lock_seg_off</OffImage>
+      <OnImage>lock_seg_on</OnImage>
+      <Threshold>2</Threshold>   <!-- Lights when value >= 2 -->
+    </Lamp>
+    <Lamp ID="2" Name="Lock_Seg_3">
+      <X>310</X><Y>400</Y><Width>60</Width><Height>60</Height>
+      <OffImage>lock_seg_off</OffImage>
+      <OnImage>lock_seg_on</OnImage>
+      <Threshold>3</Threshold>   <!-- Lights when value = 3 (multiball!) -->
+      <Glow>true</Glow>
+    </Lamp>
+
+    <!-- ID 3: MODE ACTIVE indicator -->
+    <Lamp ID="3" Name="Mode_Active">
+      <X>1080</X><Y>400</Y><Width>120</Width><Height>60</Height>
+      <OffImage>mode_off</OffImage>
+      <OnImage>mode_on</OnImage>
+      <Glow>true</Glow>
+    </Lamp>
+
+    <!-- ID 4: Euphoria Meter bar (10 segment bar, top-right) -->
+    <Lamp ID="4" Name="Meter_Bar_1"><X>1080</X><Y>500</Y><Width>30</Width><Height>30</Height>
+      <OnImage>meter_seg_on</OnImage><OffImage>meter_seg_off</OffImage><Threshold>1</Threshold></Lamp>
+    <Lamp ID="4" Name="Meter_Bar_2"><X>1080</X><Y>536</Y><Width>30</Width><Height>30</Height>
+      <OnImage>meter_seg_on</OnImage><OffImage>meter_seg_off</OffImage><Threshold>2</Threshold></Lamp>
+    <Lamp ID="4" Name="Meter_Bar_3"><X>1080</X><Y>572</Y><Width>30</Width><Height>30</Height>
+      <OnImage>meter_seg_on</OnImage><OffImage>meter_seg_off</OffImage><Threshold>3</Threshold></Lamp>
+    <Lamp ID="4" Name="Meter_Bar_4"><X>1080</X><Y>608</Y><Width>30</Width><Height>30</Height>
+      <OnImage>meter_seg_on</OnImage><OffImage>meter_seg_off</OffImage><Threshold>4</Threshold></Lamp>
+    <Lamp ID="4" Name="Meter_Bar_5"><X>1080</X><Y>644</Y><Width>30</Width><Height>30</Height>
+      <OnImage>meter_seg_on</OnImage><OffImage>meter_seg_off</OffImage><Threshold>5</Threshold></Lamp>
+    <Lamp ID="4" Name="Meter_Bar_6"><X>1080</X><Y>680</Y><Width>30</Width><Height>30</Height>
+      <OnImage>meter_seg_on</OnImage><OffImage>meter_seg_off</OffImage><Threshold>6</Threshold></Lamp>
+    <Lamp ID="4" Name="Meter_Bar_7"><X>1080</X><Y>716</Y><Width>30</Width><Height>30</Height>
+      <OnImage>meter_seg_on</OnImage><OffImage>meter_seg_off</OffImage><Threshold>7</Threshold></Lamp>
+    <Lamp ID="4" Name="Meter_Bar_8"><X>1080</X><Y>752</Y><Width>30</Width><Height>30</Height>
+      <OnImage>meter_seg_hot</OnImage><OffImage>meter_seg_off</OffImage><Threshold>8</Threshold></Lamp>
+    <Lamp ID="4" Name="Meter_Bar_9"><X>1080</X><Y>788</Y><Width>30</Width><Height>30</Height>
+      <OnImage>meter_seg_hot</OnImage><OffImage>meter_seg_off</OffImage><Threshold>9</Threshold></Lamp>
+    <Lamp ID="4" Name="Meter_Bar_10"><X>1080</X><Y>824</Y><Width>30</Width><Height>30</Height>
+      <OnImage>meter_seg_wizard</OnImage><OffImage>meter_seg_off</OffImage><Threshold>10</Threshold><Glow>true</Glow></Lamp>
+
+    <!-- ID 5: Playfield multiplier (1x-4x) indicator -->
+    <Lamp ID="5" Name="Mult_1x"><X>600</X><Y>900</Y><Width>50</Width><Height>40</Height>
+      <OnImage>mult_on</OnImage><OffImage>mult_off</OffImage><Threshold>0</Threshold></Lamp>
+    <Lamp ID="5" Name="Mult_2x"><X>660</X><Y>900</Y><Width>50</Width><Height>40</Height>
+      <OnImage>mult_on</OnImage><OffImage>mult_off</OffImage><Threshold>1</Threshold></Lamp>
+    <Lamp ID="5" Name="Mult_3x"><X>720</X><Y>900</Y><Width>50</Width><Height>40</Height>
+      <OnImage>mult_on</OnImage><OffImage>mult_off</OffImage><Threshold>2</Threshold></Lamp>
+    <Lamp ID="5" Name="Mult_4x"><X>780</X><Y>900</Y><Width>50</Width><Height>40</Height>
+      <OnImage>mult_hot</OnImage><OffImage>mult_off</OffImage><Threshold>3</Threshold><Glow>true</Glow></Lamp>
+
+  </Lamps>
+
+  <!-- ================================================================
+       IMAGES (referenced above — create as PNGs and place alongside .b2s)
+       ================================================================ -->
+  <Images>
+    <!-- Base backglass frame — two alternating for attract pulse -->
+    <Image Name="bg_frame_1"   Path="backglass/bg_frame_1.png"/>
+    <Image Name="bg_frame_2"   Path="backglass/bg_frame_2.png"/>
+    <!-- Wizard mode color sweep frames -->
+    <Image Name="bg_wizard_1"  Path="backglass/bg_wizard_1.png"/>
+    <Image Name="bg_wizard_2"  Path="backglass/bg_wizard_2.png"/>
+    <Image Name="bg_wizard_3"  Path="backglass/bg_wizard_3.png"/>
+    <Image Name="bg_wizard_4"  Path="backglass/bg_wizard_4.png"/>
+    <!-- Multiball strobe -->
+    <Image Name="bg_mb_1"      Path="backglass/bg_mb_1.png"/>
+    <!-- Lamp overlays -->
+    <Image Name="lamp_wizard_off" Path="backglass/lamp_wizard_off.png"/>
+    <Image Name="lamp_wizard_on"  Path="backglass/lamp_wizard_on.png"/>
+    <Image Name="lock_seg_off"    Path="backglass/lock_seg_off.png"/>
+    <Image Name="lock_seg_on"     Path="backglass/lock_seg_on.png"/>
+    <Image Name="mode_off"        Path="backglass/mode_off.png"/>
+    <Image Name="mode_on"         Path="backglass/mode_on.png"/>
+    <Image Name="meter_seg_off"   Path="backglass/meter_off.png"/>
+    <Image Name="meter_seg_on"    Path="backglass/meter_on.png"/>
+    <Image Name="meter_seg_hot"   Path="backglass/meter_hot.png"/>
+    <Image Name="meter_seg_wizard" Path="backglass/meter_wizard.png"/>
+    <Image Name="mult_off"        Path="backglass/mult_off.png"/>
+    <Image Name="mult_on"         Path="backglass/mult_on.png"/>
+    <Image Name="mult_hot"        Path="backglass/mult_hot.png"/>
+  </Images>
+
+</B2SBackglassData>

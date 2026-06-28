@@ -1,0 +1,560 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Euphoria (LE) — Geometry & Physics Objects
+  Merge with Euphoria.vpx.xml (or import in addition to it).
+
+  Covers:
+    - All playfield walls (side walls, orbit guides, ramp entrances/exits,
+      slingshot backs, inlane/outlane guides, center drain guide)
+    - Rubber posts (scatter posts, corner posts, flipper end posts)
+    - Slingshot kicker walls
+    - Ball trough (5-ball, Stern style)
+    - Shooter / plunger lane
+    - One-way gates (left/right orbit)
+    - Spinner object (Glitter Drop)
+    - Sub-playfield surface (The Spiral)
+    - Diverter (Stage Ramp)
+    - Rubber materials
+
+  All X/Y in VPX units. Table: 2025 wide × 4200 tall.
+  Y=0 is the TOP (backbox end); Y=4200 is the BOTTOM (drain end).
+-->
+<root>
+
+  <!-- ================================================================
+       MATERIALS
+       ================================================================ -->
+  <Materials>
+    <Material name="Playfield_Wood">
+      <WrapLighting>0.1</WrapLighting>
+      <Roughness>0.6</Roughness>
+      <GlossyImageLerp>0.5</GlossyImageLerp>
+      <Thickness>0.05</Thickness>
+      <Edge>1.0</Edge>
+      <EdgeAlpha>1.0</EdgeAlpha>
+      <Opacity>1.0</Opacity>
+      <IsMetal>false</IsMetal>
+    </Material>
+    <Material name="Rubber_Black">
+      <WrapLighting>0.4</WrapLighting>
+      <Roughness>0.9</Roughness>
+      <Elasticity>0.48</Elasticity>
+      <ElasticityFalloff>0.0</ElasticityFalloff>
+      <Friction>0.6</Friction>
+      <ScatterAngle>0.0</ScatterAngle>
+      <IsMetal>false</IsMetal>
+    </Material>
+    <Material name="Rubber_White">
+      <WrapLighting>0.4</WrapLighting>
+      <Roughness>0.85</Roughness>
+      <Elasticity>0.52</Elasticity>
+      <Friction>0.55</Friction>
+      <IsMetal>false</IsMetal>
+    </Material>
+    <Material name="Metal_Chrome">
+      <WrapLighting>0.0</WrapLighting>
+      <Roughness>0.05</Roughness>
+      <Elasticity>0.25</Elasticity>
+      <Friction>0.07</Friction>
+      <IsMetal>true</IsMetal>
+    </Material>
+    <Material name="Flipper_Rubber">
+      <WrapLighting>0.3</WrapLighting>
+      <Roughness>0.8</Roughness>
+      <Elasticity>0.88</Elasticity>
+      <ElasticityFalloff>0.0</ElasticityFalloff>
+      <Friction>0.6</Friction>
+      <ScatterAngle>0.0</ScatterAngle>
+      <IsMetal>false</IsMetal>
+    </Material>
+    <Material name="Kicker_Metal">
+      <WrapLighting>0.0</WrapLighting>
+      <Roughness>0.1</Roughness>
+      <Elasticity>0.3</Elasticity>
+      <Friction>0.1</Friction>
+      <IsMetal>true</IsMetal>
+    </Material>
+    <Material name="Ramp_Plastic">
+      <WrapLighting>0.2</WrapLighting>
+      <Roughness>0.5</Roughness>
+      <Elasticity>0.28</Elasticity>
+      <Friction>0.17</Friction>
+      <IsMetal>false</IsMetal>
+    </Material>
+  </Materials>
+
+  <!-- ================================================================
+       SURFACES (sub-playfield heights)
+       ================================================================ -->
+  <Surfaces>
+    <!-- Main playfield at Z=0 -->
+    <Surface name="Playfield">
+      <Z>0</Z>
+      <Image>playfield_diffuse</Image>
+      <SideImage></SideImage>
+      <Material>Playfield_Wood</Material>
+    </Surface>
+    <!-- The Spiral sub-playfield raised 30 VPX units -->
+    <Surface name="SubPlayfield_Spiral">
+      <Z>30</Z>
+      <Image>playfield_diffuse</Image>
+      <Material>Playfield_Wood</Material>
+    </Surface>
+    <!-- Stage Ramp surface -->
+    <Surface name="Ramp_Stage">
+      <Z>0</Z>
+      <HeightBottom>0</HeightBottom>
+      <HeightTop>120</HeightTop>
+      <Image></Image>
+      <Material>Ramp_Plastic</Material>
+      <IsVisible>true</IsVisible>
+      <IsCollidable>true</IsCollidable>
+    </Surface>
+    <!-- Ferris Wheel Ramp surface -->
+    <Surface name="Ramp_Ferris">
+      <Z>0</Z>
+      <HeightBottom>0</HeightBottom>
+      <HeightTop>100</HeightTop>
+      <Material>Ramp_Plastic</Material>
+    </Surface>
+  </Surfaces>
+
+  <!-- ================================================================
+       WALLS
+       A wall is a line segment on the playfield that the ball bounces off.
+       Height, elasticity, and friction govern physical behavior.
+       ================================================================ -->
+  <Walls>
+
+    <!-- ---- OUTER SIDE WALLS ------------------------------------------ -->
+    <Wall name="Wall_LeftSide">
+      <X1>60</X1><Y1>200</Y1><X2>60</X2><Y2>3900</Y2>
+      <Height>50</Height><Elasticity>0.3</Elasticity><Friction>0.1</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+    <Wall name="Wall_RightSide">
+      <X1>1965</X1><Y1>200</Y1><X2>1965</X2><Y2>3900</Y2>
+      <Height>50</Height><Elasticity>0.3</Elasticity><Friction>0.1</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+
+    <!-- ---- SHOOTER LANE WALLS ---------------------------------------- -->
+    <Wall name="Wall_ShooterLeft">
+      <X1>1885</X1><Y1>100</Y1><X2>1885</X2><Y2>3950</Y2>
+      <Height>50</Height><Elasticity>0.25</Elasticity><Friction>0.15</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+    <Wall name="Wall_ShooterRight">
+      <X1>1975</X1><Y1>100</Y1><X2>1975</X2><Y2>3950</Y2>
+      <Height>50</Height><Elasticity>0.1</Elasticity><Friction>0.4</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+
+    <!-- ---- TOP ARCH WALLS (orbit guide) -------------------------------- -->
+    <!-- These create the curved arch at the top connecting left/right orbits -->
+    <!-- Approximated as 8 short wall segments -->
+    <Wall name="TopArch_1"><X1>60</X1><Y1>200</Y1><X2>200</X2><Y2>120</Y2>
+      <Height>40</Height><Material>Metal_Chrome</Material><Elasticity>0.3</Elasticity></Wall>
+    <Wall name="TopArch_2"><X1>200</X1><Y1>120</Y1><X2>450</X2><Y2>80</Y2>
+      <Height>40</Height><Material>Metal_Chrome</Material><Elasticity>0.3</Elasticity></Wall>
+    <Wall name="TopArch_3"><X1>450</X1><Y1>80</Y1><X2>750</X2><Y2>65</Y2>
+      <Height>40</Height><Material>Metal_Chrome</Material><Elasticity>0.3</Elasticity></Wall>
+    <Wall name="TopArch_4"><X1>750</X1><Y1>65</Y1><X2>1012</X2><Y2>60</Y2>
+      <Height>40</Height><Material>Metal_Chrome</Material><Elasticity>0.3</Elasticity></Wall>
+    <Wall name="TopArch_5"><X1>1012</X1><Y1>60</Y1><X2>1275</X2><Y2>65</Y2>
+      <Height>40</Height><Material>Metal_Chrome</Material><Elasticity>0.3</Elasticity></Wall>
+    <Wall name="TopArch_6"><X1>1275</X1><Y1>65</Y1><X2>1575</X2><Y2>80</Y2>
+      <Height>40</Height><Material>Metal_Chrome</Material><Elasticity>0.3</Elasticity></Wall>
+    <Wall name="TopArch_7"><X1>1575</X1><Y1>80</Y1><X2>1825</X2><Y2>120</Y2>
+      <Height>40</Height><Material>Metal_Chrome</Material><Elasticity>0.3</Elasticity></Wall>
+    <Wall name="TopArch_8"><X1>1825</X1><Y1>120</Y1><X2>1885</X2><Y2>200</Y2>
+      <Height>40</Height><Material>Metal_Chrome</Material><Elasticity>0.3</Elasticity></Wall>
+
+    <!-- ---- LEFT ORBIT GUIDE WALLS ------------------------------------- -->
+    <Wall name="LeftOrbit_Inner">
+      <X1>155</X1><Y1>250</Y1><X2>155</X2><Y2>1900</Y2>
+      <Height>42</Height><Elasticity>0.32</Elasticity><Friction>0.08</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+    <Wall name="LeftOrbit_Outer">
+      <X1>95</X1><Y1>250</Y1><X2>95</X2><Y2>1900</Y2>
+      <Height>42</Height><Elasticity>0.28</Elasticity><Friction>0.08</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+    <!-- Left orbit entry diverter to Spiral (angled guide) -->
+    <Wall name="LeftOrbit_SpiralEntry">
+      <X1>155</X1><Y1>480</Y1><X2>450</X2><Y2>620</Y2>
+      <Height>40</Height><Elasticity>0.3</Elasticity><Friction>0.1</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+
+    <!-- ---- RIGHT ORBIT GUIDE WALLS ------------------------------------ -->
+    <Wall name="RightOrbit_Inner">
+      <X1>1870</X1><Y1>250</Y1><X2>1870</X2><Y2>1900</Y2>
+      <Height>42</Height><Elasticity>0.32</Elasticity><Friction>0.08</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+    <Wall name="RightOrbit_Outer">
+      <X1>1820</X1><Y1>250</Y1><X2>1820</X2><Y2>1900</Y2>
+      <Height>42</Height><Elasticity>0.28</Elasticity><Friction>0.08</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+    <!-- Right orbit connects to Ferris Ramp at right -->
+    <Wall name="RightOrbit_FerrisEntry">
+      <X1>1820</X1><Y1>1100</Y1><X2>1620</X2><Y2>1300</Y2>
+      <Height>40</Height><Elasticity>0.3</Elasticity><Friction>0.1</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+
+    <!-- ---- THE SPIRAL SUB-PLAYFIELD ENCLOSURE ------------------------- -->
+    <Wall name="Spiral_WallTop">
+      <X1>170</X1><Y1>90</Y1><X2>490</X2><Y2>90</Y2>
+      <Height>60</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="Spiral_WallLeft">
+      <X1>170</X1><Y1>90</Y1><X2>170</X2><Y2>1120</Y2>
+      <Height>60</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="Spiral_WallRight">
+      <X1>490</X1><Y1>90</Y1><X2>490</X2><Y2>1120</Y2>
+      <Height>60</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="Spiral_WallBottom_L">
+      <X1>170</X1><Y1>1120</Y1><X2>290</X2><Y2>1120</Y2>
+      <Height>60</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="Spiral_WallBottom_R">
+      <X1>380</X1><Y1>1120</Y1><X2>490</X2><Y2>1120</Y2>
+      <Height>60</Height><Material>Metal_Chrome</Material></Wall>
+    <!-- Spiral inner loop walls (approximated as 6-segment oval) -->
+    <Wall name="SpiralLoop_1"><X1>250</X1><Y1>300</Y1><X2>300</X2><Y2>240</Y2>
+      <Height>35</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="SpiralLoop_2"><X1>300</X1><Y1>240</Y1><X2>380</X2><Y2>240</Y2>
+      <Height>35</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="SpiralLoop_3"><X1>380</X1><Y1>240</Y1><X2>430</X2><Y2>300</Y2>
+      <Height>35</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="SpiralLoop_4"><X1>430</X1><Y1>300</Y1><X2>430</X2><Y2>680</Y2>
+      <Height>35</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="SpiralLoop_5"><X1>430</X1><Y1>680</Y1><X2>380</X2><Y2>730</Y2>
+      <Height>35</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="SpiralLoop_6"><X1>380</X1><Y1>730</Y1><X2>300</X2><Y2>730</Y2>
+      <Height>35</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="SpiralLoop_7"><X1>300</X1><Y1>730</Y1><X2>250</X2><Y2>680</Y2>
+      <Height>35</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="SpiralLoop_8"><X1>250</X1><Y1>680</Y1><X2>250</X2><Y2>300</Y2>
+      <Height>35</Height><Material>Metal_Chrome</Material></Wall>
+
+    <!-- ---- STAGE RAMP (Ramp 1) ENTRANCE / EXIT GUIDES ---------------- -->
+    <Wall name="StageRamp_EntryLeft">
+      <X1>880</X1><Y1>1300</Y1><X2>850</X2><Y2>900</Y2>
+      <Height>45</Height><Material>Ramp_Plastic</Material><Elasticity>0.28</Elasticity></Wall>
+    <Wall name="StageRamp_EntryRight">
+      <X1>1140</X1><Y1>1300</Y1><X2>1170</X2><Y2>900</Y2>
+      <Height>45</Height><Material>Ramp_Plastic</Material><Elasticity>0.28</Elasticity></Wall>
+    <Wall name="StageRamp_TopLeft">
+      <X1>850</X1><Y1>900</Y1><X2>870</X2><Y2>400</Y2>
+      <Height>45</Height><Material>Ramp_Plastic</Material><Elasticity>0.25</Elasticity></Wall>
+    <Wall name="StageRamp_TopRight">
+      <X1>1170</X1><Y1>900</Y1><X2>1150</X2><Y2>400</Y2>
+      <Height>45</Height><Material>Ramp_Plastic</Material><Elasticity>0.25</Elasticity></Wall>
+    <!-- Diverter slot (mid-ramp, for Scoop or inlane routing) -->
+    <Wall name="StageRamp_DiverterLeft">
+      <X1>950</X1><Y1>700</Y1><X2>920</X2><Y2>650</Y2>
+      <Height>30</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="StageRamp_DiverterRight">
+      <X1>1074</X1><Y1>700</Y1><X2>1100</X2><Y2>650</Y2>
+      <Height>30</Height><Material>Metal_Chrome</Material></Wall>
+
+    <!-- ---- FERRIS WHEEL RAMP (Ramp 2) GUIDES ------------------------- -->
+    <Wall name="FerrisRamp_EntryLeft">
+      <X1>1490</X1><Y1>1700</Y1><X2>1460</X2><Y2>1300</Y2>
+      <Height>45</Height><Material>Ramp_Plastic</Material><Elasticity>0.28</Elasticity></Wall>
+    <Wall name="FerrisRamp_EntryRight">
+      <X1>1700</X1><Y1>1700</Y1><X2>1730</X2><Y2>1300</Y2>
+      <Height>45</Height><Material>Ramp_Plastic</Material><Elasticity>0.28</Elasticity></Wall>
+    <Wall name="FerrisRamp_Exit">
+      <X1>1460</X1><Y1>1300</Y1><X2>1550</X2><Y2>1100</Y2>
+      <Height>45</Height><Material>Ramp_Plastic</Material></Wall>
+
+    <!-- ---- SLINGSHOT BACKS ------------------------------------------- -->
+    <!-- Left slingshot assembly -->
+    <Wall name="LeftSling_Back">
+      <X1>235</X1><Y1>2900</Y1><X2>500</X2><Y2>3350</Y2>
+      <Height>52</Height><Elasticity>0.7</Elasticity><Friction>0.05</Friction>
+      <Material>Rubber_Black</Material>
+      <Scatter>3.0</Scatter>
+    </Wall>
+    <Wall name="LeftSling_Top">
+      <X1>235</X1><Y1>2900</Y1><X2>500</X2><Y2>2900</Y2>
+      <Height>52</Height><Elasticity>0.3</Elasticity>
+      <Material>Rubber_Black</Material>
+    </Wall>
+    <!-- Right slingshot assembly -->
+    <Wall name="RightSling_Back">
+      <X1>1790</X1><Y1>2900</Y1><X2>1525</X2><Y2>3350</Y2>
+      <Height>52</Height><Elasticity>0.7</Elasticity><Friction>0.05</Friction>
+      <Material>Rubber_Black</Material>
+      <Scatter>3.0</Scatter>
+    </Wall>
+    <Wall name="RightSling_Top">
+      <X1>1790</X1><Y1>2900</Y1><X2>1525</X2><Y2>2900</Y2>
+      <Height>52</Height><Elasticity>0.3</Elasticity>
+      <Material>Rubber_Black</Material>
+    </Wall>
+
+    <!-- ---- INLANE GUIDES --------------------------------------------- -->
+    <Wall name="LeftInlane_Guide">
+      <X1>320</X1><Y1>3350</Y1><X2>320</X2><Y2>3700</Y2>
+      <Height>44</Height><Elasticity>0.25</Elasticity><Friction>0.12</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+    <Wall name="LeftInlane_Tip">
+      <X1>320</X1><Y1>3700</Y1><X2>390</X2><Y2>3730</Y2>
+      <Height>44</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="RightInlane_Guide">
+      <X1>1705</X1><Y1>3350</Y1><X2>1705</X2><Y2>3700</Y2>
+      <Height>44</Height><Elasticity>0.25</Elasticity><Friction>0.12</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+    <Wall name="RightInlane_Tip">
+      <X1>1705</X1><Y1>3700</Y1><X2>1635</X2><Y2>3730</Y2>
+      <Height>44</Height><Material>Metal_Chrome</Material></Wall>
+
+    <!-- ---- OUTLANE GUIDES -------------------------------------------- -->
+    <Wall name="LeftOutlane_Guide">
+      <X1>145</X1><Y1>3350</Y1><X2>145</X2><Y2>3850</Y2>
+      <Height>44</Height><Elasticity>0.28</Elasticity><Friction>0.1</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+    <Wall name="LeftOutlane_Ball_Save">
+      <!-- Post at outlane entry — tightens outlane per nudge feedback -->
+      <X1>145</X1><Y1>3350</Y1><X2>225</X2><Y2>3350</Y2>
+      <Height>44</Height><Material>Rubber_White</Material><Elasticity>0.5</Elasticity>
+    </Wall>
+    <Wall name="RightOutlane_Guide">
+      <X1>1880</X1><Y1>3350</Y1><X2>1880</X2><Y2>3850</Y2>
+      <Height>44</Height><Elasticity>0.28</Elasticity><Friction>0.1</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+    <Wall name="RightOutlane_Ball_Save">
+      <X1>1880</X1><Y1>3350</Y1><X2>1800</X2><Y2>3350</Y2>
+      <Height>44</Height><Material>Rubber_White</Material><Elasticity>0.5</Elasticity>
+    </Wall>
+
+    <!-- ---- CENTER DRAIN GUIDE ---------------------------------------- -->
+    <Wall name="Drain_Left">
+      <X1>145</X1><Y1>3850</Y1><X2>600</X2><Y2>4100</Y2>
+      <Height>40</Height><Material>Metal_Chrome</Material></Wall>
+    <Wall name="Drain_Right">
+      <X1>1880</X1><Y1>3850</Y1><X2>1425</X2><Y2>4100</Y2>
+      <Height>40</Height><Material>Metal_Chrome</Material></Wall>
+
+    <!-- ---- BUMPER HOUSING -------------------------------------------- -->
+    <!-- Curved walls funneling into the 3-bumper cluster -->
+    <Wall name="BumperHouse_Left">
+      <X1>540</X1><Y1>620</Y1><X2>720</X2><Y2>680</Y2>
+      <Height>40</Height><Material>Rubber_Black</Material><Elasticity>0.4</Elasticity></Wall>
+    <Wall name="BumperHouse_Right">
+      <X1>1480</X1><Y1>620</Y1><X2>1300</X2><Y2>680</Y2>
+      <Height>40</Height><Material>Rubber_Black</Material><Elasticity>0.4</Elasticity></Wall>
+    <Wall name="BumperHouse_Bottom">
+      <X1>720</X1><Y1>1100</Y1><X2>1300</X2><Y2>1100</Y2>
+      <Height>40</Height><Material>Rubber_Black</Material><Elasticity>0.4</Elasticity></Wall>
+
+    <!-- ---- MADDY DROP TARGET BACKING WALL ---------------------------- -->
+    <Wall name="MaddyBank_Back">
+      <X1>370</X1><Y1>1760</Y1><X2>1050</X2><Y2>1760</Y2>
+      <Height>50</Height><Elasticity>0.18</Elasticity><Friction>0.25</Friction>
+      <Material>Metal_Chrome</Material>
+    </Wall>
+
+  </Walls>
+
+  <!-- ================================================================
+       RUBBER POSTS (circular bumper walls)
+       ================================================================ -->
+  <RubberPosts>
+    <!-- Scatter posts flanking bumper cluster -->
+    <RubberPost name="Post_BumperL1"><X>780</X><Y>700</Y><Radius>14</Radius>
+      <Material>Rubber_Black</Material><Elasticity>0.48</Elasticity></RubberPost>
+    <RubberPost name="Post_BumperR1"><X>1240</X><Y>700</Y><Radius>14</Radius>
+      <Material>Rubber_Black</Material><Elasticity>0.48</Elasticity></RubberPost>
+    <RubberPost name="Post_BumperL2"><X>740</X><Y>1060</Y><Radius>14</Radius>
+      <Material>Rubber_Black</Material><Elasticity>0.48</Elasticity></RubberPost>
+    <RubberPost name="Post_BumperR2"><X>1280</X><Y>1060</Y><Radius>14</Radius>
+      <Material>Rubber_Black</Material><Elasticity>0.48</Elasticity></RubberPost>
+    <!-- Scatter posts below Maddy bank -->
+    <RubberPost name="Post_MaddyL"><X>360</X><Y>1900</Y><Radius>12</Radius>
+      <Material>Rubber_Black</Material></RubberPost>
+    <RubberPost name="Post_MaddyR"><X>1060</X><Y>1900</Y><Radius>12</Radius>
+      <Material>Rubber_Black</Material></RubberPost>
+    <!-- Flipper end posts -->
+    <RubberPost name="Post_FlipEndL"><X>350</X><Y>3720</Y><Radius>18</Radius>
+      <Material>Rubber_White</Material><Elasticity>0.55</Elasticity></RubberPost>
+    <RubberPost name="Post_FlipEndR"><X>1675</X><Y>3720</Y><Radius>18</Radius>
+      <Material>Rubber_White</Material><Elasticity>0.55</Elasticity></RubberPost>
+    <!-- Center drain post (between flippers) -->
+    <RubberPost name="Post_CenterDrain"><X>1012</X><Y>3750</Y><Radius>16</Radius>
+      <Material>Rubber_Black</Material><Elasticity>0.5</Elasticity></RubberPost>
+    <!-- Stage Ramp entry posts -->
+    <RubberPost name="Post_StageEntryL"><X>875</X><Y>1340</Y><Radius>14</Radius>
+      <Material>Rubber_White</Material><Elasticity>0.5</Elasticity></RubberPost>
+    <RubberPost name="Post_StageEntryR"><X>1150</X><Y>1340</Y><Radius>14</Radius>
+      <Material>Rubber_White</Material><Elasticity>0.5</Elasticity></RubberPost>
+    <!-- Ferris Ramp entry posts -->
+    <RubberPost name="Post_FerrisEntryL"><X>1480</X><Y>1740</Y><Radius>14</Radius>
+      <Material>Rubber_White</Material><Elasticity>0.5</Elasticity></RubberPost>
+    <RubberPost name="Post_FerrisEntryR"><X>1710</X><Y>1740</Y><Radius>14</Radius>
+      <Material>Rubber_White</Material><Elasticity>0.5</Elasticity></RubberPost>
+  </RubberPosts>
+
+  <!-- ================================================================
+       SLINGSHOT KICKER WALLS (the actual kicking face)
+       ================================================================ -->
+  <Slingshots>
+    <Slingshot name="Sling_Left">
+      <X1>235</X1><Y1>3000</Y1>
+      <X2>490</X2><Y2>3350</Y2>
+      <Force>14</Force>
+      <Threshold>1.0</Threshold>
+      <Material>Rubber_Black</Material>
+      <Image>sling_left_decal</Image>
+    </Slingshot>
+    <Slingshot name="Sling_Right">
+      <X1>1790</X1><Y1>3000</Y1>
+      <X2>1535</X2><Y2>3350</Y2>
+      <Force>14</Force>
+      <Threshold>1.0</Threshold>
+      <Material>Rubber_Black</Material>
+      <Image>sling_right_decal</Image>
+    </Slingshot>
+  </Slingshots>
+
+  <!-- ================================================================
+       GATES (one-way — orbit entry control)
+       ================================================================ -->
+  <Gates>
+    <!-- Left orbit gate — allows ball upward only (drops closed going down) -->
+    <Gate name="Gate_LeftOrbit">
+      <X>125</X><Y>1900</Y>
+      <Length>80</Length>
+      <Rotation>90</Rotation>
+      <Elasticity>0.3</Elasticity>
+      <Material>Metal_Chrome</Material>
+      <TwoWay>false</TwoWay>
+      <IsVisible>true</IsVisible>
+    </Gate>
+    <!-- Right orbit gate -->
+    <Gate name="Gate_RightOrbit">
+      <X>1900</X><Y>1900</Y>
+      <Length>80</Length>
+      <Rotation>90</Rotation>
+      <Elasticity>0.3</Elasticity>
+      <Material>Metal_Chrome</Material>
+      <TwoWay>false</TwoWay>
+      <IsVisible>true</IsVisible>
+    </Gate>
+    <!-- Spiral exit gate (wireform mouth at bottom of Spiral) -->
+    <Gate name="Gate_SpiralExit">
+      <X>330</X><Y>1120</Y>
+      <Length>60</Length>
+      <Rotation>0</Rotation>
+      <Material>Metal_Chrome</Material>
+      <TwoWay>false</TwoWay>
+    </Gate>
+  </Gates>
+
+  <!-- ================================================================
+       SPINNER (Glitter Drop — Mech 2)
+       ================================================================ -->
+  <Spinners>
+    <Spinner name="Spinner_GlitterDrop">
+      <X>1830</X><Y>1550</Y>
+      <Length>100</Length>
+      <Rotation>0</Rotation>
+      <Elasticity>0.3</Elasticity>
+      <Damping>0.9878</Damping>      <!-- High spin retention -->
+      <AngleMax>90</AngleMax>
+      <AngleMin>-90</AngleMin>
+      <IsVisible>true</IsVisible>
+      <ShowBracket>true</ShowBracket>
+      <Material>Metal_Chrome</Material>
+      <Image>spinner_glitter</Image>
+    </Spinner>
+  </Spinners>
+
+  <!-- ================================================================
+       BALL TROUGH — Stern-style 5-ball gravity feed
+       Kicker array at bottom of table; script drives AutoPlunger for launch.
+       ================================================================ -->
+  <Troughs>
+    <Trough name="BallTrough">
+      <Type>ModernMech</Type>
+      <BallCount>5</BallCount>
+      <!-- Entry (drain): balls fall into slot 5 from drain -->
+      <EntryKicker>TroughKick_Entry</EntryKicker>
+      <!-- Exit (shooter lane): slot 1 kicks to shooter lane -->
+      <ExitKicker>TroughKick_Exit</ExitKicker>
+      <!-- Eject direction toward shooter lane -->
+      <EjectAngle>0</EjectAngle>
+      <EjectStrength>55</EjectStrength>
+    </Trough>
+    <!-- Trough kicker positions (hidden, below playfield apron) -->
+    <Kicker name="TroughKick_Entry">
+      <X>1012</X><Y>4150</Y><Radius>25</Radius>
+      <Type>Hole</Type><Surface>Playfield</Surface>
+      <Material>Metal_Chrome</Material>
+    </Kicker>
+    <Kicker name="TroughKick_Exit">
+      <X>1930</X><Y>3980</Y><Radius>25</Radius>
+      <Type>Hole</Type><Surface>Playfield</Surface>
+      <Material>Metal_Chrome</Material>
+    </Kicker>
+  </Troughs>
+
+  <!-- ================================================================
+       SHOOTER / PLUNGER
+       ================================================================ -->
+  <Plungers>
+    <Plunger name="Plunger">
+      <X>1930</X><Y>3900</Y>
+      <Width>25</Width><Height>160</Height>
+      <ZAdjust>0</ZAdjust>
+      <PullSpeed>5.0</PullSpeed>
+      <ReleaseSpeed>80</ReleaseSpeed>
+      <FireSpeed>80</FireSpeed>
+      <ParkPosition>0.5</ParkPosition>
+      <ScatterVelocity>0.0</ScatterVelocity>
+      <AnimFrames>1</AnimFrames>
+      <AutoPlunger>false</AutoPlunger>
+      <Image>plunger_tip</Image>
+      <Material>Metal_Chrome</Material>
+    </Plunger>
+  </Plungers>
+
+  <!-- ================================================================
+       DRAIN TRIGGER
+       ================================================================ -->
+  <Triggers>
+    <Trigger name="Drain">
+      <X>1012</X><Y>4130</Y>
+      <Width>1600</Width><Height>40</Height>
+      <Shape>Wire</Shape>
+      <IsEnabled>true</IsEnabled>
+    </Trigger>
+  </Triggers>
+
+  <!-- ================================================================
+       DIVERTER (Stage Ramp — routes to Scoop or inlane)
+       Implemented as a gate that the script enables/disables.
+       ================================================================ -->
+  <Gates>
+    <Gate name="Diverter_Stage">
+      <X>1012</X><Y>680</Y>
+      <Length>100</Length>
+      <Rotation>45</Rotation>
+      <Elasticity>0.25</Elasticity>
+      <Material>Metal_Chrome</Material>
+      <TwoWay>true</TwoWay>
+      <IsVisible>true</IsVisible>
+      <!-- Script sets IsActive / Open/Closed to route ball -->
+    </Gate>
+  </Gates>
+
+</root>
